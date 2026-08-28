@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -26,6 +27,15 @@ public class SecurityConfig {
         private final AuthenticationProvider authenticationProvider;
 
         /** Orígenes permitidos, separados por comas (app.cors.allowed-origins). */
+        /** Rutas de los catalogos maestros: lectura publica, escritura solo ADMIN. */
+        private static final String[] CATALOGOS = {
+                        "/api/v1/sedes/**",
+                        "/api/v1/facultades/**",
+                        "/api/v1/programas-academicos/**",
+                        "/api/v1/categorias/**",
+                        "/api/v1/keywords/**"
+        };
+
         @Value("${app.cors.allowed-origins}")
         private String allowedOrigins;
 
@@ -40,52 +50,32 @@ public class SecurityConfig {
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 // 3. Reglas de Autorización
                                 .authorizeHttpRequests(auth -> auth
-                                                // 1. Reglas de Administrador (Todas al principio)
+                                                // 1. Administracion
                                                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                                                 .requestMatchers("/api/v1/usuarios/admin/**").hasRole("ADMIN")
-                                                .requestMatchers(org.springframework.http.HttpMethod.POST,
-                                                                "/api/v1/convocatorias/**",
-                                                                "/api/v1/categorias/**",
-                                                                "/api/v1/entidades/**")
-                                                .hasRole("ADMIN")
-                                                .requestMatchers(org.springframework.http.HttpMethod.PUT,
-                                                                "/api/v1/convocatorias/**")
-                                                .hasRole("ADMIN")
-                                                .requestMatchers(org.springframework.http.HttpMethod.DELETE,
-                                                                "/api/v1/convocatorias/**")
-                                                .hasRole("ADMIN")
 
-                                                // 2. Auth, Registro y Swagger (Públicos)
+                                                // 2. Escritura sobre catalogos maestros: solo ADMIN
+                                                .requestMatchers(HttpMethod.POST, CATALOGOS).hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.PUT, CATALOGOS).hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.DELETE, CATALOGOS).hasRole("ADMIN")
+
+                                                // 3. Publico: login, registro y Swagger
                                                 .requestMatchers(
                                                                 "/api/v1/auth/**",
-                                                                "/api/v1/usuarios/registro",
                                                                 "/v3/api-docs/**",
                                                                 "/swagger-ui/**",
                                                                 "/swagger-ui.html")
                                                 .permitAll()
-
-                                                // 3. Endpoints de Perfil y Password personales
-                                                .requestMatchers("/api/v1/usuarios/perfil/me").authenticated()
-                                                .requestMatchers("/api/v1/usuarios/me/password/**").authenticated()
-                                                .requestMatchers(org.springframework.http.HttpMethod.POST,
-                                                                "/api/v1/usuarios/perfil")
-                                                .authenticated()
-                                                .requestMatchers(org.springframework.http.HttpMethod.GET,
-                                                                "/api/v1/usuarios/perfil/**")
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/usuarios/registro")
                                                 .permitAll()
 
-                                                // 4. Datos maestros y consultas generales (Públicos)
-                                                .requestMatchers(org.springframework.http.HttpMethod.GET,
-                                                                "/api/v1/usuarios",
-                                                                "/api/v1/usuarios/*",
-                                                                "/api/v1/convocatorias/**",
-                                                                "/api/v1/categorias/**",
-                                                                "/api/v1/entidades/**",
-                                                                "/api/v1/certificaciones/**",
-                                                                "/api/v1/keywords/**")
-                                                .permitAll()
+                                                // 4. Lectura de catalogos: publica, la necesita el formulario
+                                                // de registro antes de que exista sesion.
+                                                .requestMatchers(HttpMethod.GET, CATALOGOS).permitAll()
 
-                                                // 5. Por defecto cualquier otra cosa requiere estar autenticado
+                                                // 5. El resto exige sesion. En Dattapro, GET /api/v1/usuarios
+                                                // y /api/v1/usuarios/* eran permitAll: cualquiera sin
+                                                // autenticar listaba a todos los usuarios con su correo.
                                                 .anyRequest().authenticated())
 
                                 // 4. Proveedor y Filtro JWT

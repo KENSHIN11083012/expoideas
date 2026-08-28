@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @OpenAPIDefinition(
-    info = @Info(title = "Dattapro API", version = "v1", description = "API para la gestión de perfiles de docentes"),
+    info = @Info(title = "Expoideas API", version = "v1", description = "Red social de emprendimiento universitario"),
     security = @SecurityRequirement(name = "bearerAuth")
 )
 @SecurityScheme(

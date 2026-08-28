@@ -1,287 +1,168 @@
 package com.dattapro.dattapro_api.service;
 
-import com.dattapro.dattapro_api.entity.*;
-import com.dattapro.dattapro_api.repository.*;
+import com.dattapro.dattapro_api.entity.Categoria;
+import com.dattapro.dattapro_api.entity.Facultad;
+import com.dattapro.dattapro_api.entity.Keyword;
+import com.dattapro.dattapro_api.entity.ProgramaAcademico;
+import com.dattapro.dattapro_api.entity.Sede;
+import com.dattapro.dattapro_api.repository.CategoriaRepository;
+import com.dattapro.dattapro_api.repository.FacultadRepository;
+import com.dattapro.dattapro_api.repository.KeywordRepository;
+import com.dattapro.dattapro_api.repository.ProgramaAcademicoRepository;
+import com.dattapro.dattapro_api.repository.SedeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
+/**
+ * CRUD de los catalogos maestros: estructura academica y clasificacion.
+ *
+ * <p>Dattapro tenia catorce catalogos; aqui sobreviven los cinco del baseline.
+ * El resto pertenecia al perfil docente y se retiro con el dominio de
+ * convocatorias.
+ */
 @Service
 @RequiredArgsConstructor
 public class MasterDataService {
 
-    // ─── Repositorios existentes ───────────────────────────────────────────────
-    private final AreaConocimientoRepository areaConocimientoRepository;
-    private final AreaEspecialidadRepository areaEspecialidadRepository;
-    private final SectorExperienciaRepository sectorExperienciaRepository;
-    private final TipoServicioRepository tipoServicioRepository;
-    private final TipoProyectoRepository tipoProyectoRepository;
-    private final CompetenciaTecnicaRepository competenciaTecnicaRepository;
-    private final CompetenciaTransversalRepository competenciaTransversalRepository;
-
-    // ─── Repositorios nuevos ───────────────────────────────────────────────────
     private final SedeRepository sedeRepository;
-    private final ProgramaAcademicoRepository programaAcademicoRepository;
     private final FacultadRepository facultadRepository;
-    private final CentroInvestigativoRepository centroInvestigativoRepository;
-    private final TipoVinculacionRepository tipoVinculacionRepository;
-    private final IdiomaRepository idiomaRepository;
-    private final InteresRedRepository interesRedRepository;
+    private final ProgramaAcademicoRepository programaAcademicoRepository;
+    private final CategoriaRepository categoriaRepository;
+    private final KeywordRepository keywordRepository;
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // ---------------------------------------------
     // SEDE
-    // ═══════════════════════════════════════════════════════════════════════════
+    // ---------------------------------------------
+
+    @Transactional(readOnly = true)
     public List<Sede> listarSedes() {
         return sedeRepository.findAll();
     }
 
+    @Transactional
     public Sede crearSede(Sede sede) {
         return sedeRepository.save(sede);
     }
 
+    /**
+     * @throws NoSuchElementException si el ID no existe
+     */
+    @Transactional
     public Sede actualizarSede(Integer id, Sede datos) {
         Sede sede = sedeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Sede no encontrada: " + id));
+                .orElseThrow(() -> new NoSuchElementException("No existe una sede con ID: " + id));
         sede.setNombre(datos.getNombre());
         return sedeRepository.save(sede);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // PROGRAMA ACADÉMICO
-    // ═══════════════════════════════════════════════════════════════════════════
-    public List<ProgramaAcademico> listarProgramasAcademicos() {
-        return programaAcademicoRepository.findAll();
-    }
-
-    public ProgramaAcademico crearProgramaAcademico(ProgramaAcademico programa) {
-        return programaAcademicoRepository.save(programa);
-    }
-
-    public ProgramaAcademico actualizarProgramaAcademico(Integer id, ProgramaAcademico datos) {
-        ProgramaAcademico programa = programaAcademicoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("ProgramaAcademico no encontrado: " + id));
-        programa.setNombre(datos.getNombre());
-        if (datos.getFacultad() != null) {
-            programa.setFacultad(datos.getFacultad());
-        }
-        return programaAcademicoRepository.save(programa);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
+    // ---------------------------------------------
     // FACULTAD
-    // ═══════════════════════════════════════════════════════════════════════════
+    // ---------------------------------------------
+
+    @Transactional(readOnly = true)
     public List<Facultad> listarFacultades() {
         return facultadRepository.findAll();
     }
 
+    @Transactional
     public Facultad crearFacultad(Facultad facultad) {
         return facultadRepository.save(facultad);
     }
 
+    /**
+     * @throws NoSuchElementException si el ID no existe
+     */
+    @Transactional
     public Facultad actualizarFacultad(Integer id, Facultad datos) {
         Facultad facultad = facultadRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Facultad no encontrada: " + id));
+                .orElseThrow(() -> new NoSuchElementException("No existe una facultad con ID: " + id));
         facultad.setNombre(datos.getNombre());
         return facultadRepository.save(facultad);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // CENTRO INVESTIGATIVO
-    // ═══════════════════════════════════════════════════════════════════════════
-    public List<CentroInvestigativo> listarCentrosInvestigativos() {
-        return centroInvestigativoRepository.findAll();
+    // ---------------------------------------------
+    // PROGRAMA ACADEMICO
+    // ---------------------------------------------
+
+    @Transactional(readOnly = true)
+    public List<ProgramaAcademico> listarProgramasAcademicos() {
+        return programaAcademicoRepository.findAll();
     }
 
-    public CentroInvestigativo crearCentroInvestigativo(CentroInvestigativo centro) {
-        return centroInvestigativoRepository.save(centro);
+    @Transactional
+    public ProgramaAcademico crearProgramaAcademico(ProgramaAcademico programa) {
+        return programaAcademicoRepository.save(programa);
     }
 
-    public CentroInvestigativo actualizarCentroInvestigativo(Integer id, CentroInvestigativo datos) {
-        CentroInvestigativo centro = centroInvestigativoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("CentroInvestigativo no encontrado: " + id));
-        centro.setNombre(datos.getNombre());
-        centro.setSubtitulo(datos.getSubtitulo());
-        return centroInvestigativoRepository.save(centro);
+    /**
+     * @throws NoSuchElementException si el programa o la facultad no existen
+     */
+    @Transactional
+    public ProgramaAcademico actualizarProgramaAcademico(Integer id, ProgramaAcademico datos) {
+        ProgramaAcademico programa = programaAcademicoRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("No existe un programa academico con ID: " + id));
+        programa.setNombre(datos.getNombre());
+
+        if (datos.getFacultad() != null && datos.getFacultad().getId() != null) {
+            Integer facultadId = datos.getFacultad().getId();
+            Facultad facultad = facultadRepository.findById(facultadId)
+                    .orElseThrow(() -> new NoSuchElementException("No existe una facultad con ID: " + facultadId));
+            programa.setFacultad(facultad);
+        }
+        return programaAcademicoRepository.save(programa);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // TIPO VINCULACIÓN
-    // ═══════════════════════════════════════════════════════════════════════════
-    public List<TipoVinculacion> listarTiposVinculacion() {
-        return tipoVinculacionRepository.findAll();
+    // ---------------------------------------------
+    // CATEGORIA
+    // ---------------------------------------------
+
+    @Transactional(readOnly = true)
+    public List<Categoria> listarCategorias() {
+        return categoriaRepository.findAll();
     }
 
-    public TipoVinculacion crearTipoVinculacion(TipoVinculacion tipoVinculacion) {
-        return tipoVinculacionRepository.save(tipoVinculacion);
+    @Transactional
+    public Categoria crearCategoria(Categoria categoria) {
+        return categoriaRepository.save(categoria);
     }
 
-    public TipoVinculacion actualizarTipoVinculacion(Integer id, TipoVinculacion datos) {
-        TipoVinculacion tv = tipoVinculacionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("TipoVinculacion no encontrado: " + id));
-        tv.setNombre(datos.getNombre());
-        return tipoVinculacionRepository.save(tv);
+    /**
+     * @throws NoSuchElementException si el ID no existe
+     */
+    @Transactional
+    public Categoria actualizarCategoria(Integer id, Categoria datos) {
+        Categoria categoria = categoriaRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("No existe una categoria con ID: " + id));
+        categoria.setNombre(datos.getNombre());
+        return categoriaRepository.save(categoria);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // IDIOMAS
-    // ═══════════════════════════════════════════════════════════════════════════
-    public List<Idioma> listarIdiomas() {
-        return idiomaRepository.findAll();
+    // ---------------------------------------------
+    // KEYWORD
+    // ---------------------------------------------
+
+    @Transactional(readOnly = true)
+    public List<Keyword> listarKeywords() {
+        return keywordRepository.findAll();
     }
 
-    public Idioma crearIdioma(Idioma idioma) {
-        return idiomaRepository.save(idioma);
+    @Transactional
+    public Keyword crearKeyword(Keyword keyword) {
+        return keywordRepository.save(keyword);
     }
 
-    public Idioma actualizarIdioma(Integer id, Idioma datos) {
-        Idioma idioma = idiomaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Idioma no encontrado: " + id));
-        idioma.setNombre(datos.getNombre());
-        return idiomaRepository.save(idioma);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // SECTORES DE EXPERIENCIA (servicios en DTO)
-    // ═══════════════════════════════════════════════════════════════════════════
-    public List<SectorExperiencia> listarSectoresExperiencia() {
-        return sectorExperienciaRepository.findAll();
-    }
-
-    public SectorExperiencia crearSectorExperiencia(SectorExperiencia sector) {
-        return sectorExperienciaRepository.save(sector);
-    }
-
-    public SectorExperiencia actualizarSectorExperiencia(Integer id, SectorExperiencia datos) {
-        SectorExperiencia sector = sectorExperienciaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("SectorExperiencia no encontrado: " + id));
-        sector.setNombre(datos.getNombre());
-        return sectorExperienciaRepository.save(sector);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // TIPOS DE SERVICIO
-    // ═══════════════════════════════════════════════════════════════════════════
-    public List<TipoServicio> listarTiposServicios() {
-        return tipoServicioRepository.findAll();
-    }
-
-    public TipoServicio crearTipoServicio(TipoServicio tipoServicio) {
-        return tipoServicioRepository.save(tipoServicio);
-    }
-
-    public TipoServicio actualizarTipoServicio(Integer id, TipoServicio datos) {
-        TipoServicio ts = tipoServicioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("TipoServicio no encontrado: " + id));
-        ts.setNombre(datos.getNombre());
-        return tipoServicioRepository.save(ts);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // TIPOS DE PROYECTO
-    // ═══════════════════════════════════════════════════════════════════════════
-    public List<TipoProyecto> listarTiposProyecto() {
-        return tipoProyectoRepository.findAll();
-    }
-
-    public TipoProyecto crearTipoProyecto(TipoProyecto tipoProyecto) {
-        return tipoProyectoRepository.save(tipoProyecto);
-    }
-
-    public TipoProyecto actualizarTipoProyecto(Integer id, TipoProyecto datos) {
-        TipoProyecto tp = tipoProyectoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("TipoProyecto no encontrado: " + id));
-        tp.setNombre(datos.getNombre());
-        return tipoProyectoRepository.save(tp);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // COMPETENCIAS TÉCNICAS
-    // ═══════════════════════════════════════════════════════════════════════════
-    public List<CompetenciaTecnica> listarCompetenciasTecnicas() {
-        return competenciaTecnicaRepository.findAll();
-    }
-
-    public CompetenciaTecnica crearCompetenciaTecnica(CompetenciaTecnica competencia) {
-        return competenciaTecnicaRepository.save(competencia);
-    }
-
-    public CompetenciaTecnica actualizarCompetenciaTecnica(Integer id, CompetenciaTecnica datos) {
-        CompetenciaTecnica ct = competenciaTecnicaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("CompetenciaTecnica no encontrada: " + id));
-        ct.setNombre(datos.getNombre());
-        return competenciaTecnicaRepository.save(ct);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // COMPETENCIAS TRANSVERSALES
-    // ═══════════════════════════════════════════════════════════════════════════
-    public List<CompetenciaTransversal> listarCompetenciasTransversales() {
-        return competenciaTransversalRepository.findAll();
-    }
-
-    public CompetenciaTransversal crearCompetenciaTransversal(CompetenciaTransversal competencia) {
-        return competenciaTransversalRepository.save(competencia);
-    }
-
-    public CompetenciaTransversal actualizarCompetenciaTransversal(Integer id, CompetenciaTransversal datos) {
-        CompetenciaTransversal ct = competenciaTransversalRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("CompetenciaTransversal no encontrada: " + id));
-        ct.setNombre(datos.getNombre());
-        return competenciaTransversalRepository.save(ct);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // ÁREAS DE CONOCIMIENTO
-    // ═══════════════════════════════════════════════════════════════════════════
-    public List<AreaConocimiento> listarAreasConocimiento() {
-        return areaConocimientoRepository.findAll();
-    }
-
-    public AreaConocimiento crearAreaConocimiento(AreaConocimiento area) {
-        return areaConocimientoRepository.save(area);
-    }
-
-    public AreaConocimiento actualizarAreaConocimiento(Integer id, AreaConocimiento datos) {
-        AreaConocimiento area = areaConocimientoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("AreaConocimiento no encontrada: " + id));
-        area.setNombre(datos.getNombre());
-        return areaConocimientoRepository.save(area);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // ÁREAS DE ESPECIALIDAD
-    // ═══════════════════════════════════════════════════════════════════════════
-    public List<AreaEspecialidad> listarAreasEspecialidad() {
-        return areaEspecialidadRepository.findAll();
-    }
-
-    public AreaEspecialidad crearAreaEspecialidad(AreaEspecialidad area) {
-        return areaEspecialidadRepository.save(area);
-    }
-
-    public AreaEspecialidad actualizarAreaEspecialidad(Integer id, AreaEspecialidad datos) {
-        AreaEspecialidad area = areaEspecialidadRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("AreaEspecialidad no encontrada: " + id));
-        area.setNombre(datos.getNombre());
-        return areaEspecialidadRepository.save(area);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // INTERESES / REDES (intereses en DTO)
-    // ═══════════════════════════════════════════════════════════════════════════
-    public List<InteresRed> listarIntereses() {
-        return interesRedRepository.findAll();
-    }
-
-    public InteresRed crearInteres(InteresRed interes) {
-        return interesRedRepository.save(interes);
-    }
-
-    public InteresRed actualizarInteres(Integer id, InteresRed datos) {
-        InteresRed interes = interesRedRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("InteresRed no encontrado: " + id));
-        interes.setNombre(datos.getNombre());
-        return interesRedRepository.save(interes);
+    /**
+     * @throws NoSuchElementException si el ID no existe
+     */
+    @Transactional
+    public Keyword actualizarKeyword(Integer id, Keyword datos) {
+        Keyword keyword = keywordRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("No existe una keyword con ID: " + id));
+        keyword.setNombre(datos.getNombre());
+        return keywordRepository.save(keyword);
     }
 }

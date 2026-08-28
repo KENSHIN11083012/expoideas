@@ -1,14 +1,12 @@
 package com.dattapro.dattapro_api.dto;
 
-import com.dattapro.dattapro_api.entity.EstadoFormulario;
 import com.dattapro.dattapro_api.entity.RolUsuario;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
 /**
- * DTO para la actualización completa de un usuario por parte de un
- * administrador.
- * Permite editar todos los campos, incluyendo el rol.
+ * Actualización de un usuario por parte de un administrador.
+ * Todos los campos son opcionales: solo se aplica lo que llegue.
  */
 public record UsuarioAdminUpdateDTO(
 
@@ -20,29 +18,13 @@ public record UsuarioAdminUpdateDTO(
 
                 @Email(message = "El formato del correo no es válido") @Size(max = 150, message = "El correo no puede exceder 150 caracteres") String correoInstitucional,
 
-                String perfilProfesional,
-
-                String descripcionProyectos,
-
-                Integer aniosProf,
-
-                Boolean colaborativos,
-
-                Boolean liderar,
+                @Size(max = 255, message = "La URL de la foto no puede exceder 255 caracteres") String fotoUrl,
 
                 @Size(min = 6, max = 100, message = "La contraseña debe tener entre 6 y 100 caracteres") String password,
 
                 RolUsuario rol,
 
-                EstadoFormulario estadoFormulario,
-
-                Integer tipoDocumentoId,
-
-                Integer tipoVinculacionId,
-
                 Integer sedeId,
-
-                Integer centroInvestigativoId,
 
                 Integer programaAcademicoId) {
 }

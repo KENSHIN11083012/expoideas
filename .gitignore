@@ -1,0 +1,33 @@
+# Build
+target/
+dist/
+node_modules/
+*.class
+
+# Logs y salidas de ejecución
+*.log
+*_out.txt
+*_output.txt
+effective-pom
+
+# Base de datos
+*.sql
+!**/db/migration/*.sql
+*.dump
+
+# Entorno / secretos
+.env
+.env.local
+.env.*.local
+application-local.properties
+
+# Mockups y material de trabajo
+temporal/
+**/temporal/
+
+# IDE / SO
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db

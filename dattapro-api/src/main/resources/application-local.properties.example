@@ -1,0 +1,15 @@
+# Copia este archivo a application-local.properties (ignorado por git) y rellena los valores.
+# Arranca con: ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+
+spring.datasource.url=jdbc:mysql://localhost:3306/expoideas
+spring.datasource.username=root
+spring.datasource.password=CAMBIAME
+
+# openssl rand -base64 32
+application.security.jwt.secret-key=CAMBIAME
+
+# Logs de SQL para desarrollo.
+# OJO: BasicBinder=TRACE imprime los valores de los parámetros (correos, etc.)
+# en el log. No lo actives en un entorno con datos reales.
+spring.jpa.show-sql=true
+logging.level.org.hibernate.SQL=DEBUG

@@ -25,7 +25,8 @@ public class SecurityConfig {
         private final JwtAuthenticationFilter jwtAuthFilter;
         private final AuthenticationProvider authenticationProvider;
 
-        @Value("${ALLOWED_ORIGINS:http://localhost:5173}")
+        /** Orígenes permitidos, separados por comas (app.cors.allowed-origins). */
+        @Value("${app.cors.allowed-origins}")
         private String allowedOrigins;
 
         @Bean
@@ -98,14 +99,18 @@ public class SecurityConfig {
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
 
-                configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173"));
-                configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                // Importante: Permitir todos los headers que envía el navegador
+                configuration.setAllowedOrigins(
+                                Arrays.stream(allowedOrigins.split(","))
+                                                .map(String::trim)
+                                                .filter(o -> !o.isEmpty())
+                                                .toList());
+                configuration.setAllowedMethods(
+                                Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
                 configuration.setAllowedHeaders(
                                 Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With"));
                 configuration.setExposedHeaders(Arrays.asList("Authorization"));
                 configuration.setAllowCredentials(true);
-                configuration.setMaxAge(3600L); // Cache de 1 hora para las peticiones OPTIONS
+                configuration.setMaxAge(3600L);
 
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                 source.registerCorsConfiguration("/**", configuration);

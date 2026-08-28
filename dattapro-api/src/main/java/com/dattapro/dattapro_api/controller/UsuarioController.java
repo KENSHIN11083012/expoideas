@@ -6,12 +6,10 @@ import com.dattapro.dattapro_api.dto.UsuarioResponseDTO;
 import com.dattapro.dattapro_api.entity.Usuario;
 import com.dattapro.dattapro_api.service.UsuarioService;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import javax.sql.DataSource;
 
 /**
  * Controlador REST para la gestión de usuarios.
@@ -127,13 +124,5 @@ public class UsuarioController {
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
         }
-    }
-
-    @Autowired
-    private DataSource dataSource;
-
-    @PostConstruct
-    public void printDbInfo() throws Exception {
-        System.out.println("URL REAL: " + dataSource.getConnection().getMetaData().getURL());
     }
 }

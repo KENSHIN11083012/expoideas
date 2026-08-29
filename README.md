@@ -57,7 +57,10 @@ npm ci
 npm run dev
 ```
 
-App en `http://localhost:5173/dattapro/`
+App en `http://localhost:5173/expoideas/`
+
+El subdirectorio sale de `VITE_BASE_PATH` (por defecto `/expoideas/`). `App.jsx` lo
+reutiliza como `basename` del router, asi que no hay que tocarlo en dos sitios.
 
 ## Notas
 

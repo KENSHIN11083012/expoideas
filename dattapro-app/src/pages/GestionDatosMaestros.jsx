@@ -7,20 +7,11 @@ import Toast from '../components/masterData/Toast';
 // hasSubtitulo: true  → shows the Subtítulo column and field (centros only)
 // ─────────────────────────────────────────────────────────────────────────────
 const CATALOGS = [
-    { key: 'tipos-vinculacion', label: 'Tipos de Vinculación', endpoint: 'tipos-vinculacion', hasSubtitulo: false },
-    { key: 'tipos-servicios', label: 'Tipos de Servicios', endpoint: 'tipos-servicios', hasSubtitulo: false },
-    { key: 'tipos-proyecto', label: 'Tipos de Proyecto', endpoint: 'tipos-proyecto', hasSubtitulo: false },
     { key: 'sedes', label: 'Sedes', endpoint: 'sedes', hasSubtitulo: false },
-    { key: 'sectores-experiencia', label: 'Sectores de Experiencia', endpoint: 'sectores-experiencia', hasSubtitulo: false },
-    { key: 'programas-academicos', label: 'Programas Académicos', endpoint: 'programas-academicos', hasSubtitulo: false },
-    { key: 'intereses', label: 'Intereses', endpoint: 'intereses', hasSubtitulo: false },
-    { key: 'idiomas', label: 'Idiomas', endpoint: 'idiomas', hasSubtitulo: false },
     { key: 'facultades', label: 'Facultades', endpoint: 'facultades', hasSubtitulo: false },
-    { key: 'competencias-transversales', label: 'Competencias Transversales', endpoint: 'competencias-transversales', hasSubtitulo: false },
-    { key: 'competencias-tecnicas', label: 'Competencias Técnicas', endpoint: 'competencias-tecnicas', hasSubtitulo: false },
-    { key: 'centros-investigativos', label: 'Centros Investigativos', endpoint: 'centros-investigativos', hasSubtitulo: true },
-    { key: 'areas-especialidad', label: 'Áreas de Especialidad', endpoint: 'areas-especialidad', hasSubtitulo: false },
-    { key: 'areas-conocimiento', label: 'Áreas de Conocimiento', endpoint: 'areas-conocimiento', hasSubtitulo: false },
+    { key: 'programas-academicos', label: 'Programas Academicos', endpoint: 'programas-academicos', hasSubtitulo: false },
+    { key: 'categorias', label: 'Categorias', endpoint: 'categorias', hasSubtitulo: false },
+    { key: 'keywords', label: 'Palabras clave', endpoint: 'keywords', hasSubtitulo: false },
 ];
 
 const GestionDatosMaestros = () => {

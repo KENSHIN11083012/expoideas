@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { API_BASE_URL } from '../config/api';
+import { useAuth } from '../hooks/useAuth';
+import { ROLES, normalizeRole } from '../utils/roles';
+import { get, post, put } from '../services/apiClient';
 import { toast } from 'sonner';
 import Select from 'react-select';
 import { Eye, EyeOff, Lock, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const CambioPasswordView = () => {
-    const { user, role, isAdmin, token } = useAuth();
-    
-    // Validación de rol estricta para administrador
-    const isUserAdmin = role && (
-        String(role).toLowerCase() === 'admin' || 
-        String(role).toLowerCase() === 'role_admin'
-    );
+    const { user, role } = useAuth();
+
+    const isUserAdmin = normalizeRole(role) === ROLES.ADMIN;
 
     // Form states
     const [formData, setFormData] = useState({
@@ -43,13 +40,8 @@ const CambioPasswordView = () => {
     const fetchUsers = async () => {
         setIsFetchingUsers(true);
         try {
-            const cleanToken = (token || localStorage.getItem('token') || '').replace(/[\n\r"'\s]/g, '');
-            const response = await fetch(`${API_BASE_URL}/admin/users`, {
-                headers: { 'Authorization': `Bearer ${cleanToken}` }
-            });
-            if (!response.ok) throw new Error('Error al cargar usuarios');
-            const data = await response.json();
-            
+            const data = await get('/admin/users');
+
             const options = data.map(u => ({
                 value: u.id,
                 label: `${u.nombres} ${u.apellidos} (${u.correoInstitucional})`,
@@ -94,39 +86,18 @@ const CambioPasswordView = () => {
         setIsLoading(true);
 
         try {
-            const cleanToken = (token || localStorage.getItem('token') || '').replace(/[\n\r"'\s]/g, '');
-            let endpoint = '';
-            let method = '';
-            
             const body = {
                 passwordNueva: formData.passwordNueva,
-                confirmacionPassword: formData.confirmacionPassword
+                confirmacionPassword: formData.confirmacionPassword,
             };
 
             if (selectedUser) {
-                // Modo Administrador
-                method = 'POST';
-                endpoint = `${API_BASE_URL}/usuarios/admin/reset-password?email=${encodeURIComponent(selectedUser.email)}`;
+                await post(
+                    `/usuarios/admin/reset-password?email=${encodeURIComponent(selectedUser.email)}`,
+                    body,
+                );
             } else {
-                // Modo Usuario Normal
-                method = 'PUT';
-                endpoint = `${API_BASE_URL}/usuarios/me/password`;
-                body.passwordActual = formData.passwordActual;
-            }
-
-            const response = await fetch(endpoint, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${cleanToken}`
-                },
-                body: JSON.stringify(body)
-            });
-
-            const data = await response.json().catch(() => ({}));
-
-            if (!response.ok) {
-                throw new Error(data.error || data.message || 'Error al procesar la solicitud');
+                await put('/usuarios/me/password', { ...body, passwordActual: formData.passwordActual });
             }
 
             toast.success(selectedUser 
@@ -182,7 +153,7 @@ const CambioPasswordView = () => {
                         <div className="mt-12 lg:mt-0 relative z-10">
                             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/50">
                                 <div className="h-px w-8 bg-white/20"></div>
-                                Dattapro Security
+                                Seguridad de la cuenta
                             </div>
                         </div>
 

@@ -1,23 +1,14 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import logoDattapro from '../assets/brand/logo-app.png';
+import { useAuth } from '../hooks/useAuth';
+import { roleLabel } from '../utils/roles';
+import logoApp from '../assets/brand/logo-app.png';
 
 const Navbar = () => {
     const { logout, role, user } = useAuth();
     const navigate = useNavigate();
 
-    // Mapeo de roles para una vista más estética
-    const roleLabels = {
-        'ROLE_ADMIN': 'Administrador',
-        'ADMIN': 'Administrador',
-        'ROLE_PROFESOR': 'Investigador / Profesor',
-        'PROFESOR': 'Investigador / Profesor',
-        'ROLE_DIRECTIVO': 'Directivo',
-        'DIRECTIVO': 'Directivo'
-    };
-
-    const displayRole = roleLabels[String(role).toUpperCase()] || 'Investigador';
+    const displayRole = roleLabel(role);
     const displayName = user?.name || user?.email || 'Usuario';
 
     const handleLogout = () => {
@@ -31,10 +22,10 @@ const Navbar = () => {
             <div className="flex items-center space-x-4">
                 <Link to="/" className="flex items-center space-x-4">
                     <div className="size-10">
-                        <img src={logoDattapro} alt="Logo Dattapro" className="w-full h-full object-contain" />
+                        <img src={logoApp} alt="Logo de Expoideas" className="w-full h-full object-contain" />
                     </div>
                     <span className="text-2xl font-normal tracking-tight text-slate-900 font-montserrat">
-                        <span className="font-bold">Datta</span>pro
+                        <span className="font-bold">Expo</span>ideas
                     </span>
                 </Link>
             </div>

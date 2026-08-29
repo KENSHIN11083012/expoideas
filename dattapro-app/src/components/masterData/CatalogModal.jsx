@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 /**
  * Reusable create/edit modal for any master-data catalog.
@@ -15,20 +15,13 @@ import React, { useState, useEffect } from 'react';
 const CatalogModal = ({ isOpen, onClose, onSave, item, catalogLabel, hasSubtitulo, isSaving }) => {
     const isEditMode = item !== null && item !== undefined;
 
-    const emptyForm = { nombre: '', subtitulo: '' };
-    const [form, setForm]     = useState(emptyForm);
+    // El estado arranca del item. CatalogTab remonta el modal con una key
+    // distinta por item, asi que no hace falta sincronizarlo con un effect.
+    const [form, setForm] = useState({
+        nombre:    item?.nombre    ?? '',
+        subtitulo: item?.subtitulo ?? '',
+    });
     const [errors, setErrors] = useState({});
-
-    // Sync form with selected item whenever modal opens
-    useEffect(() => {
-        if (isOpen) {
-            setForm({
-                nombre:    item?.nombre    ?? '',
-                subtitulo: item?.subtitulo ?? '',
-            });
-            setErrors({});
-        }
-    }, [isOpen, item]);
 
     if (!isOpen) return null;
 

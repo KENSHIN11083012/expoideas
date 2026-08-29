@@ -12,6 +12,17 @@ import SkeletonTable from './SkeletonTable';
  *   hasSubtitulo  {boolean}   Show Subtítulo column for centros-investigativos
  *   onEdit        {function}  Called with the item to edit
  */
+// Definido fuera del componente: si se declara dentro, React lo trata como un
+// tipo nuevo en cada render y desmonta el subarbol.
+const SortIcon = ({ sortDir }) => (
+    <svg className="inline w-3.5 h-3.5 ml-1 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+        {sortDir === 'asc'
+            ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+            : <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        }
+    </svg>
+);
+
 const CatalogTable = ({ items, isLoading, error, searchTerm, hasSubtitulo, onEdit }) => {
     const [sortDir, setSortDir] = useState('asc'); // 'asc' | 'desc'
 
@@ -69,16 +80,6 @@ const CatalogTable = ({ items, isLoading, error, searchTerm, hasSubtitulo, onEdi
     }
 
     // -------------------------------------------------------------------
-    // Sort icon
-    // -------------------------------------------------------------------
-    const SortIcon = () => (
-        <svg className="inline w-3.5 h-3.5 ml-1 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            {sortDir === 'asc'
-                ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-                : <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            }
-        </svg>
-    );
 
     // -------------------------------------------------------------------
     // Table
@@ -99,7 +100,7 @@ const CatalogTable = ({ items, isLoading, error, searchTerm, hasSubtitulo, onEdi
                                 className="px-6 py-4 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest cursor-pointer select-none hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                                 onClick={toggleSort}
                             >
-                                Nombre <SortIcon />
+                                Nombre <SortIcon sortDir={sortDir} />
                             </th>
 
                             {/* Subtítulo — centros-investigativos only */}

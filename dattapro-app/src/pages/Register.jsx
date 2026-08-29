@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '../config/api';
-import logoDattapro from '../assets/brand/logo-app.png';
+import { post } from '../services/apiClient';
+import logoApp from '../assets/brand/logo-app.png';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -73,25 +73,14 @@ const Register = () => {
 
         try {
             const { confirmPassword, ...dataToSend } = formData;
-            const response = await fetch(`${API_BASE_URL}/usuarios/registro`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(dataToSend)
-            });
-
-            if (response.status === 201) {
-                // Registro exitoso
-                navigate('/login', { state: { message: '¡Cuenta creada con éxito! Por favor, inicia sesión.' } });
-            } else if (response.status === 409) {
-                // Conflicto: correo ya existe
-                setErrorMessage('El correo institucional ya está registrado.');
-            } else {
-                setErrorMessage('Error al registrar la cuenta. Por favor, inténtalo de nuevo.');
-            }
+            await post('/usuarios/registro', dataToSend, { auth: false });
+            navigate('/login', { state: { message: 'Cuenta creada con exito. Inicia sesion.' } });
         } catch (error) {
-            setErrorMessage('Error de conexión. Verifica que el servidor esté en ejecución.');
+            setErrorMessage(
+                error.status === 409
+                    ? 'El correo institucional ya esta registrado.'
+                    : error.message,
+            );
         } finally {
             setIsLoading(false);
         }
@@ -112,17 +101,17 @@ const Register = () => {
                         {/* Logo */}
                         <div className="flex items-center justify-center gap-3 mb-10">
                             <div className="size-10">
-                                <img src={logoDattapro} alt="Logo Dattapro" className="w-full h-full object-contain" />
+                                <img src={logoApp} alt="Logo de Expoideas" className="w-full h-full object-contain" />
                             </div>
                             <h2 className="text-2xl font-normal tracking-tight text-slate-900 dark:text-white font-montserrat">
-                                <span className="font-bold">Datta</span>pro
+                                <span className="font-bold">Expo</span>ideas
                             </h2>
                         </div>
 
                         {/* Header */}
                         <div className="mb-10 text-center">
                             <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-slate-900 dark:text-white mb-3">Crea tu cuenta</h1>
-                            <p className="text-slate-500 dark:text-slate-400 text-lg">Comienza tu viaje en la red Unisimón de investigadores.</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-lg">Comienza a construir tu emprendimiento.</p>
                         </div>
 
                         {/* Error Message */}

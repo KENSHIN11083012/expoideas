@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { API_BASE_URL } from '../config/api';
+import { useAuth } from '../hooks/useAuth';
+import { post } from '../services/apiClient';
 import { jwtDecode } from 'jwt-decode';
+import { homePathForRole, roleFromToken, normalizeRole } from '../utils/roles';
 import fotoLogin from '../assets/brand/login-hero.jpeg';
 import logoUnisimon from '../assets/brand/logo-unisimon-negro.png';
-import logoDattapro from '../assets/brand/logo-app.png';
+import logoApp from '../assets/brand/logo-app.png';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -25,45 +26,18 @@ const Login = () => {
         setError('');
 
         try {
-            const response = await fetch(`${API_BASE_URL}/auth/login`, {
-                method: 'POST',
-                headers: {
-                    'accept': '*/*',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email, password })
-            });
+            const data = await post('/auth/login', { email, password }, { auth: false });
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Credenciales inválidas');
+            if (!data?.token) {
+                throw new Error('No se recibio el token de autenticacion');
             }
 
-            const data = await response.json();
+            // El rol viene tanto en el claim del token como en el cuerpo;
+            // normalizeRole resuelve las dos formas.
+            const rol = roleFromToken(jwtDecode(data.token)) ?? normalizeRole(data.rol);
 
-            if (data.token) {
-                const decoded = jwtDecode(data.token);
-                const exactRole = decoded.rol || decoded.role || decoded.roles || data.rol;
-
-                // Normalizar rol a mayúsculas
-                let roleToSave = String(exactRole).toUpperCase();
-                if (roleToSave === 'PROFESOR') roleToSave = 'ROLE_PROFESOR';
-
-                // Guardar token y datos en el contexto usando el rol del token
-                login(data.token, { id: data.userId, email: data.email }, roleToSave);
-
-                // Redirección condicional según el rol (insensible a mayúsculas/minúsculas)
-                if (roleToSave === 'ROLE_ADMIN' || roleToSave === 'ADMIN') {
-                    navigate('/admin');
-                } else if (roleToSave === 'ROLE_PROFESOR' || roleToSave === 'PROFESOR') {
-                    navigate('/');
-                } else {
-                    // Redirección por defecto para otros roles
-                    navigate('/network');
-                }
-            } else {
-                throw new Error('No se recibió el token de autenticación');
-            }
+            login(data.token, { id: data.userId, email }, rol);
+            navigate(homePathForRole(rol));
 
         } catch (err) {
             setError(err.message);
@@ -80,10 +54,10 @@ const Login = () => {
                     <div className="sm:mx-auto sm:w-full sm:max-w-md">
                         <div className="flex items-center gap-3 mb-10">
                             <div className="size-8">
-                                <img src={logoDattapro} alt="Logo Dattapro" className="w-full h-full object-contain" />
+                                <img src={logoApp} alt="Logo de Expoideas" className="w-full h-full object-contain" />
                             </div>
                             <h2 className="text-xl font-normal tracking-tight text-slate-900 dark:text-slate-100 font-montserrat">
-                                <span className="font-bold">Datta</span>pro
+                                <span className="font-bold">Expo</span>ideas
                             </h2>
                         </div>
 
@@ -213,7 +187,7 @@ const Login = () => {
                     </div>
 
                     <div className="mt-auto pt-10 text-center text-xs text-slate-400">
-                        <p className="mb-1">© 2026 dattapro. Colaboración investigativa segura y encriptada.</p>
+                        <p className="mb-1">© 2026 Expoideas · Universidad Simón Bolívar</p>
                         <p>
                             Elaborado por:{' '}
                             <a href="https://github.com/JorgeOrVerMur" className="hover:text-primary transition-colors">Jorge Vera</a>,{' '}
@@ -237,9 +211,9 @@ const Login = () => {
                                 <div className="flex gap-2 mb-4 text-primary">
                                     <img src={logoUnisimon} alt="Logo Unisimón" className="h-16 object-contain" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white mb-2">El conocimiento de la Unisimón, al servicio de todos</h3>
+                                <h3 className="text-2xl font-bold text-white mb-2">Las ideas de la Unisimón, a la vista de todos</h3>
                                 <p className="text-white/80 text-base leading-relaxed mb-4">
-                                    Una plataforma que reúne el perfil y la experiencia de nuestro talento para conectarlos con las oportunidades que necesitan su saber.
+                                    La vitrina donde los emprendimientos universitarios encuentran comunidad, mentores y visibilidad.
                                 </p>
                                 <div className="flex items-center gap-4">
                                     {/* <div className="flex -space-x-3">

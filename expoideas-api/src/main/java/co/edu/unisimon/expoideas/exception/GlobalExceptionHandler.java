@@ -58,6 +58,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problem(HttpStatus.FORBIDDEN, "No tienes permiso para realizar esta acción");
     }
 
+    /** Regla de negocio sobre roles: a diferencia del 403 genérico, explica el motivo. */
+    @ExceptionHandler(AccionNoPermitidaException.class)
+    public ProblemDetail handleAccionNoPermitida(AccionNoPermitidaException ex) {
+        return problem(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
     @ExceptionHandler(NoSuchElementException.class)
     public ProblemDetail handleNotFound(NoSuchElementException ex) {
         return problem(HttpStatus.NOT_FOUND, ex.getMessage());

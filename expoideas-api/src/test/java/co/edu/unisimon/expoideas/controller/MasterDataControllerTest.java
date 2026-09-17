@@ -33,7 +33,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Catálogos maestros: lectura pública, escritura de admin, validación y conflictos.
+ * Catálogos maestros: lectura pública; la estructura institucional la escribe el
+ * administrador y la clasificación, MacondoLab. Validación y conflictos.
  */
 @WebMvcTest(controllers = MasterDataController.class)
 @Import(SecurityConfig.class)
@@ -129,8 +130,28 @@ class MasterDataControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "EMPRENDEDOR")
-    void soloAdminEscribeCatalogos() throws Exception {
+    @WithMockUser(roles = "MACONDOLAB")
+    void macondoLabEscribeClasificacionPeroNoEstructura() throws Exception {
+        when(masterDataService.crearCategoria(new CatalogoRequestDTO("Gastronomía")))
+                .thenReturn(new CatalogoResponseDTO(4, "Gastronomía"));
+
+        mockMvc.perform(post("/api/v1/categorias")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Gastronomía\"}"))
+                .andExpect(status().isCreated());
+        mockMvc.perform(post("/api/v1/sedes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Cúcuta\"}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/v1/programas-academicos/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Derecho\",\"facultadId\":3}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ESTUDIANTE")
+    void estudianteNoEscribeCatalogos() throws Exception {
         mockMvc.perform(post("/api/v1/sedes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nombre\":\"Cúcuta\"}"))

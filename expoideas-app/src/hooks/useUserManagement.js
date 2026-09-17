@@ -3,8 +3,9 @@ import { toast } from 'sonner';
 import { get, put, post, del } from '@/services/apiClient';
 
 /**
- * Lista y gestión de usuarios desde el panel de administración. Las
- * confirmaciones las pide la interfaz (AlertDialog), no el hook.
+ * Lista y gestión de usuarios desde la gestión (MacondoLab y administradores).
+ * Las confirmaciones las pide la interfaz (AlertDialog), no el hook, y los
+ * permisos por rol los aplica la API.
  */
 export const useUserManagement = () => {
     const [usuarios, setUsuarios] = useState([]);
@@ -28,6 +29,14 @@ export const useUserManagement = () => {
     useEffect(() => {
         fetchUsuarios();
     }, [fetchUsuarios]);
+
+    /** Crea una cuenta con rol y contraseña temporal. Lanza el error para que el formulario lo muestre. */
+    const crearUsuario = async (datos) => {
+        const creado = await post('/admin/users', datos);
+        setUsuarios((prev) => [...prev, creado]);
+        toast.success(`Cuenta de ${creado.nombres} ${creado.apellidos} creada`);
+        return creado;
+    };
 
     /** @param {string} nuevoRol valor de la API (minúsculas) */
     const handleRoleChange = async (usuario, nuevoRol) => {
@@ -74,6 +83,7 @@ export const useUserManagement = () => {
         error,
         updatingId,
         fetchUsuarios,
+        crearUsuario,
         handleRoleChange,
         updateAdscripcion,
         resetPassword,

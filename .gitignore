@@ -1,6 +1,7 @@
 # Build
 target/
 dist/
+.vite/
 node_modules/
 *.class
 

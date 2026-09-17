@@ -9,7 +9,8 @@ import jakarta.validation.constraints.Size;
 
 /**
  * Registro inicial de usuario. El rol no se acepta desde el cliente:
- * toda cuenta nueva nace como emprendedor y solo un admin puede cambiarlo.
+ * toda cuenta nueva nace como estudiante y solo la gestión (MacondoLab o un
+ * administrador) puede cambiarlo.
  */
 public record UsuarioRegistroDTO(
 

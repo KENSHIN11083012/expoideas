@@ -4,7 +4,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { AppShell } from '@/components/layout/AppShell';
 import { Spinner } from '@/components/ui/feedback';
 import { useAuth } from '@/hooks/useAuth';
-import { homePathForRole, ROLES } from '@/utils/roles';
+import { homePathForRole, ROLES_DE_GESTION } from '@/utils/roles';
 
 // Cada página se descarga cuando se visita por primera vez.
 const Inicio = lazy(() => import('@/pages/Inicio'));
@@ -45,14 +45,14 @@ function App() {
                         <Route path="perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
                         <Route path="seguridad" element={<ProtectedRoute><Seguridad /></ProtectedRoute>} />
 
-                        {/* Administración */}
+                        {/* Gestión: MacondoLab y administradores */}
                         <Route
                             path="admin/usuarios"
-                            element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]}><AdminUsuarios /></ProtectedRoute>}
+                            element={<ProtectedRoute allowedRoles={ROLES_DE_GESTION}><AdminUsuarios /></ProtectedRoute>}
                         />
                         <Route
                             path="admin/catalogos"
-                            element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]}><Catalogos /></ProtectedRoute>}
+                            element={<ProtectedRoute allowedRoles={ROLES_DE_GESTION}><Catalogos /></ProtectedRoute>}
                         />
                         {/* Rutas anteriores del panel */}
                         <Route path="admin" element={<Navigate to="/admin/usuarios" replace />} />

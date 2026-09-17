@@ -4,25 +4,44 @@ package co.edu.unisimon.expoideas.entity;
  * Rol del usuario en la tabla `usuarios`.
  *
  * <p>Los valores se persisten como texto en una columna VARCHAR con un CHECK
- * (ver V1__baseline.sql). Agregar un rol nuevo es añadirlo aquí y actualizar la
- * constraint con una migración; no hace falta reescribir el tipo de la columna,
- * como sí exigía el ENUM de MySQL que usaba Dattapro.
+ * (ver V4__roles_expoideas.sql). Agregar un rol nuevo es añadirlo aquí y
+ * actualizar la constraint con una migración.
  *
- * <p>Herencia de Dattapro: su rol {@code profesor} es aquí {@code docente}.
- * {@code directivo} no se trasladó.
+ * <p>En Spring Security cada rol es ROLE_ + el nombre en mayúsculas, y
+ * SecurityConfig declara que ROLE_ADMIN implica ROLE_MACONDOLAB.
  */
 public enum RolUsuario {
+    /** Parte técnica de la plataforma. Puede todo lo de MacondoLab y además gestionar cuentas de gestión. */
     admin,
+    /** Coordinación de INNPRENDE I y II: operación completa, sin la parte técnica. */
+    macondolab,
     docente,
-    emprendedor,
-    mentor,
-    visitante;
+    /** Evalúa proyectos. Puede ser externo a la universidad. */
+    jurado,
+    /** Rol con el que nace toda cuenta registrada. */
+    estudiante;
+
+    /** Si el rol pertenece a la comunidad académica y debe declarar sede y facultad. */
+    public boolean requiereAdscripcion() {
+        return this == docente || this == estudiante;
+    }
+
+    /** Roles con acceso a la gestión de la plataforma (usuarios, catálogos). */
+    public boolean esDeGestion() {
+        return this == admin || this == macondolab;
+    }
 
     /**
-     * Si el rol pertenece a la comunidad académica y, por tanto, debe declarar
-     * sede y facultad. El administrador es personal técnico: no se le pide.
+     * Si quien tiene este rol puede administrar una cuenta con el rol {@code otro}:
+     * editarla, cambiarle el rol o restablecer su contraseña. MacondoLab gestiona
+     * estudiantes, docentes y jurados; las cuentas de gestión solo las toca un
+     * administrador.
      */
-    public boolean requiereAdscripcion() {
-        return this != admin;
+    public boolean puedeGestionar(RolUsuario otro) {
+        return switch (this) {
+            case admin -> true;
+            case macondolab -> !otro.esDeGestion();
+            default -> false;
+        };
     }
 }

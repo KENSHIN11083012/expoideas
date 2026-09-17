@@ -6,8 +6,8 @@ import { Alert, Skeleton } from '@/components/ui/feedback';
 
 /**
  * Sede, facultad y programa académico para formularios de react-hook-form.
- * El programa se filtra por la facultad elegida y es opcional: docentes y
- * mentores pueden pertenecer a una facultad sin estar en un programa.
+ * El programa se filtra por la facultad elegida y es opcional: los docentes
+ * pueden pertenecer a una facultad sin estar en un programa.
  *
  * @param {object} form      { register, control, setValue, errors } del useForm
  * @param {object} catalogos resultado de useCatalogosAdscripcion()
@@ -55,14 +55,14 @@ export function CamposAdscripcion({ form, catalogos, className }) {
             <div className="grid gap-5 sm:grid-cols-2">
                 <Field label="Sede" error={errors.sedeId?.message} required>
                     <NativeSelect {...register('sedeId')}>
-                        <option value="">Selecciona tu sede</option>
+                        <option value="">Selecciona la sede</option>
                         {sedes.map((s) => <option key={s.id} value={String(s.id)}>{s.nombre}</option>)}
                     </NativeSelect>
                 </Field>
 
                 <Field label="Facultad" error={errors.facultadId?.message} required>
                     <NativeSelect {...registroFacultad} onChange={onFacultadChange}>
-                        <option value="">Selecciona tu facultad</option>
+                        <option value="">Selecciona la facultad</option>
                         {facultades.map((f) => <option key={f.id} value={String(f.id)}>{f.nombre}</option>)}
                     </NativeSelect>
                 </Field>
@@ -75,7 +75,7 @@ export function CamposAdscripcion({ form, catalogos, className }) {
                             ? 'Primero elige la facultad.'
                             : programasDeLaFacultad.length === 0
                                 ? 'Esta facultad aún no tiene programas registrados.'
-                                : 'Opcional si eres docente o mentor.'
+                                : 'Opcional para docentes.'
                     }
                     className="sm:col-span-2"
                 >

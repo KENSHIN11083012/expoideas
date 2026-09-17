@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * Entidad JPA mapeada a la tabla `usuarios`.
  *
  * <p>Solo el núcleo de identidad. El perfil extendido de cada rol
- * (emprendedor, mentor, docente) vive en sus propias tablas.
+ * (estudiante, docente, jurado) vive en sus propias tablas.
  */
 @Data
 @Builder
@@ -45,7 +45,7 @@ public class Usuario {
     @Enumerated(EnumType.STRING)
     @Column(name = "rol", nullable = false, length = 30)
     @Builder.Default
-    private RolUsuario rol = RolUsuario.emprendedor;
+    private RolUsuario rol = RolUsuario.estudiante;
 
     /**
      * Ruta o URL de la foto. En Dattapro era un MEDIUMBLOB dentro de esta misma
@@ -74,8 +74,8 @@ public class Usuario {
     private Sede sede;
 
     /**
-     * Facultad del usuario. Se guarda aparte del programa porque un docente o
-     * mentor pertenece a una facultad sin estar en un programa concreto.
+     * Facultad del usuario. Se guarda aparte del programa porque un docente
+     * pertenece a una facultad sin estar en un programa concreto.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_facultad")
@@ -94,7 +94,7 @@ public class Usuario {
             this.fechaCreacion = LocalDateTime.now();
         }
         if (this.rol == null) {
-            this.rol = RolUsuario.emprendedor;
+            this.rol = RolUsuario.estudiante;
         }
     }
 }

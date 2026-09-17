@@ -1,15 +1,18 @@
 package co.edu.unisimon.expoideas.service;
 
 import co.edu.unisimon.expoideas.dto.CambiarPasswordDTO;
+import co.edu.unisimon.expoideas.dto.UsuarioAdminCreateDTO;
 import co.edu.unisimon.expoideas.dto.UsuarioAdminUpdateDTO;
 import co.edu.unisimon.expoideas.dto.UsuarioRegistroDTO;
 import co.edu.unisimon.expoideas.dto.UsuarioResponseDTO;
 import co.edu.unisimon.expoideas.dto.UsuarioUpdateDTO;
+import co.edu.unisimon.expoideas.dto.Validaciones;
 import co.edu.unisimon.expoideas.entity.Facultad;
 import co.edu.unisimon.expoideas.entity.ProgramaAcademico;
 import co.edu.unisimon.expoideas.entity.RolUsuario;
 import co.edu.unisimon.expoideas.entity.Sede;
 import co.edu.unisimon.expoideas.entity.Usuario;
+import co.edu.unisimon.expoideas.exception.AccionNoPermitidaException;
 import co.edu.unisimon.expoideas.exception.CamposInvalidosException;
 import co.edu.unisimon.expoideas.exception.ConflictException;
 import co.edu.unisimon.expoideas.repository.FacultadRepository;
@@ -51,7 +54,7 @@ public class UsuarioService {
     // ---------------------------------------------
 
     /**
-     * Registra un usuario nuevo. Siempre nace con rol {@code emprendedor}:
+     * Registra un usuario nuevo. Siempre nace con rol {@code estudiante}:
      * el rol no se acepta desde el cliente.
      *
      * @throws ConflictException si el correo ya esta en uso
@@ -67,7 +70,7 @@ public class UsuarioService {
                 .apellidos(dto.apellidos())
                 .correoInstitucional(dto.correoInstitucional())
                 .password(passwordEncoder.encode(dto.password()))
-                .rol(RolUsuario.emprendedor)
+                .rol(RolUsuario.estudiante)
                 // El DTO exige autorizaDatos == true: aqui solo se deja constancia.
                 .autorizaDatos(true)
                 .fechaAutorizacionDatos(LocalDateTime.now())
@@ -107,7 +110,7 @@ public class UsuarioService {
 
     /**
      * Reemplaza los datos que el propio usuario puede cambiar: nombre y, si su
-     * rol la lleva, adscripcion academica (el administrador no la tiene y se
+     * rol la lleva, adscripcion academica (gestion y jurados no la tienen y se
      * ignora). Se identifica por el correo de la sesion, nunca por un ID que
      * venga del cliente.
      *
@@ -120,7 +123,9 @@ public class UsuarioService {
         Usuario usuario = buscarPorCorreo(correo);
 
         if (usuario.getRol().requiereAdscripcion()) {
-            exigirSedeYFacultad(dto.sedeId(), dto.facultadId());
+            Map<String, String> faltantes = faltantesDeAdscripcion(dto.sedeId(), dto.facultadId());
+            if (!faltantes.isEmpty())
+                throw new CamposInvalidosException(faltantes);
             usuario.setSede(buscarSede(dto.sedeId()));
             asignarFacultadYPrograma(usuario, dto.facultadId(), dto.programaAcademicoId());
         }
@@ -130,17 +135,83 @@ public class UsuarioService {
         return toResponseDTO(usuarioRepository.save(usuario));
     }
 
+    // ---------------------------------------------
+    // Gestion de cuentas (MacondoLab y administradores)
+    // ---------------------------------------------
+
     /**
-     * Actualizacion por parte de un administrador: anade rol y adscripcion
-     * academica sobre lo que puede cambiar el propio usuario.
+     * Alta de una cuenta desde la gestion: jurados externos o cuentas que nacen
+     * con un rol distinto de estudiante. El consentimiento de datos queda sin
+     * registrar porque no lo dio la persona.
      *
-     * @throws NoSuchElementException   si el usuario, la sede, la facultad o el programa no existen
-     * @throws IllegalArgumentException si el programa no es de la facultad o el rol no lleva adscripcion
-     * @throws ConflictException        si el correo nuevo ya es de otro usuario
+     * @throws AccionNoPermitidaException si el rol de quien crea no puede gestionar el rol pedido
+     * @throws CamposInvalidosException   si el correo no es institucional (salvo jurados) o falta la adscripcion
+     * @throws ConflictException          si el correo ya esta en uso
+     * @throws NoSuchElementException     si la sede, la facultad o el programa no existen
+     * @throws IllegalArgumentException   si el programa no es de la facultad
      */
     @Transactional
-    public UsuarioResponseDTO actualizarDesdeAdmin(Integer id, UsuarioAdminUpdateDTO dto) {
+    public UsuarioResponseDTO crearDesdeGestion(String correoActor, UsuarioAdminCreateDTO dto) {
+        Usuario actor = buscarPorCorreo(correoActor);
+        if (!actor.getRol().puedeGestionar(dto.rol())) {
+            throw new AccionNoPermitidaException("Solo un administrador puede crear cuentas de administración o de MacondoLab.");
+        }
+
+        String correo = dto.correoInstitucional().trim();
+        Map<String, String> campos = new LinkedHashMap<>();
+        if (dto.rol() != RolUsuario.jurado && !correo.matches(Validaciones.CORREO_INSTITUCIONAL_REGEX)) {
+            campos.put("correoInstitucional", "Solo los jurados pueden tener un correo externo; usa uno @unisimon.edu.co");
+        }
+        if (dto.rol().requiereAdscripcion()) {
+            campos.putAll(faltantesDeAdscripcion(dto.sedeId(), dto.facultadId()));
+        }
+        if (!campos.isEmpty()) {
+            throw new CamposInvalidosException(campos);
+        }
+        if (usuarioRepository.existsByCorreoInstitucional(correo)) {
+            throw new ConflictException("El correo " + correo + " ya pertenece a otro usuario.");
+        }
+
+        Usuario nuevo = Usuario.builder()
+                .nombres(dto.nombres().trim())
+                .apellidos(dto.apellidos().trim())
+                .correoInstitucional(correo)
+                .password(passwordEncoder.encode(dto.password()))
+                .rol(dto.rol())
+                .autorizaDatos(false)
+                .build();
+        if (dto.rol().requiereAdscripcion()) {
+            nuevo.setSede(buscarSede(dto.sedeId()));
+            asignarFacultadYPrograma(nuevo, dto.facultadId(), dto.programaAcademicoId());
+        }
+
+        Usuario guardado = usuarioRepository.save(nuevo);
+        log.info("Usuario ID {} creado desde la gestion con rol {}", guardado.getId(), guardado.getRol());
+        return toResponseDTO(guardado);
+    }
+
+    /**
+     * Actualizacion desde la gestion: anade rol y adscripcion academica sobre lo
+     * que puede cambiar el propio usuario.
+     *
+     * @throws AccionNoPermitidaException si el actor no puede gestionar al usuario o el rol pedido, o cambia su propio rol
+     * @throws NoSuchElementException     si el usuario, la sede, la facultad o el programa no existen
+     * @throws IllegalArgumentException   si el programa no es de la facultad o el rol no lleva adscripcion
+     * @throws ConflictException          si el correo nuevo ya es de otro usuario
+     */
+    @Transactional
+    public UsuarioResponseDTO actualizarDesdeAdmin(String correoActor, Integer id, UsuarioAdminUpdateDTO dto) {
+        Usuario actor = buscarPorCorreo(correoActor);
         Usuario usuario = buscarPorId(id);
+        verificarPuedeGestionar(actor, usuario);
+        if (dto.rol() != null && dto.rol() != usuario.getRol()) {
+            if (actor.getId().equals(usuario.getId())) {
+                throw new AccionNoPermitidaException("No puedes cambiar tu propio rol.");
+            }
+            if (!actor.getRol().puedeGestionar(dto.rol())) {
+                throw new AccionNoPermitidaException("Solo un administrador puede asignar los roles Administrador o MacondoLab.");
+            }
+        }
         validarCorreoDisponible(usuario, dto.correoInstitucional());
 
         if (dto.nombres() != null)
@@ -175,7 +246,7 @@ public class UsuarioService {
             usuario.setFacultad(programa.getFacultad());
         }
 
-        log.info("Usuario ID {} actualizado por un administrador", id);
+        log.info("Usuario ID {} actualizado desde la gestion", id);
         return toResponseDTO(usuarioRepository.save(usuario));
     }
 
@@ -194,14 +265,22 @@ public class UsuarioService {
     }
 
     /**
-     * Restablecimiento por parte de un admin, sin conocer la contrasena actual.
+     * Restablecimiento desde la gestion, sin conocer la contrasena actual.
      *
-     * @throws NoSuchElementException si el correo no existe
+     * @throws AccionNoPermitidaException si el actor no puede gestionar al usuario o es su propia cuenta
+     * @throws NoSuchElementException     si el correo no existe
      */
     @Transactional
-    public void restablecerPasswordAdmin(String correo, CambiarPasswordDTO dto) {
-        validarYActualizarPassword(buscarPorCorreo(correo), dto, false);
-        log.info("Contrasena restablecida por un administrador");
+    public void restablecerPasswordAdmin(String correoActor, String correo, CambiarPasswordDTO dto) {
+        Usuario actor = buscarPorCorreo(correoActor);
+        Usuario usuario = buscarPorCorreo(correo);
+        if (actor.getId().equals(usuario.getId())) {
+            // Por aqui no se pide la contrasena actual: la propia se cambia en /me/password.
+            throw new AccionNoPermitidaException("Para cambiar tu propia contraseña usa la opción Seguridad de tu cuenta.");
+        }
+        verificarPuedeGestionar(actor, usuario);
+        validarYActualizarPassword(usuario, dto, false);
+        log.info("Contrasena del usuario ID {} restablecida desde la gestion", usuario.getId());
     }
 
     private void validarYActualizarPassword(Usuario usuario, CambiarPasswordDTO dto, boolean requiereActual) {
@@ -229,14 +308,19 @@ public class UsuarioService {
     // ---------------------------------------------
 
     /**
-     * @throws NoSuchElementException si el ID no existe
+     * Solo administradores (lo exige SecurityConfig).
+     *
+     * @throws AccionNoPermitidaException si es la propia cuenta
+     * @throws NoSuchElementException     si el ID no existe
      */
     @Transactional
-    public void eliminarUsuario(Integer id) {
-        if (!usuarioRepository.existsById(id)) {
-            throw new NoSuchElementException("No existe un usuario con ID: " + id);
+    public void eliminarUsuario(String correoActor, Integer id) {
+        Usuario actor = buscarPorCorreo(correoActor);
+        Usuario usuario = buscarPorId(id);
+        if (actor.getId().equals(usuario.getId())) {
+            throw new AccionNoPermitidaException("No puedes eliminar tu propia cuenta.");
         }
-        usuarioRepository.deleteById(id);
+        usuarioRepository.delete(usuario);
         log.info("Usuario ID {} eliminado", id);
     }
 
@@ -273,14 +357,19 @@ public class UsuarioService {
     }
 
     /** Mismos mensajes que las anotaciones del registro, para que el cliente los trate igual. */
-    private static void exigirSedeYFacultad(Integer sedeId, Integer facultadId) {
+    private static Map<String, String> faltantesDeAdscripcion(Integer sedeId, Integer facultadId) {
         Map<String, String> campos = new LinkedHashMap<>();
         if (sedeId == null)
             campos.put("sedeId", "La sede es obligatoria");
         if (facultadId == null)
             campos.put("facultadId", "La facultad es obligatoria");
-        if (!campos.isEmpty())
-            throw new CamposInvalidosException(campos);
+        return campos;
+    }
+
+    private static void verificarPuedeGestionar(Usuario actor, Usuario objetivo) {
+        if (!actor.getRol().puedeGestionar(objetivo.getRol())) {
+            throw new AccionNoPermitidaException("Solo un administrador puede modificar cuentas de administración o de MacondoLab.");
+        }
     }
 
     /**

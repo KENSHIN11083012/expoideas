@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * Carga el usuario de la base de datos para Spring Security. El username es el
- * correo institucional y el rol se expone como ROLE_ADMIN, ROLE_EMPRENDEDOR...
+ * correo institucional y el rol se expone como ROLE_ADMIN, ROLE_ESTUDIANTE...
  *
  * <p>Con este bean y el PasswordEncoder de {@link SecurityConfig}, Spring
  * Security arma solo el DaoAuthenticationProvider: no hace falta declararlo.

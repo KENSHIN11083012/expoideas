@@ -9,9 +9,9 @@ import jakarta.validation.constraints.Size;
  * <p>Es un reemplazo completo, como corresponde a PUT: llegan todos los campos.
  * La adscripción depende del rol, así que la valida el servicio y no una
  * anotación: si el rol la requiere ({@code RolUsuario#requiereAdscripcion}),
- * sede y facultad son obligatorias; si no (administrador), se ignoran.
- * {@code programaAcademicoId} en null significa "sin programa" (docentes y
- * mentores pueden no tenerlo); si llega, debe ser de la facultad indicada.
+ * sede y facultad son obligatorias; si no (gestión o jurado), se ignoran.
+ * {@code programaAcademicoId} en null significa "sin programa" (los docentes
+ * pueden no tenerlo); si llega, debe ser de la facultad indicada.
  *
  * <p>El correo no está aquí a propósito: es el login y el subject del JWT, así
  * que cambiarlo invalida la sesión activa. Solo lo cambia un administrador. La

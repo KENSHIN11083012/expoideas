@@ -6,6 +6,8 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -27,11 +29,15 @@ import java.util.Arrays;
 @EnableWebSecurity
 public class SecurityConfig {
 
-        /** Rutas de los catalogos maestros: lectura publica, escritura solo ADMIN. */
-        private static final String[] CATALOGOS = {
+        /** Estructura de la universidad: la escribe solo el administrador. */
+        private static final String[] CATALOGOS_INSTITUCIONALES = {
                         "/api/v1/sedes/**",
                         "/api/v1/facultades/**",
-                        "/api/v1/programas-academicos/**",
+                        "/api/v1/programas-academicos/**"
+        };
+
+        /** Clasificacion de proyectos: la escribe MacondoLab (y el administrador). */
+        private static final String[] CATALOGOS_DE_CLASIFICACION = {
                         "/api/v1/categorias/**",
                         "/api/v1/keywords/**"
         };
@@ -59,13 +65,18 @@ public class SecurityConfig {
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
-                                                // 1. Administracion
-                                                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                                                .requestMatchers("/api/v1/usuarios/admin/**").hasRole("ADMIN")
+                                                // 1. Gestion de cuentas: MacondoLab y administradores.
+                                                // Eliminar es solo del administrador. Las reglas sobre a
+                                                // quien se gestiona las aplica UsuarioService.
+                                                .requestMatchers(HttpMethod.DELETE, "/api/v1/admin/users/**").hasRole("ADMIN")
+                                                .requestMatchers("/api/v1/admin/**").hasRole("MACONDOLAB")
+                                                .requestMatchers("/api/v1/usuarios/admin/**").hasRole("MACONDOLAB")
 
-                                                // 2. Escritura sobre catalogos maestros: solo ADMIN
-                                                .requestMatchers(HttpMethod.POST, CATALOGOS).hasRole("ADMIN")
-                                                .requestMatchers(HttpMethod.PUT, CATALOGOS).hasRole("ADMIN")
+                                                // 2. Escritura sobre catalogos
+                                                .requestMatchers(HttpMethod.POST, CATALOGOS_INSTITUCIONALES).hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.PUT, CATALOGOS_INSTITUCIONALES).hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.POST, CATALOGOS_DE_CLASIFICACION).hasRole("MACONDOLAB")
+                                                .requestMatchers(HttpMethod.PUT, CATALOGOS_DE_CLASIFICACION).hasRole("MACONDOLAB")
 
                                                 // 3. Publico: login, registro y Swagger
                                                 .requestMatchers(
@@ -79,11 +90,14 @@ public class SecurityConfig {
 
                                                 // 4. Lectura de catalogos: publica, la necesita el formulario
                                                 // de registro antes de que exista sesion.
-                                                .requestMatchers(HttpMethod.GET, CATALOGOS).permitAll()
+                                                .requestMatchers(HttpMethod.GET, CATALOGOS_INSTITUCIONALES).permitAll()
+                                                .requestMatchers(HttpMethod.GET, CATALOGOS_DE_CLASIFICACION).permitAll()
 
                                                 // 5. El resto exige sesion (incluye /api/v1/usuarios/me).
                                                 // Gestionar a otros usuarios solo se hace desde
                                                 // /api/v1/admin/users.
+                                                // Docentes, jurados y estudiantes aun no tienen rutas
+                                                // propias: llegan con las fases del dominio.
                                                 .anyRequest().authenticated())
                                 // Los rechazos de seguridad ocurren en la cadena de filtros, antes de
                                 // llegar a un controlador. Se delegan al HandlerExceptionResolver
@@ -98,6 +112,17 @@ public class SecurityConfig {
                                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
                 return http.build();
+        }
+
+        /**
+         * ROLE_ADMIN incluye todo lo de ROLE_MACONDOLAB: cada regla se escribe con el
+         * rol minimo que la permite. authorizeHttpRequests toma este bean solo.
+         */
+        @Bean
+        static RoleHierarchy roleHierarchy() {
+                return RoleHierarchyImpl.withDefaultRolePrefix()
+                                .role("ADMIN").implies("MACONDOLAB")
+                                .build();
         }
 
         /**

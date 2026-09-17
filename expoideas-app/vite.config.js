@@ -20,6 +20,12 @@ export default defineConfig(({ mode }) => {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
     },
+    // Vitest usa esta misma configuración (alias @ incluido).
+    test: {
+      environment: 'jsdom',
+      setupFiles: ['./src/test/setup.js'],
+      css: false,
+    },
     build: {
       rollupOptions: {
         output: {

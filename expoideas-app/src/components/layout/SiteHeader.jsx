@@ -22,10 +22,10 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from 
  * Secciones del menú. Solo aparecen las que existen: las de INNPRENDE I y II se
  * agregan en las fases del dominio.
  */
-const enlacesPara = (autenticado, esAdmin) => [
+const enlacesPara = (autenticado, esGestion) => [
     { to: '/', label: 'Inicio', icon: House, end: true },
     ...(autenticado ? [{ to: '/perfil', label: 'Mi perfil', icon: User }] : []),
-    ...(esAdmin
+    ...(esGestion
         ? [
             { to: '/admin/usuarios', label: 'Usuarios', icon: Users },
             { to: '/admin/catalogos', label: 'Catálogos', icon: Database },
@@ -159,10 +159,10 @@ function MenuMovil({ enlaces, autenticado, user, role, onLogout }) {
  * la navegación y el menú de la cuenta; por debajo de md, un menú lateral.
  */
 export function SiteHeader() {
-    const { token, user, role, isAdmin, logout } = useAuth();
+    const { token, user, role, esGestion, logout } = useAuth();
     const navigate = useNavigate();
     const autenticado = Boolean(token);
-    const enlaces = enlacesPara(autenticado, isAdmin());
+    const enlaces = enlacesPara(autenticado, esGestion());
 
     const cerrarSesion = () => {
         logout();

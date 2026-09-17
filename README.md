@@ -82,6 +82,12 @@ npm run dev
 
 App en `http://localhost:5173/expoideas/`
 
+Pruebas (Vitest + Testing Library, sin navegador ni API):
+
+```bash
+npm test
+```
+
 El subdirectorio sale de `VITE_BASE_PATH` (por defecto `/expoideas/`). `App.jsx` lo
 reutiliza como `basename` del router, así que no hay que tocarlo en dos sitios.
 

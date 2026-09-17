@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { AuthContext } from './authContext';
 import { UNAUTHORIZED_EVENT } from '../services/apiClient';
-import { ROLES, normalizeRole, roleFromToken } from '../utils/roles';
+import { ROLES, esDeGestion, normalizeRole, roleFromToken } from '../utils/roles';
 
 const STORAGE_KEYS = ['token', 'role', 'userId', 'userEmail', 'userName'];
 
@@ -103,9 +103,8 @@ export const AuthProvider = ({ children }) => {
         logout,
         updateUser,
         isAdmin: () => role === ROLES.ADMIN,
-        isDocente: () => role === ROLES.DOCENTE,
-        isEmprendedor: () => role === ROLES.EMPRENDEDOR,
-        isMentor: () => role === ROLES.MENTOR,
+        /** MacondoLab o administrador: acceso a Usuarios y Catálogos. */
+        esGestion: () => esDeGestion(role),
     }), [user, token, sesion, role, login, logout, updateUser]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

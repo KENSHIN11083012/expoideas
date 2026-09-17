@@ -60,14 +60,14 @@ function Etiqueta({ children }) {
     );
 }
 
-function AccionesPrincipales({ autenticado, esAdmin }) {
+function AccionesPrincipales({ autenticado, esGestion }) {
     if (autenticado) {
         return (
             <div className="flex flex-wrap gap-3">
                 <Button asChild size="lg">
                     <Link to="/perfil">Ir a mi perfil <ArrowRight /></Link>
                 </Button>
-                {esAdmin && (
+                {esGestion && (
                     <Button asChild size="lg" variant="outline">
                         <Link to="/admin/usuarios">Administración</Link>
                     </Button>
@@ -93,7 +93,7 @@ function AccionesPrincipales({ autenticado, esAdmin }) {
 }
 
 const Inicio = () => {
-    const { token, isAdmin } = useAuth();
+    const { token, esGestion } = useAuth();
     const autenticado = Boolean(token);
 
     return (
@@ -118,7 +118,7 @@ const Inicio = () => {
                             Expoideas reúne los proyectos de la Cátedra INNPRENDE: los equipos los inscriben con sus
                             entregables, los jurados los evalúan y los resultados quedan a la vista de la comunidad.
                         </p>
-                        <AccionesPrincipales autenticado={autenticado} esAdmin={isAdmin()} />
+                        <AccionesPrincipales autenticado={autenticado} esGestion={esGestion()} />
                     </div>
 
                     <figure className="relative">

@@ -1,13 +1,22 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Ellipsis, GraduationCap, KeyRound, RotateCw, Search, Trash2, UserX, Users } from 'lucide-react';
+import { Ellipsis, GraduationCap, KeyRound, RotateCw, Search, Trash2, UserPlus, UserX, Users } from 'lucide-react';
 import { normalizarTexto } from '@/lib/utils';
 import { useUserManagement } from '@/hooks/useUserManagement';
 import { useAuth } from '@/hooks/useAuth';
-import { ROLES, ROLE_LABELS, normalizeRole, requiereAdscripcion } from '@/utils/roles';
-import { aplicarErroresDelServidor } from '@/utils/validaciones';
-import { resetPasswordSchema } from '@/schemas/usuario';
+import {
+    ROLES,
+    ROLE_LABELS,
+    esDeGestion,
+    normalizeRole,
+    puedeGestionar,
+    requiereAdscripcion,
+    roleLabel,
+    rolesAsignablesPor,
+} from '@/utils/roles';
+import { aplicarErroresDelServidor, DOMINIO_INSTITUCIONAL } from '@/utils/validaciones';
+import { nuevaCuentaSchemaPara, resetPasswordSchema } from '@/schemas/usuario';
 import {
     adscripcionDesdeUsuario,
     adscripcionParaApi,
@@ -54,32 +63,37 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-/** El rol admin no se otorga ni se quita desde aquí. */
-const ROLES_ASIGNABLES = [ROLES.EMPRENDEDOR, ROLES.DOCENTE, ROLES.MENTOR, ROLES.VISITANTE];
-
-function SelectorDeRol({ usuario, deshabilitado, onChange }) {
+/**
+ * La propia cuenta y las que el rol de la sesión no gestiona (MacondoLab frente a
+ * cuentas de gestión) solo muestran el rol. La API aplica las mismas reglas.
+ */
+function SelectorDeRol({ usuario, actor, esPropio, deshabilitado, onChange }) {
     const rolActual = normalizeRole(usuario.rol);
 
-    if (rolActual === ROLES.ADMIN) {
-        return <Badge variant="dark" mono>{ROLE_LABELS[ROLES.ADMIN]}</Badge>;
+    if (esPropio || !puedeGestionar(actor, rolActual)) {
+        return (
+            <Badge variant={esDeGestion(rolActual) ? 'dark' : 'outline'} mono>
+                {roleLabel(rolActual)}
+            </Badge>
+        );
     }
 
     return (
         <NativeSelect
             aria-label={`Rol de ${usuario.nombres} ${usuario.apellidos}`}
-            value={rolActual ?? ROLES.EMPRENDEDOR}
+            value={rolActual ?? ''}
             disabled={deshabilitado}
-            onChange={(e) => onChange(usuario, e.target.value.toLowerCase())}
+            onChange={(e) => onChange(usuario, e.target.value)}
             className="h-9 min-w-44 text-sm"
         >
-            {ROLES_ASIGNABLES.map((rol) => (
+            {rolesAsignablesPor(actor).map((rol) => (
                 <option key={rol} value={rol}>{ROLE_LABELS[rol]}</option>
             ))}
         </NativeSelect>
     );
 }
 
-/** Facultad arriba; sede y programa debajo. El administrador no tiene adscripción. */
+/** Facultad arriba; sede y programa debajo. Gestión y jurados no tienen adscripción. */
 function ResumenAdscripcion({ usuario }) {
     if (!requiereAdscripcion(usuario.rol)) {
         return <p className="text-xs text-outline">No aplica</p>;
@@ -94,8 +108,12 @@ function ResumenAdscripcion({ usuario }) {
     );
 }
 
-function AccionesUsuario({ usuario, esPropio, onAdscripcion, onReset, onEliminar }) {
+function AccionesUsuario({ usuario, actor, esPropio, onAdscripcion, onReset, onEliminar }) {
+    // MacondoLab no tiene nada que hacer sobre cuentas de gestión.
+    if (!puedeGestionar(actor, usuario.rol)) return null;
+
     const esAdmin = normalizeRole(usuario.rol) === ROLES.ADMIN;
+    const puedeEliminar = normalizeRole(actor) === ROLES.ADMIN;
 
     return (
         <DropdownMenu>
@@ -113,10 +131,14 @@ function AccionesUsuario({ usuario, esPropio, onAdscripcion, onReset, onEliminar
                 <DropdownMenuItem onSelect={() => onReset(usuario)} disabled={esPropio}>
                     <KeyRound /> Restablecer contraseña
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onSelect={() => onEliminar(usuario)} disabled={esAdmin || esPropio}>
-                    <Trash2 /> Eliminar usuario
-                </DropdownMenuItem>
+                {puedeEliminar && (
+                    <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem variant="destructive" onSelect={() => onEliminar(usuario)} disabled={esAdmin || esPropio}>
+                            <Trash2 /> Eliminar usuario
+                        </DropdownMenuItem>
+                    </>
+                )}
             </DropdownMenuContent>
         </DropdownMenu>
     );
@@ -226,6 +248,127 @@ function DialogoAdscripcion({ usuario, onClose, onConfirmar }) {
     );
 }
 
+/** Los catálogos se piden solo si el rol elegido lleva adscripción. */
+function AdscripcionDeLaCuenta({ form }) {
+    const catalogos = useCatalogosAdscripcion();
+    return (
+        <fieldset className="flex flex-col gap-4 rounded-lg border border-outline-variant/70 p-4">
+            <legend className="px-1 font-heading text-sm font-semibold text-on-surface">Adscripción académica</legend>
+            <CamposAdscripcion form={form} catalogos={catalogos} />
+        </fieldset>
+    );
+}
+
+function DialogoNuevaCuenta({ actor, onClose, onCrear }) {
+    const rolesPermitidos = rolesAsignablesPor(actor);
+    const {
+        register,
+        control,
+        handleSubmit,
+        setError,
+        setValue,
+        formState: { errors, isSubmitting },
+    } = useForm({
+        // El esquema se arma con el rol elegido en cada validación.
+        resolver: (valores, contexto, opciones) => zodResolver(nuevaCuentaSchemaPara(valores.rol))(valores, contexto, opciones),
+        mode: 'onTouched',
+        defaultValues: {
+            // El caso más común es un jurado externo.
+            rol: rolesPermitidos.includes(ROLES.JURADO) ? ROLES.JURADO : rolesPermitidos[0],
+            nombres: '',
+            apellidos: '',
+            correoInstitucional: '',
+            password: '',
+            sedeId: '',
+            facultadId: '',
+            programaAcademicoId: '',
+        },
+    });
+    const [rol, password] = useWatch({ control, name: ['rol', 'password'] });
+
+    const onSubmit = async ({ rol: rolElegido, sedeId, facultadId, programaAcademicoId, ...datos }) => {
+        const cuerpo = {
+            ...datos,
+            rol: rolElegido.toLowerCase(),
+            ...(requiereAdscripcion(rolElegido) ? adscripcionParaApi({ sedeId, facultadId, programaAcademicoId }) : {}),
+        };
+        try {
+            await onCrear(cuerpo);
+            onClose();
+        } catch (error) {
+            if (error.status === 409) {
+                setError('correoInstitucional', { type: 'server', message: error.message }, { shouldFocus: true });
+            } else if (!aplicarErroresDelServidor(error, setError) && !aplicarErrorDePrograma(error, setError)) {
+                setError('root', { type: 'server', message: error.message });
+            }
+        }
+    };
+
+    return (
+        <Dialog open onOpenChange={(abierto) => !abierto && onClose()}>
+            <DialogContent>
+                <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                    <DialogHeader>
+                        <DialogTitle>Nueva cuenta</DialogTitle>
+                        <DialogDescription>
+                            Para jurados externos o personas que necesitan otro rol. Los estudiantes pueden crear su
+                            cuenta por sí mismos.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogBody>
+                        {errors.root && <Alert variant="error" title={errors.root.message} />}
+                        <Field label="Rol" error={errors.rol?.message} required>
+                            <NativeSelect {...register('rol')}>
+                                {rolesPermitidos.map((opcion) => (
+                                    <option key={opcion} value={opcion}>{ROLE_LABELS[opcion]}</option>
+                                ))}
+                            </NativeSelect>
+                        </Field>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <Field label="Nombres" error={errors.nombres?.message} required>
+                                <Input autoComplete="off" {...register('nombres')} />
+                            </Field>
+                            <Field label="Apellidos" error={errors.apellidos?.message} required>
+                                <Input autoComplete="off" {...register('apellidos')} />
+                            </Field>
+                        </div>
+                        <Field
+                            label="Correo"
+                            error={errors.correoInstitucional?.message}
+                            hint={rol === ROLES.JURADO ? 'Puede ser personal o de su organización.' : `Debe terminar en ${DOMINIO_INSTITUCIONAL}`}
+                            required
+                        >
+                            <Input type="email" inputMode="email" autoComplete="off" {...register('correoInstitucional')} />
+                        </Field>
+                        <div className="flex flex-col gap-2">
+                            <Field
+                                label="Contraseña temporal"
+                                error={errors.password?.message}
+                                hint="Entrégala por un canal seguro; la persona puede cambiarla en Seguridad."
+                                required
+                            >
+                                <PasswordInput autoComplete="new-password" {...register('password')} />
+                            </Field>
+                            <RequisitosPassword valor={password} className="sm:grid-cols-1" />
+                        </div>
+                        {requiereAdscripcion(rol) && <AdscripcionDeLaCuenta form={{ register, control, setValue, errors }} />}
+                    </DialogBody>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+                        <Button type="submit" loading={isSubmitting}>Crear cuenta</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+/** Lo que implica cada rol de gestión, para confirmarlo antes de otorgarlo. */
+const ALCANCE_DE_GESTION = {
+    [ROLES.MACONDOLAB]: 'Podrá gestionar las cuentas de estudiantes, docentes y jurados, y la clasificación de proyectos.',
+    [ROLES.ADMIN]: 'Tendrá acceso completo a la plataforma, incluidas las cuentas de gestión y la estructura institucional.',
+};
+
 function CargandoUsuarios() {
     return (
         <div className="flex flex-col gap-3" aria-hidden="true">
@@ -235,15 +378,27 @@ function CargandoUsuarios() {
 }
 
 const AdminUsuarios = () => {
-    const { user } = useAuth();
-    const { usuarios, isLoading, error, updatingId, fetchUsuarios, handleRoleChange, updateAdscripcion, resetPassword, handleDeleteUser } =
-        useUserManagement();
+    const { user, role } = useAuth();
+    const {
+        usuarios,
+        isLoading,
+        error,
+        updatingId,
+        fetchUsuarios,
+        crearUsuario,
+        handleRoleChange,
+        updateAdscripcion,
+        resetPassword,
+        handleDeleteUser,
+    } = useUserManagement();
 
     const [busqueda, setBusqueda] = useState('');
     const [filtroRol, setFiltroRol] = useState('');
     const [usuarioAdscripcion, setUsuarioAdscripcion] = useState(null);
     const [usuarioReset, setUsuarioReset] = useState(null);
     const [usuarioEliminar, setUsuarioEliminar] = useState(null);
+    const [cambioDeRol, setCambioDeRol] = useState(null);
+    const [creandoCuenta, setCreandoCuenta] = useState(false);
     const busquedaDiferida = useDeferredValue(busqueda);
 
     const filtrados = useMemo(() => {
@@ -259,16 +414,30 @@ const AdminUsuarios = () => {
     const esPropio = (u) => u.correoInstitucional?.toLowerCase() === user?.email?.toLowerCase();
     const hayFiltros = Boolean(busqueda || filtroRol);
 
+    // Otorgar un rol de gestión se confirma; los demás cambios se aplican directo.
+    const solicitarCambioDeRol = (usuario, rol) => {
+        if (esDeGestion(rol)) {
+            setCambioDeRol({ usuario, rol });
+        } else {
+            handleRoleChange(usuario, rol.toLowerCase());
+        }
+    };
+
     return (
         <PageContainer>
             <PageHeader
-                eyebrow="Administración"
+                eyebrow="Gestión"
                 title="Usuarios"
-                description="Consulta las cuentas registradas, asigna roles y restablece contraseñas."
+                description="Consulta las cuentas, asigna roles, crea cuentas para jurados y restablece contraseñas."
                 actions={
-                    <Button variant="outline" onClick={fetchUsuarios} disabled={isLoading}>
-                        <RotateCw className={isLoading ? 'animate-spin' : undefined} /> Actualizar
-                    </Button>
+                    <>
+                        <Button variant="outline" onClick={fetchUsuarios} disabled={isLoading}>
+                            <RotateCw className={isLoading ? 'animate-spin' : undefined} /> Actualizar
+                        </Button>
+                        <Button onClick={() => setCreandoCuenta(true)}>
+                            <UserPlus /> Nueva cuenta
+                        </Button>
+                    </>
                 }
             />
 
@@ -354,11 +523,18 @@ const AdminUsuarios = () => {
                                             <ResumenAdscripcion usuario={u} />
                                         </td>
                                         <td className="px-5 py-3">
-                                            <SelectorDeRol usuario={u} deshabilitado={updatingId === u.id} onChange={handleRoleChange} />
+                                            <SelectorDeRol
+                                                usuario={u}
+                                                actor={role}
+                                                esPropio={esPropio(u)}
+                                                deshabilitado={updatingId === u.id}
+                                                onChange={solicitarCambioDeRol}
+                                            />
                                         </td>
                                         <td className="px-5 py-3 text-right">
                                             <AccionesUsuario
                                                 usuario={u}
+                                                actor={role}
                                                 esPropio={esPropio(u)}
                                                 onAdscripcion={setUsuarioAdscripcion}
                                                 onReset={setUsuarioReset}
@@ -387,13 +563,20 @@ const AdminUsuarios = () => {
                                         </div>
                                         <AccionesUsuario
                                             usuario={u}
+                                            actor={role}
                                             esPropio={esPropio(u)}
                                             onAdscripcion={setUsuarioAdscripcion}
                                             onReset={setUsuarioReset}
                                             onEliminar={setUsuarioEliminar}
                                         />
                                     </div>
-                                    <SelectorDeRol usuario={u} deshabilitado={updatingId === u.id} onChange={handleRoleChange} />
+                                    <SelectorDeRol
+                                        usuario={u}
+                                        actor={role}
+                                        esPropio={esPropio(u)}
+                                        deshabilitado={updatingId === u.id}
+                                        onChange={solicitarCambioDeRol}
+                                    />
                                 </Card>
                             </li>
                         ))}
@@ -408,6 +591,25 @@ const AdminUsuarios = () => {
                     onConfirmar={updateAdscripcion}
                 />
             )}
+
+            {creandoCuenta && (
+                <DialogoNuevaCuenta actor={role} onClose={() => setCreandoCuenta(false)} onCrear={crearUsuario} />
+            )}
+
+            <AlertDialog open={Boolean(cambioDeRol)} onOpenChange={(abierto) => !abierto && setCambioDeRol(null)}>
+                <AlertDialogContent>
+                    <AlertDialogTitle>
+                        ¿Dar el rol {ROLE_LABELS[cambioDeRol?.rol]} a {cambioDeRol?.usuario.nombres} {cambioDeRol?.usuario.apellidos}?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>{ALCANCE_DE_GESTION[cambioDeRol?.rol]}</AlertDialogDescription>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleRoleChange(cambioDeRol.usuario, cambioDeRol.rol.toLowerCase())}>
+                            Dar el rol
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {usuarioReset && (
                 <DialogoResetPassword usuario={usuarioReset} onClose={() => setUsuarioReset(null)} onConfirmar={resetPassword} />

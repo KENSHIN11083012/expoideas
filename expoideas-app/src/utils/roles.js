@@ -6,23 +6,31 @@
  * como admin. Dattapro resolvia esa diferencia en tres sitios distintos
  * (Login, AuthContext y ProtectedRoute), cada uno con su propio parche.
  * Aqui se resuelve una sola vez.
+ *
+ * Las reglas de permisos son espejo de RolUsuario en la API, que es quien
+ * decide de verdad: aqui solo sirven para no ofrecer acciones que la API
+ * rechazaria.
  */
 
+/** En orden de menor a mayor alcance, que es como se listan en los selectores. */
 export const ROLES = {
-    ADMIN: 'ADMIN',
+    ESTUDIANTE: 'ESTUDIANTE',
     DOCENTE: 'DOCENTE',
-    EMPRENDEDOR: 'EMPRENDEDOR',
-    MENTOR: 'MENTOR',
-    VISITANTE: 'VISITANTE',
+    JURADO: 'JURADO',
+    MACONDOLAB: 'MACONDOLAB',
+    ADMIN: 'ADMIN',
 };
 
 export const ROLE_LABELS = {
-    [ROLES.ADMIN]: 'Administrador',
+    [ROLES.ESTUDIANTE]: 'Estudiante',
     [ROLES.DOCENTE]: 'Docente',
-    [ROLES.EMPRENDEDOR]: 'Emprendedor',
-    [ROLES.MENTOR]: 'Mentor / Jurado',
-    [ROLES.VISITANTE]: 'Visitante',
+    [ROLES.JURADO]: 'Jurado',
+    [ROLES.MACONDOLAB]: 'MacondoLab',
+    [ROLES.ADMIN]: 'Administrador',
 };
+
+/** Roles con acceso a la gestión de la plataforma (Usuarios y Catálogos). */
+export const ROLES_DE_GESTION = [ROLES.MACONDOLAB, ROLES.ADMIN];
 
 /**
  * Lleva cualquier variante (admin, ROLE_ADMIN, ["ROLE_ADMIN"]) a ADMIN.
@@ -48,12 +56,24 @@ export const hasRole = (role, allowed) => {
 
 export const roleLabel = (role) => ROLE_LABELS[normalizeRole(role)] ?? 'Usuario';
 
+export const esDeGestion = (role) => ROLES_DE_GESTION.includes(normalizeRole(role));
+
+/** Si el rol declara sede y facultad. Espejo de RolUsuario#requiereAdscripcion. */
+export const requiereAdscripcion = (role) => [ROLES.DOCENTE, ROLES.ESTUDIANTE].includes(normalizeRole(role));
+
 /**
- * Si el rol declara sede y facultad. El administrador es personal tecnico y no
- * la tiene. Espejo de RolUsuario#requiereAdscripcion en la API.
+ * Si `actor` puede administrar una cuenta con el rol `objetivo` (editarla,
+ * cambiarle el rol, restablecer su contraseña). Espejo de RolUsuario#puedeGestionar.
  */
-export const requiereAdscripcion = (role) => normalizeRole(role) !== ROLES.ADMIN;
+export const puedeGestionar = (actor, objetivo) => {
+    const rolActor = normalizeRole(actor);
+    if (rolActor === ROLES.ADMIN) return true;
+    if (rolActor === ROLES.MACONDOLAB) return !esDeGestion(objetivo);
+    return false;
+};
+
+/** Roles que `actor` puede asignar o con los que puede crear cuentas. */
+export const rolesAsignablesPor = (actor) => Object.values(ROLES).filter((rol) => puedeGestionar(actor, rol));
 
 /** Ruta de aterrizaje tras el login. */
-export const homePathForRole = (role) =>
-    normalizeRole(role) === ROLES.ADMIN ? '/admin/usuarios' : '/';
+export const homePathForRole = (role) => (esDeGestion(role) ? '/admin/usuarios' : '/');

@@ -3,6 +3,7 @@ package co.edu.unisimon.expoideas.controller;
 import co.edu.unisimon.expoideas.dto.CambiarPasswordDTO;
 import co.edu.unisimon.expoideas.dto.UsuarioResponseDTO;
 import co.edu.unisimon.expoideas.dto.UsuarioUpdateDTO;
+import co.edu.unisimon.expoideas.exception.AccionNoPermitidaException;
 import co.edu.unisimon.expoideas.exception.CamposInvalidosException;
 import co.edu.unisimon.expoideas.exception.ConflictException;
 import co.edu.unisimon.expoideas.security.JwtService;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -84,8 +86,8 @@ class UsuarioControllerSecurityTest {
     // ── Rutas sobre otros usuarios: ya no existen fuera de /admin ──────────
 
     @Test
-    @WithMockUser(username = CORREO, roles = "EMPRENDEDOR")
-    void emprendedorNoPuedeEditarNiBorrarOtroUsuario() throws Exception {
+    @WithMockUser(username = CORREO, roles = "ESTUDIANTE")
+    void estudianteNoPuedeEditarNiBorrarOtroUsuario() throws Exception {
         mockMvc.perform(put("/api/v1/usuarios/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"correoInstitucional\":\"yo@unisimon.edu.co\",\"password\":\"Hack3d!!\"}"))
@@ -98,8 +100,8 @@ class UsuarioControllerSecurityTest {
     }
 
     @Test
-    @WithMockUser(username = CORREO, roles = "EMPRENDEDOR")
-    void emprendedorNoPuedeUsarRutasDeAdmin() throws Exception {
+    @WithMockUser(username = CORREO, roles = "ESTUDIANTE")
+    void estudianteNoPuedeUsarRutasDeGestion() throws Exception {
         mockMvc.perform(get("/api/v1/usuarios")).andExpect(status().isNotFound());
         mockMvc.perform(get("/api/v1/admin/users"))
                 .andExpect(status().isForbidden())
@@ -118,29 +120,113 @@ class UsuarioControllerSecurityTest {
         verifyNoInteractions(usuarioService);
     }
 
-    // ── Administración ─────────────────────────────────────────────────────
+    // ── Gestión de cuentas ─────────────────────────────────────────────────
 
     @Test
     @WithMockUser(username = CORREO, roles = "ADMIN")
     void adminGestionaUsuarios() throws Exception {
+        // Las rutas de gestión piden MACONDOLAB: el administrador entra por la jerarquía de roles.
         when(usuarioService.listarUsuarios()).thenReturn(List.of());
-        when(usuarioService.actualizarDesdeAdmin(eq(5), any()))
-                .thenReturn(UsuarioResponseDTO.builder().id(5).rol("mentor").build());
+        when(usuarioService.actualizarDesdeAdmin(eq(CORREO), eq(5), any()))
+                .thenReturn(UsuarioResponseDTO.builder().id(5).rol("jurado").build());
 
         mockMvc.perform(get("/api/v1/admin/users")).andExpect(status().isOk());
         mockMvc.perform(put("/api/v1/admin/users/5")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"rol\":\"mentor\"}"))
+                        .content("{\"rol\":\"jurado\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.rol").value("mentor"));
+                .andExpect(jsonPath("$.rol").value("jurado"));
         mockMvc.perform(delete("/api/v1/admin/users/5")).andExpect(status().isNoContent());
         mockMvc.perform(post("/api/v1/usuarios/admin/reset-password").param("email", "otro@unisimon.edu.co")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"passwordNueva\":\"Segura#2026\",\"confirmacionPassword\":\"Segura#2026\"}"))
                 .andExpect(status().isNoContent());
 
-        verify(usuarioService).eliminarUsuario(5);
-        verify(usuarioService).restablecerPasswordAdmin(eq("otro@unisimon.edu.co"), any(CambiarPasswordDTO.class));
+        verify(usuarioService).eliminarUsuario(CORREO, 5);
+        verify(usuarioService).restablecerPasswordAdmin(eq(CORREO), eq("otro@unisimon.edu.co"), any(CambiarPasswordDTO.class));
+    }
+
+    @Test
+    @WithMockUser(username = CORREO, roles = "MACONDOLAB")
+    void macondoLabGestionaCuentasPeroNoElimina() throws Exception {
+        when(usuarioService.listarUsuarios()).thenReturn(List.of());
+        when(usuarioService.crearDesdeGestion(eq(CORREO), any()))
+                .thenReturn(UsuarioResponseDTO.builder().id(8).rol("jurado").build());
+
+        mockMvc.perform(get("/api/v1/admin/users")).andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/admin/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nombres":"Marta","apellidos":"Ríos","correoInstitucional":"marta@empresa.com",
+                                 "password":"Temporal#2026","rol":"jurado"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(8));
+        mockMvc.perform(put("/api/v1/admin/users/5")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"rol\":\"docente\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/usuarios/admin/reset-password").param("email", "otro@unisimon.edu.co")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"passwordNueva\":\"Segura#2026\",\"confirmacionPassword\":\"Segura#2026\"}"))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(delete("/api/v1/admin/users/5"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.detail").value("No tienes permiso para realizar esta acción"));
+
+        verify(usuarioService, never()).eliminarUsuario(any(), any());
+    }
+
+    @Test
+    void docentesYJuradosNoEntranALaGestion() throws Exception {
+        for (String rol : List.of("DOCENTE", "JURADO", "ESTUDIANTE")) {
+            mockMvc.perform(get("/api/v1/admin/users").with(user(CORREO).roles(rol)))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(post("/api/v1/admin/users").with(user(CORREO).roles(rol))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{}"))
+                    .andExpect(status().isForbidden());
+        }
+
+        verifyNoInteractions(usuarioService);
+    }
+
+    @Test
+    @WithMockUser(username = CORREO, roles = "MACONDOLAB")
+    void reglaDeRolesEs403ConElMotivo() throws Exception {
+        when(usuarioService.actualizarDesdeAdmin(eq(CORREO), eq(1), any()))
+                .thenThrow(new AccionNoPermitidaException("Solo un administrador puede modificar cuentas de administración o de MacondoLab."));
+
+        mockMvc.perform(put("/api/v1/admin/users/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombres\":\"Luis\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("Solo un administrador puede modificar cuentas de administración o de MacondoLab."));
+    }
+
+    @Test
+    @WithMockUser(username = CORREO, roles = "MACONDOLAB")
+    void crearCuentaValidaElCuerpo() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombres\":\"Marta\",\"apellidos\":\"Ríos\",\"correoInstitucional\":\"marta@empresa.com\",\"password\":\"123\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.campos.rol").value("El rol es obligatorio"))
+                .andExpect(jsonPath("$.campos.password").exists());
+
+        verifyNoInteractions(usuarioService);
+    }
+
+    @Test
+    @WithMockUser(username = CORREO, roles = "MACONDOLAB")
+    void rolInexistenteEs400() throws Exception {
+        mockMvc.perform(put("/api/v1/admin/users/5")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"rol\":\"emprendedor\"}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(usuarioService);
     }
 
     @Test
@@ -160,13 +246,13 @@ class UsuarioControllerSecurityTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
 
-        verify(usuarioService, never()).eliminarUsuario(any());
+        verify(usuarioService, never()).eliminarUsuario(any(), any());
     }
 
     // ── /usuarios/me ───────────────────────────────────────────────────────
 
     @Test
-    @WithMockUser(username = CORREO, roles = "EMPRENDEDOR")
+    @WithMockUser(username = CORREO, roles = "ESTUDIANTE")
     void perfilPropioUsaElCorreoDeLaSesion() throws Exception {
         when(usuarioService.obtenerPerfilPropio(CORREO))
                 .thenReturn(UsuarioResponseDTO.builder().id(7).correoInstitucional(CORREO).build());
@@ -177,7 +263,7 @@ class UsuarioControllerSecurityTest {
     }
 
     @Test
-    @WithMockUser(username = CORREO, roles = "EMPRENDEDOR")
+    @WithMockUser(username = CORREO, roles = "ESTUDIANTE")
     void actualizarPerfilPropioUsaElCorreoDeLaSesion() throws Exception {
         mockMvc.perform(put("/api/v1/usuarios/me")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -201,7 +287,7 @@ class UsuarioControllerSecurityTest {
     }
 
     @Test
-    @WithMockUser(username = CORREO, roles = "EMPRENDEDOR")
+    @WithMockUser(username = CORREO, roles = "ESTUDIANTE")
     void adscripcionIncompletaEs400ConCampos() throws Exception {
         when(usuarioService.actualizarPerfilPropio(eq(CORREO), any()))
                 .thenThrow(new CamposInvalidosException(Map.of("facultadId", "La facultad es obligatoria")));
@@ -216,7 +302,7 @@ class UsuarioControllerSecurityTest {
     }
 
     @Test
-    @WithMockUser(username = CORREO, roles = "EMPRENDEDOR")
+    @WithMockUser(username = CORREO, roles = "ESTUDIANTE")
     void programaDeOtraFacultadEs400() throws Exception {
         when(usuarioService.actualizarPerfilPropio(eq(CORREO), any()))
                 .thenThrow(new IllegalArgumentException("El programa académico no pertenece a la facultad seleccionada."));
@@ -229,7 +315,7 @@ class UsuarioControllerSecurityTest {
     }
 
     @Test
-    @WithMockUser(username = CORREO, roles = "EMPRENDEDOR")
+    @WithMockUser(username = CORREO, roles = "ESTUDIANTE")
     void cambiarPasswordPropioEs204() throws Exception {
         mockMvc.perform(put("/api/v1/usuarios/me/password")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -240,7 +326,7 @@ class UsuarioControllerSecurityTest {
     }
 
     @Test
-    @WithMockUser(username = CORREO, roles = "EMPRENDEDOR")
+    @WithMockUser(username = CORREO, roles = "ESTUDIANTE")
     void passwordActualIncorrectaEs400() throws Exception {
         doThrow(new IllegalArgumentException("La contraseña actual es incorrecta."))
                 .when(usuarioService).cambiarPasswordPropio(eq(CORREO), any());
@@ -309,14 +395,14 @@ class UsuarioControllerSecurityTest {
     @Test
     void registroValidoCreaYDevuelveElUsuario() throws Exception {
         when(usuarioService.registrarUsuario(any()))
-                .thenReturn(UsuarioResponseDTO.builder().id(1).correoInstitucional(CORREO).rol("emprendedor").build());
+                .thenReturn(UsuarioResponseDTO.builder().id(1).correoInstitucional(CORREO).rol("estudiante").build());
 
         mockMvc.perform(post("/api/v1/usuarios/registro")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registro(CORREO, "Segura#2026", true)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.rol").value("emprendedor"));
+                .andExpect(jsonPath("$.rol").value("estudiante"));
     }
 
     @Test

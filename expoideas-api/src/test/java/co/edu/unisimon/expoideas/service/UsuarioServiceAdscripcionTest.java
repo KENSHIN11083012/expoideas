@@ -37,12 +37,13 @@ import static org.mockito.Mockito.when;
 /**
  * Reglas de la adscripción académica: la facultad es obligatoria, el programa
  * opcional y, si existe, debe ser de esa facultad. El administrador no tiene
- * adscripción.
+ * adscripción. Las operaciones de gestión las hace un administrador (id 99).
  */
 @ExtendWith(MockitoExtension.class)
 class UsuarioServiceAdscripcionTest {
 
     private static final String CORREO = "ana@unisimon.edu.co";
+    private static final String CORREO_ADMIN = "luis@unisimon.edu.co";
 
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private SedeRepository sedeRepository;
@@ -64,6 +65,8 @@ class UsuarioServiceAdscripcionTest {
         lenient().when(facultadRepository.findById(20)).thenReturn(Optional.of(derecho));
         lenient().when(programaAcademicoRepository.findById(100)).thenReturn(Optional.of(sistemas));
         lenient().when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+        Usuario admin = Usuario.builder().id(99).correoInstitucional(CORREO_ADMIN).rol(RolUsuario.admin).build();
+        lenient().when(usuarioRepository.findByCorreoWithBaseInfo(CORREO_ADMIN)).thenReturn(Optional.of(admin));
     }
 
     @Test
@@ -152,7 +155,7 @@ class UsuarioServiceAdscripcionTest {
         luis.setRol(RolUsuario.admin);
         when(usuarioRepository.findByIdWithBaseInfo(1)).thenReturn(Optional.of(luis));
 
-        assertThatThrownBy(() -> service.actualizarDesdeAdmin(1, adminUpdate(null, 10, null)))
+        assertThatThrownBy(() -> service.actualizarDesdeAdmin(CORREO_ADMIN, 1, adminUpdate(null, 10, null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("no lleva adscripción");
         verify(usuarioRepository, never()).save(any());
@@ -163,7 +166,7 @@ class UsuarioServiceAdscripcionTest {
         Usuario ana = usuario();
         when(usuarioRepository.findByIdWithBaseInfo(1)).thenReturn(Optional.of(ana));
 
-        UsuarioResponseDTO actualizado = service.actualizarDesdeAdmin(1, adminUpdate(null, null, 100));
+        UsuarioResponseDTO actualizado = service.actualizarDesdeAdmin(CORREO_ADMIN, 1, adminUpdate(null, null, 100));
 
         assertThat(actualizado.getFacultadId()).isEqualTo(10);
         assertThat(actualizado.getProgramaAcademicoId()).isEqualTo(100);
@@ -176,7 +179,7 @@ class UsuarioServiceAdscripcionTest {
         ana.setProgramaAcademico(sistemas);
         when(usuarioRepository.findByIdWithBaseInfo(1)).thenReturn(Optional.of(ana));
 
-        UsuarioResponseDTO actualizado = service.actualizarDesdeAdmin(1, adminUpdate(1, 20, null));
+        UsuarioResponseDTO actualizado = service.actualizarDesdeAdmin(CORREO_ADMIN, 1, adminUpdate(1, 20, null));
 
         assertThat(actualizado.getSede()).isEqualTo("Barranquilla");
         assertThat(actualizado.getFacultad()).isEqualTo("Derecho");

@@ -5,8 +5,8 @@ import { z } from 'zod';
  * administración. Los <select> entregan los ids como texto.
  */
 export const adscripcionShape = {
-    sedeId: z.string().min(1, 'Selecciona tu sede'),
-    facultadId: z.string().min(1, 'Selecciona tu facultad'),
+    sedeId: z.string().min(1, 'Selecciona la sede'),
+    facultadId: z.string().min(1, 'Selecciona la facultad'),
     programaAcademicoId: z.string(),
 };
 

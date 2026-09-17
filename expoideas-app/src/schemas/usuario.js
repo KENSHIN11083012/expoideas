@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { PASSWORD_MENSAJE, PASSWORD_REGEX } from '@/utils/validaciones';
+import { CORREO_INSTITUCIONAL_REGEX, DOMINIO_INSTITUCIONAL, PASSWORD_MENSAJE, PASSWORD_REGEX } from '@/utils/validaciones';
+import { ROLES, requiereAdscripcion } from '@/utils/roles';
 import { adscripcionShape } from './adscripcion';
 
 /** Lo que cualquier rol edita de sí mismo. */
@@ -8,8 +9,31 @@ export const datosPersonalesSchema = z.object({
     apellidos: z.string().trim().min(1, 'Ingresa tus apellidos').max(100, 'Máximo 100 caracteres'),
 });
 
-/** Perfil de los roles con adscripción académica (todos menos el administrador). */
+/** Perfil de los roles con adscripción académica (docentes y estudiantes). */
 export const perfilSchema = datosPersonalesSchema.extend(adscripcionShape);
+
+/**
+ * Alta de una cuenta desde la gestión. Las reglas dependen del rol elegido, como
+ * en la API: correo externo solo para jurados y adscripción solo para docentes y
+ * estudiantes.
+ */
+export const nuevaCuentaSchemaPara = (rol) =>
+    z.object({
+        rol: z.string().min(1, 'Selecciona el rol'),
+        nombres: z.string().trim().min(1, 'Ingresa los nombres').max(100, 'Máximo 100 caracteres'),
+        apellidos: z.string().trim().min(1, 'Ingresa los apellidos').max(100, 'Máximo 100 caracteres'),
+        correoInstitucional:
+            rol === ROLES.JURADO
+                ? z.string().trim().min(1, 'Ingresa el correo').max(150, 'Máximo 150 caracteres').pipe(z.email('Ingresa un correo válido'))
+                : z
+                    .string()
+                    .trim()
+                    .min(1, 'Ingresa el correo')
+                    .max(150, 'Máximo 150 caracteres')
+                    .regex(CORREO_INSTITUCIONAL_REGEX, `Usa un correo ${DOMINIO_INSTITUCIONAL}; solo los jurados pueden tener uno externo`),
+        password: z.string().regex(PASSWORD_REGEX, PASSWORD_MENSAJE),
+        ...(requiereAdscripcion(rol) ? adscripcionShape : {}),
+    });
 
 const passwordNuevaConConfirmacion = {
     passwordNueva: z.string().regex(PASSWORD_REGEX, PASSWORD_MENSAJE),

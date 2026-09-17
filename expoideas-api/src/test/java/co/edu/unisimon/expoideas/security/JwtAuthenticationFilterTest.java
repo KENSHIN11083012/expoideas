@@ -50,14 +50,14 @@ class JwtAuthenticationFilterTest {
     @Test
     void usaLosRolesDeLaBaseDeDatosYNoLosDelToken() throws Exception {
         String tokenDeCuandoEraAdmin = jwtService.generateToken(usuario("ADMIN"));
-        when(userDetailsService.loadUserByUsername(CORREO)).thenReturn(usuario("EMPRENDEDOR"));
+        when(userDetailsService.loadUserByUsername(CORREO)).thenReturn(usuario("ESTUDIANTE"));
 
         Authentication auth = filtrar(tokenDeCuandoEraAdmin);
 
         assertThat(auth).isNotNull();
         assertThat(auth.getAuthorities())
                 .extracting(GrantedAuthority::getAuthority)
-                .containsExactly("ROLE_EMPRENDEDOR");
+                .containsExactly("ROLE_ESTUDIANTE");
     }
 
     @Test
@@ -76,7 +76,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     void tokenManipuladoNoAutentica() throws Exception {
-        String token = jwtService.generateToken(usuario("EMPRENDEDOR"));
+        String token = jwtService.generateToken(usuario("ESTUDIANTE"));
 
         Authentication auth = filtrar(token.substring(0, token.length() - 2) + "xx");
 

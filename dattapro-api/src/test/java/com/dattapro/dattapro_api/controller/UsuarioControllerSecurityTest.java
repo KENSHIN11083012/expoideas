@@ -3,6 +3,7 @@ package com.dattapro.dattapro_api.controller;
 import com.dattapro.dattapro_api.dto.CambiarPasswordDTO;
 import com.dattapro.dattapro_api.dto.UsuarioResponseDTO;
 import com.dattapro.dattapro_api.dto.UsuarioUpdateDTO;
+import com.dattapro.dattapro_api.exception.CamposInvalidosException;
 import com.dattapro.dattapro_api.exception.ConflictException;
 import com.dattapro.dattapro_api.security.JwtService;
 import com.dattapro.dattapro_api.security.SecurityConfig;
@@ -18,6 +19,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -179,10 +181,51 @@ class UsuarioControllerSecurityTest {
     void actualizarPerfilPropioUsaElCorreoDeLaSesion() throws Exception {
         mockMvc.perform(put("/api/v1/usuarios/me")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nombres\":\"Ana\",\"apellidos\":\"Pérez\"}"))
+                        .content("{\"nombres\":\"Ana\",\"apellidos\":\"Pérez\",\"sedeId\":1,\"facultadId\":2,\"programaAcademicoId\":null}"))
                 .andExpect(status().isOk());
 
-        verify(usuarioService).actualizarPerfilPropio(eq(CORREO), eq(new UsuarioUpdateDTO("Ana", "Pérez")));
+        verify(usuarioService).actualizarPerfilPropio(eq(CORREO), eq(new UsuarioUpdateDTO("Ana", "Pérez", 1, 2, null)));
+    }
+
+    @Test
+    @WithMockUser(username = "luis@unisimon.edu.co", roles = "ADMIN")
+    void perfilSinAdscripcionPasaLaValidacionDelDto() throws Exception {
+        // Que la exija o no depende del rol: lo decide el servicio, no el DTO.
+        mockMvc.perform(put("/api/v1/usuarios/me")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombres\":\"Luis\",\"apellidos\":\"Gómez\"}"))
+                .andExpect(status().isOk());
+
+        verify(usuarioService).actualizarPerfilPropio(
+                eq("luis@unisimon.edu.co"), eq(new UsuarioUpdateDTO("Luis", "Gómez", null, null, null)));
+    }
+
+    @Test
+    @WithMockUser(username = CORREO, roles = "EMPRENDEDOR")
+    void adscripcionIncompletaEs400ConCampos() throws Exception {
+        when(usuarioService.actualizarPerfilPropio(eq(CORREO), any()))
+                .thenThrow(new CamposInvalidosException(Map.of("facultadId", "La facultad es obligatoria")));
+
+        mockMvc.perform(put("/api/v1/usuarios/me")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombres\":\"Ana\",\"apellidos\":\"Pérez\",\"sedeId\":1}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("Datos inválidos"))
+                .andExpect(jsonPath("$.campos.facultadId").value("La facultad es obligatoria"));
+    }
+
+    @Test
+    @WithMockUser(username = CORREO, roles = "EMPRENDEDOR")
+    void programaDeOtraFacultadEs400() throws Exception {
+        when(usuarioService.actualizarPerfilPropio(eq(CORREO), any()))
+                .thenThrow(new IllegalArgumentException("El programa académico no pertenece a la facultad seleccionada."));
+
+        mockMvc.perform(put("/api/v1/usuarios/me")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombres\":\"Ana\",\"apellidos\":\"Pérez\",\"sedeId\":1,\"facultadId\":2,\"programaAcademicoId\":9}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("El programa académico no pertenece a la facultad seleccionada."));
     }
 
     @Test
@@ -276,9 +319,25 @@ class UsuarioControllerSecurityTest {
                 .andExpect(jsonPath("$.rol").value("emprendedor"));
     }
 
+    @Test
+    void registroExigeSedeYFacultadPeroNoPrograma() throws Exception {
+        mockMvc.perform(post("/api/v1/usuarios/registro")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nombres":"Ana","apellidos":"Pérez","correoInstitucional":"%s","password":"Segura#2026","autorizaDatos":true}
+                                """.formatted(CORREO)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.campos.sedeId").exists())
+                .andExpect(jsonPath("$.campos.facultadId").exists())
+                .andExpect(jsonPath("$.campos.programaAcademicoId").doesNotExist());
+
+        verifyNoInteractions(usuarioService);
+    }
+
+    /** Registro válido salvo lo que se varíe: sede 1, facultad 2 y sin programa. */
     private static String registro(String correo, String password, boolean autorizaDatos) {
         return """
-                {"nombres":"Ana","apellidos":"Pérez","correoInstitucional":"%s","password":"%s","autorizaDatos":%s}
+                {"nombres":"Ana","apellidos":"Pérez","correoInstitucional":"%s","password":"%s","autorizaDatos":%s,"sedeId":1,"facultadId":2}
                 """.formatted(correo, password, autorizaDatos);
     }
 }

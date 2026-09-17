@@ -6,6 +6,9 @@ import { ArrowRight } from 'lucide-react';
 import { post } from '@/services/apiClient';
 import { aplicarErroresDelServidor, DOMINIO_INSTITUCIONAL } from '@/utils/validaciones';
 import { registroSchema } from '@/schemas/auth';
+import { adscripcionParaApi, aplicarErrorDePrograma } from '@/schemas/adscripcion';
+import { useCatalogosAdscripcion } from '@/hooks/useCatalogosAdscripcion';
+import { CamposAdscripcion } from '@/components/forms/CamposAdscripcion';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { RequisitosPassword } from '@/components/forms/RequisitosPassword';
 import { Button } from '@/components/ui/button';
@@ -19,11 +22,13 @@ const Registro = () => {
     const navigate = useNavigate();
     const [errorGeneral, setErrorGeneral] = useState('');
 
+    const catalogos = useCatalogosAdscripcion();
     const {
         register,
         control,
         handleSubmit,
         setError,
+        setValue,
         formState: { errors, isSubmitting },
     } = useForm({
         resolver: zodResolver(registroSchema),
@@ -34,22 +39,26 @@ const Registro = () => {
             correoInstitucional: '',
             password: '',
             confirmPassword: '',
+            sedeId: '',
+            facultadId: '',
+            programaAcademicoId: '',
             autorizaDatos: false,
         },
     });
     const password = useWatch({ control, name: 'password' });
 
-    const onSubmit = async ({ confirmPassword, ...datos }) => {
+    const onSubmit = async ({ confirmPassword, sedeId, facultadId, programaAcademicoId, ...datos }) => {
         setErrorGeneral('');
         try {
-            await post('/usuarios/registro', datos, { auth: false });
+            const cuerpo = { ...datos, ...adscripcionParaApi({ sedeId, facultadId, programaAcademicoId }) };
+            await post('/usuarios/registro', cuerpo, { auth: false });
             navigate('/login', {
                 state: { message: 'Tu cuenta fue creada. Ya puedes iniciar sesión.', email: datos.correoInstitucional },
             });
         } catch (error) {
             if (error.status === 409) {
                 setError('correoInstitucional', { type: 'server', message: error.message }, { shouldFocus: true });
-            } else if (!aplicarErroresDelServidor(error, setError)) {
+            } else if (!aplicarErroresDelServidor(error, setError) && !aplicarErrorDePrograma(error, setError)) {
                 setErrorGeneral(error.message);
             }
         }
@@ -93,6 +102,11 @@ const Registro = () => {
                         {...register('correoInstitucional')}
                     />
                 </Field>
+
+                <fieldset className="flex flex-col gap-4 rounded-lg border border-outline-variant/70 p-4">
+                    <legend className="px-1 font-heading text-sm font-semibold text-on-surface">Tu vínculo con la universidad</legend>
+                    <CamposAdscripcion form={{ register, control, setValue, errors }} catalogos={catalogos} />
+                </fieldset>
 
                 <div className="flex flex-col gap-2">
                     <Field label="Contraseña" error={errors.password?.message} required>

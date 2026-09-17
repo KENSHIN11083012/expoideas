@@ -16,5 +16,13 @@ public enum RolUsuario {
     docente,
     emprendedor,
     mentor,
-    visitante
+    visitante;
+
+    /**
+     * Si el rol pertenece a la comunidad académica y, por tanto, debe declarar
+     * sede y facultad. El administrador es personal técnico: no se le pide.
+     */
+    public boolean requiereAdscripcion() {
+        return this != admin;
+    }
 }

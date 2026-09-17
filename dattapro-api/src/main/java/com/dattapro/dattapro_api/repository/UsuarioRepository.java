@@ -26,6 +26,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
      */
     @Query("SELECT u FROM Usuario u " +
            "LEFT JOIN FETCH u.sede " +
+           "LEFT JOIN FETCH u.facultad " +
            "LEFT JOIN FETCH u.programaAcademico p " +
            "LEFT JOIN FETCH p.facultad " +
            "WHERE u.id = :id")
@@ -34,6 +35,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
     /** Igual que {@link #findByIdWithBaseInfo}, buscando por el correo de la sesión. */
     @Query("SELECT u FROM Usuario u " +
            "LEFT JOIN FETCH u.sede " +
+           "LEFT JOIN FETCH u.facultad " +
            "LEFT JOIN FETCH u.programaAcademico p " +
            "LEFT JOIN FETCH p.facultad " +
            "WHERE u.correoInstitucional = :correo")
@@ -45,6 +47,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
      */
     @Query("SELECT u FROM Usuario u " +
            "LEFT JOIN FETCH u.sede " +
+           "LEFT JOIN FETCH u.facultad " +
            "LEFT JOIN FETCH u.programaAcademico p " +
            "LEFT JOIN FETCH p.facultad")
     List<Usuario> findAllWithBaseInfo();

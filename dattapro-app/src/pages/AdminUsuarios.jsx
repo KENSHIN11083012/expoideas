@@ -1,13 +1,22 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Ellipsis, KeyRound, RotateCw, Search, Trash2, UserX, Users } from 'lucide-react';
+import { Ellipsis, GraduationCap, KeyRound, RotateCw, Search, Trash2, UserX, Users } from 'lucide-react';
+import { normalizarTexto } from '@/lib/utils';
 import { useUserManagement } from '@/hooks/useUserManagement';
 import { useAuth } from '@/hooks/useAuth';
-import { ROLES, ROLE_LABELS, normalizeRole } from '@/utils/roles';
+import { ROLES, ROLE_LABELS, normalizeRole, requiereAdscripcion } from '@/utils/roles';
 import { aplicarErroresDelServidor } from '@/utils/validaciones';
 import { resetPasswordSchema } from '@/schemas/usuario';
+import {
+    adscripcionDesdeUsuario,
+    adscripcionParaApi,
+    adscripcionSchema,
+    aplicarErrorDePrograma,
+} from '@/schemas/adscripcion';
+import { useCatalogosAdscripcion } from '@/hooks/useCatalogosAdscripcion';
 import { PageContainer } from '@/components/layout/AppShell';
+import { CamposAdscripcion } from '@/components/forms/CamposAdscripcion';
 import { RequisitosPassword } from '@/components/forms/RequisitosPassword';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card } from '@/components/ui/card';
@@ -48,8 +57,6 @@ import {
 /** El rol admin no se otorga ni se quita desde aquí. */
 const ROLES_ASIGNABLES = [ROLES.EMPRENDEDOR, ROLES.DOCENTE, ROLES.MENTOR, ROLES.VISITANTE];
 
-const normalizar = (texto) => texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-
 function SelectorDeRol({ usuario, deshabilitado, onChange }) {
     const rolActual = normalizeRole(usuario.rol);
 
@@ -72,7 +79,22 @@ function SelectorDeRol({ usuario, deshabilitado, onChange }) {
     );
 }
 
-function AccionesUsuario({ usuario, esPropio, onReset, onEliminar }) {
+/** Facultad arriba; sede y programa debajo. El administrador no tiene adscripción. */
+function ResumenAdscripcion({ usuario }) {
+    if (!requiereAdscripcion(usuario.rol)) {
+        return <p className="text-xs text-outline">No aplica</p>;
+    }
+    return (
+        <>
+            <p className={usuario.facultad ? undefined : 'italic text-outline'}>{usuario.facultad ?? 'Sin facultad'}</p>
+            <p className="text-xs text-outline">
+                {usuario.sede ?? 'Sin sede'} · {usuario.programaAcademico ?? 'Sin programa'}
+            </p>
+        </>
+    );
+}
+
+function AccionesUsuario({ usuario, esPropio, onAdscripcion, onReset, onEliminar }) {
     const esAdmin = normalizeRole(usuario.rol) === ROLES.ADMIN;
 
     return (
@@ -83,6 +105,11 @@ function AccionesUsuario({ usuario, esPropio, onReset, onEliminar }) {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+                {requiereAdscripcion(usuario.rol) && (
+                    <DropdownMenuItem onSelect={() => onAdscripcion(usuario)}>
+                        <GraduationCap /> Editar adscripción
+                    </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onSelect={() => onReset(usuario)} disabled={esPropio}>
                     <KeyRound /> Restablecer contraseña
                 </DropdownMenuItem>
@@ -153,6 +180,52 @@ function DialogoResetPassword({ usuario, onClose, onConfirmar }) {
     );
 }
 
+function DialogoAdscripcion({ usuario, onClose, onConfirmar }) {
+    const catalogos = useCatalogosAdscripcion();
+    const {
+        register,
+        control,
+        handleSubmit,
+        setError,
+        setValue,
+        formState: { errors, isSubmitting, isDirty },
+    } = useForm({ resolver: zodResolver(adscripcionSchema), defaultValues: adscripcionDesdeUsuario(usuario) });
+
+    const onSubmit = async (datos) => {
+        try {
+            await onConfirmar(usuario, adscripcionParaApi(datos));
+            onClose();
+        } catch (error) {
+            if (!aplicarErroresDelServidor(error, setError) && !aplicarErrorDePrograma(error, setError)) {
+                setError('root', { type: 'server', message: error.message });
+            }
+        }
+    };
+
+    return (
+        <Dialog open onOpenChange={(abierto) => !abierto && onClose()}>
+            <DialogContent>
+                <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                    <DialogHeader>
+                        <DialogTitle>Editar adscripción</DialogTitle>
+                        <DialogDescription>
+                            Sede, facultad y programa de {usuario.nombres} {usuario.apellidos}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogBody>
+                        {errors.root && <Alert variant="error" title={errors.root.message} />}
+                        <CamposAdscripcion form={{ register, control, setValue, errors }} catalogos={catalogos} />
+                    </DialogBody>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+                        <Button type="submit" loading={isSubmitting} disabled={!isDirty}>Guardar</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function CargandoUsuarios() {
     return (
         <div className="flex flex-col gap-3" aria-hidden="true">
@@ -163,20 +236,21 @@ function CargandoUsuarios() {
 
 const AdminUsuarios = () => {
     const { user } = useAuth();
-    const { usuarios, isLoading, error, updatingId, fetchUsuarios, handleRoleChange, resetPassword, handleDeleteUser } =
+    const { usuarios, isLoading, error, updatingId, fetchUsuarios, handleRoleChange, updateAdscripcion, resetPassword, handleDeleteUser } =
         useUserManagement();
 
     const [busqueda, setBusqueda] = useState('');
     const [filtroRol, setFiltroRol] = useState('');
+    const [usuarioAdscripcion, setUsuarioAdscripcion] = useState(null);
     const [usuarioReset, setUsuarioReset] = useState(null);
     const [usuarioEliminar, setUsuarioEliminar] = useState(null);
     const busquedaDiferida = useDeferredValue(busqueda);
 
     const filtrados = useMemo(() => {
-        const termino = normalizar(busquedaDiferida.trim());
+        const termino = normalizarTexto(busquedaDiferida.trim());
         return usuarios.filter((u) => {
             const coincideTexto =
-                !termino || normalizar(`${u.nombres} ${u.apellidos} ${u.correoInstitucional}`).includes(termino);
+                !termino || normalizarTexto(`${u.nombres} ${u.apellidos} ${u.correoInstitucional}`).includes(termino);
             const coincideRol = !filtroRol || normalizeRole(u.rol) === filtroRol;
             return coincideTexto && coincideRol;
         });
@@ -277,8 +351,7 @@ const AdminUsuarios = () => {
                                             </div>
                                         </td>
                                         <td className="px-5 py-3 text-on-surface-variant">
-                                            <p>{u.sede ?? 'Sin sede'}</p>
-                                            <p className="text-xs text-outline">{u.programaAcademico ?? 'Sin programa'}</p>
+                                            <ResumenAdscripcion usuario={u} />
                                         </td>
                                         <td className="px-5 py-3">
                                             <SelectorDeRol usuario={u} deshabilitado={updatingId === u.id} onChange={handleRoleChange} />
@@ -287,6 +360,7 @@ const AdminUsuarios = () => {
                                             <AccionesUsuario
                                                 usuario={u}
                                                 esPropio={esPropio(u)}
+                                                onAdscripcion={setUsuarioAdscripcion}
                                                 onReset={setUsuarioReset}
                                                 onEliminar={setUsuarioEliminar}
                                             />
@@ -307,13 +381,14 @@ const AdminUsuarios = () => {
                                         <div className="min-w-0 flex-1">
                                             <p className="font-semibold">{u.nombres} {u.apellidos}</p>
                                             <p className="truncate text-sm text-on-surface-variant">{u.correoInstitucional}</p>
-                                            <p className="mt-1 text-xs text-outline">
-                                                {u.sede ?? 'Sin sede'} · {u.programaAcademico ?? 'Sin programa'}
-                                            </p>
+                                            <div className="mt-1 text-sm text-on-surface-variant">
+                                                <ResumenAdscripcion usuario={u} />
+                                            </div>
                                         </div>
                                         <AccionesUsuario
                                             usuario={u}
                                             esPropio={esPropio(u)}
+                                            onAdscripcion={setUsuarioAdscripcion}
                                             onReset={setUsuarioReset}
                                             onEliminar={setUsuarioEliminar}
                                         />
@@ -324,6 +399,14 @@ const AdminUsuarios = () => {
                         ))}
                     </ul>
                 </>
+            )}
+
+            {usuarioAdscripcion && (
+                <DialogoAdscripcion
+                    usuario={usuarioAdscripcion}
+                    onClose={() => setUsuarioAdscripcion(null)}
+                    onConfirmar={updateAdscripcion}
+                />
             )}
 
             {usuarioReset && (

@@ -5,11 +5,14 @@ import com.dattapro.dattapro_api.dto.UsuarioAdminUpdateDTO;
 import com.dattapro.dattapro_api.dto.UsuarioRegistroDTO;
 import com.dattapro.dattapro_api.dto.UsuarioResponseDTO;
 import com.dattapro.dattapro_api.dto.UsuarioUpdateDTO;
+import com.dattapro.dattapro_api.entity.Facultad;
 import com.dattapro.dattapro_api.entity.ProgramaAcademico;
 import com.dattapro.dattapro_api.entity.RolUsuario;
 import com.dattapro.dattapro_api.entity.Sede;
 import com.dattapro.dattapro_api.entity.Usuario;
+import com.dattapro.dattapro_api.exception.CamposInvalidosException;
 import com.dattapro.dattapro_api.exception.ConflictException;
+import com.dattapro.dattapro_api.repository.FacultadRepository;
 import com.dattapro.dattapro_api.repository.ProgramaAcademicoRepository;
 import com.dattapro.dattapro_api.repository.SedeRepository;
 import com.dattapro.dattapro_api.repository.UsuarioRepository;
@@ -20,7 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
@@ -37,6 +42,7 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final SedeRepository sedeRepository;
+    private final FacultadRepository facultadRepository;
     private final ProgramaAcademicoRepository programaAcademicoRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -66,6 +72,8 @@ public class UsuarioService {
                 .autorizaDatos(true)
                 .fechaAutorizacionDatos(LocalDateTime.now())
                 .build();
+        nuevoUsuario.setSede(buscarSede(dto.sedeId()));
+        asignarFacultadYPrograma(nuevoUsuario, dto.facultadId(), dto.programaAcademicoId());
 
         Usuario guardado = usuarioRepository.save(nuevoUsuario);
         log.info("Usuario registrado con ID {}", guardado.getId());
@@ -98,19 +106,26 @@ public class UsuarioService {
     // ---------------------------------------------
 
     /**
-     * Actualiza los datos que el propio usuario puede cambiar. Se identifica por
-     * el correo de la sesion, nunca por un ID que venga del cliente.
+     * Reemplaza los datos que el propio usuario puede cambiar: nombre y, si su
+     * rol la lleva, adscripcion academica (el administrador no la tiene y se
+     * ignora). Se identifica por el correo de la sesion, nunca por un ID que
+     * venga del cliente.
      *
-     * @throws NoSuchElementException si el correo no existe
+     * @throws CamposInvalidosException si el rol requiere adscripcion y faltan sede o facultad
+     * @throws NoSuchElementException   si el correo, la sede, la facultad o el programa no existen
+     * @throws IllegalArgumentException si el programa no es de la facultad
      */
     @Transactional
     public UsuarioResponseDTO actualizarPerfilPropio(String correo, UsuarioUpdateDTO dto) {
         Usuario usuario = buscarPorCorreo(correo);
 
-        if (dto.nombres() != null && !dto.nombres().isBlank())
-            usuario.setNombres(dto.nombres().trim());
-        if (dto.apellidos() != null && !dto.apellidos().isBlank())
-            usuario.setApellidos(dto.apellidos().trim());
+        if (usuario.getRol().requiereAdscripcion()) {
+            exigirSedeYFacultad(dto.sedeId(), dto.facultadId());
+            usuario.setSede(buscarSede(dto.sedeId()));
+            asignarFacultadYPrograma(usuario, dto.facultadId(), dto.programaAcademicoId());
+        }
+        usuario.setNombres(dto.nombres().trim());
+        usuario.setApellidos(dto.apellidos().trim());
 
         return toResponseDTO(usuarioRepository.save(usuario));
     }
@@ -119,8 +134,9 @@ public class UsuarioService {
      * Actualizacion por parte de un administrador: anade rol y adscripcion
      * academica sobre lo que puede cambiar el propio usuario.
      *
-     * @throws NoSuchElementException si el usuario, la sede o el programa no existen
-     * @throws ConflictException      si el correo nuevo ya es de otro usuario
+     * @throws NoSuchElementException   si el usuario, la sede, la facultad o el programa no existen
+     * @throws IllegalArgumentException si el programa no es de la facultad o el rol no lleva adscripcion
+     * @throws ConflictException        si el correo nuevo ya es de otro usuario
      */
     @Transactional
     public UsuarioResponseDTO actualizarDesdeAdmin(Integer id, UsuarioAdminUpdateDTO dto) {
@@ -142,18 +158,21 @@ public class UsuarioService {
         if (dto.rol() != null)
             usuario.setRol(dto.rol());
 
-        // Se resuelven contra la base en vez de crear entidades sueltas con el id:
-        // asi un id inexistente falla aqui y no como violacion de FK al hacer flush.
-        if (dto.sedeId() != null) {
-            Sede sede = sedeRepository.findById(dto.sedeId())
-                    .orElseThrow(() -> new NoSuchElementException("No existe una sede con ID: " + dto.sedeId()));
-            usuario.setSede(sede);
+        boolean traeAdscripcion = dto.sedeId() != null || dto.facultadId() != null || dto.programaAcademicoId() != null;
+        if (traeAdscripcion && !usuario.getRol().requiereAdscripcion()) {
+            throw new IllegalArgumentException("El rol de este usuario no lleva adscripción académica.");
         }
-        if (dto.programaAcademicoId() != null) {
-            ProgramaAcademico programa = programaAcademicoRepository.findById(dto.programaAcademicoId())
-                    .orElseThrow(() -> new NoSuchElementException(
-                            "No existe un programa academico con ID: " + dto.programaAcademicoId()));
+        if (dto.sedeId() != null) {
+            usuario.setSede(buscarSede(dto.sedeId()));
+        }
+        // Con facultad, la adscripcion se reemplaza completa (programa null = sin
+        // programa). Solo con programa, la facultad sale de ese programa.
+        if (dto.facultadId() != null) {
+            asignarFacultadYPrograma(usuario, dto.facultadId(), dto.programaAcademicoId());
+        } else if (dto.programaAcademicoId() != null) {
+            ProgramaAcademico programa = buscarPrograma(dto.programaAcademicoId());
             usuario.setProgramaAcademico(programa);
+            usuario.setFacultad(programa.getFacultad());
         }
 
         log.info("Usuario ID {} actualizado por un administrador", id);
@@ -235,6 +254,52 @@ public class UsuarioService {
                 .orElseThrow(() -> new NoSuchElementException("No existe un usuario con correo: " + correo));
     }
 
+    // Los ids se resuelven contra la base en vez de crear entidades sueltas: asi
+    // un id inexistente falla aqui (404) y no como violacion de FK al hacer flush.
+
+    private Sede buscarSede(Integer sedeId) {
+        return sedeRepository.findById(sedeId)
+                .orElseThrow(() -> new NoSuchElementException("No existe una sede con ID: " + sedeId));
+    }
+
+    private Facultad buscarFacultad(Integer facultadId) {
+        return facultadRepository.findById(facultadId)
+                .orElseThrow(() -> new NoSuchElementException("No existe una facultad con ID: " + facultadId));
+    }
+
+    private ProgramaAcademico buscarPrograma(Integer programaId) {
+        return programaAcademicoRepository.findById(programaId)
+                .orElseThrow(() -> new NoSuchElementException("No existe un programa academico con ID: " + programaId));
+    }
+
+    /** Mismos mensajes que las anotaciones del registro, para que el cliente los trate igual. */
+    private static void exigirSedeYFacultad(Integer sedeId, Integer facultadId) {
+        Map<String, String> campos = new LinkedHashMap<>();
+        if (sedeId == null)
+            campos.put("sedeId", "La sede es obligatoria");
+        if (facultadId == null)
+            campos.put("facultadId", "La facultad es obligatoria");
+        if (!campos.isEmpty())
+            throw new CamposInvalidosException(campos);
+    }
+
+    /**
+     * Facultad obligatoria y programa opcional (null = sin programa). Si hay
+     * programa, debe pertenecer a esa facultad.
+     *
+     * @throws IllegalArgumentException si el programa es de otra facultad
+     */
+    private void asignarFacultadYPrograma(Usuario usuario, Integer facultadId, Integer programaId) {
+        Facultad facultad = buscarFacultad(facultadId);
+        ProgramaAcademico programa = programaId == null ? null : buscarPrograma(programaId);
+
+        if (programa != null && !programa.getFacultad().getId().equals(facultad.getId())) {
+            throw new IllegalArgumentException("El programa académico no pertenece a la facultad seleccionada.");
+        }
+        usuario.setFacultad(facultad);
+        usuario.setProgramaAcademico(programa);
+    }
+
     private void validarCorreoDisponible(Usuario usuario, String correoNuevo) {
         if (correoNuevo != null
                 && !correoNuevo.equalsIgnoreCase(usuario.getCorreoInstitucional())
@@ -244,6 +309,8 @@ public class UsuarioService {
     }
 
     private UsuarioResponseDTO toResponseDTO(Usuario usuario) {
+        Sede sede = usuario.getSede();
+        Facultad facultad = usuario.getFacultad();
         ProgramaAcademico programa = usuario.getProgramaAcademico();
         return UsuarioResponseDTO.builder()
                 .id(usuario.getId())
@@ -254,11 +321,12 @@ public class UsuarioService {
                 .fotoUrl(usuario.getFotoUrl())
                 .rol(usuario.getRol() != null ? usuario.getRol().name() : null)
                 .fechaCreacion(usuario.getFechaCreacion())
-                .sede(usuario.getSede() != null ? usuario.getSede().getNombre() : null)
+                .sedeId(sede != null ? sede.getId() : null)
+                .sede(sede != null ? sede.getNombre() : null)
+                .facultadId(facultad != null ? facultad.getId() : null)
+                .facultad(facultad != null ? facultad.getNombre() : null)
+                .programaAcademicoId(programa != null ? programa.getId() : null)
                 .programaAcademico(programa != null ? programa.getNombre() : null)
-                .facultad(programa != null && programa.getFacultad() != null
-                        ? programa.getFacultad().getNombre()
-                        : null)
                 .build();
     }
 }

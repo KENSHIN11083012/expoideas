@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
  * <p>No incluye el hash de la contraseña: la versión de Dattapro sí lo exponía,
  * y GET /api/v1/usuarios era permitAll. Tampoco es apto para un listado público
  * (lleva correo y número de identificación).
+ *
+ * <p>La adscripción viaja con nombre (para mostrar) e id (para los formularios).
  */
 @Data
 @Builder
@@ -24,7 +26,10 @@ public class UsuarioResponseDTO {
     private String rol;
     private LocalDateTime fechaCreacion;
 
+    private Integer sedeId;
     private String sede;
-    private String programaAcademico;
+    private Integer facultadId;
     private String facultad;
+    private Integer programaAcademicoId;
+    private String programaAcademico;
 }

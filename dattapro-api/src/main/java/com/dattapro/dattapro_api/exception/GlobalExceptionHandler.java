@@ -80,6 +80,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problem(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    /** Validación por campo hecha en el servicio: mismo formato que la de Bean Validation. */
+    @ExceptionHandler(CamposInvalidosException.class)
+    public ProblemDetail handleCamposInvalidos(CamposInvalidosException ex) {
+        ProblemDetail body = problem(HttpStatus.BAD_REQUEST, "Datos inválidos");
+        body.setProperty("campos", ex.getCampos());
+        return body;
+    }
+
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpected(Exception ex, WebRequest request) {
         log.error("Error no controlado en {}", request.getDescription(false), ex);

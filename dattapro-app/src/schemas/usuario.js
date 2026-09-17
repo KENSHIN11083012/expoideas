@@ -1,10 +1,15 @@
 import { z } from 'zod';
 import { PASSWORD_MENSAJE, PASSWORD_REGEX } from '@/utils/validaciones';
+import { adscripcionShape } from './adscripcion';
 
-export const perfilSchema = z.object({
+/** Lo que cualquier rol edita de sí mismo. */
+export const datosPersonalesSchema = z.object({
     nombres: z.string().trim().min(1, 'Ingresa tus nombres').max(100, 'Máximo 100 caracteres'),
     apellidos: z.string().trim().min(1, 'Ingresa tus apellidos').max(100, 'Máximo 100 caracteres'),
 });
+
+/** Perfil de los roles con adscripción académica (todos menos el administrador). */
+export const perfilSchema = datosPersonalesSchema.extend(adscripcionShape);
 
 const passwordNuevaConConfirmacion = {
     passwordNueva: z.string().regex(PASSWORD_REGEX, PASSWORD_MENSAJE),

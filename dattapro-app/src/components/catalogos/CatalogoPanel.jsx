@@ -1,6 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { ArrowDownAZ, ArrowUpAZ, FolderOpen, Pencil, Plus, RotateCw, Search, SearchX } from 'lucide-react';
+import { normalizarTexto } from '@/lib/utils';
 import { useMasterData } from '@/hooks/useMasterData';
 import * as masterDataService from '@/services/masterDataService';
 import { Button } from '@/components/ui/button';
@@ -9,8 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, EmptyState, Skeleton } from '@/components/ui/feedback';
 import { CatalogoDialog } from './CatalogoDialog';
-
-const normalizar = (texto) => texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 /** Facultades para el select de programas académicos. */
 function useFacultades(activo) {
@@ -43,9 +42,9 @@ export function CatalogoPanel({ catalogo }) {
     const busquedaDiferida = useDeferredValue(busqueda);
 
     const visibles = useMemo(() => {
-        const termino = normalizar(busquedaDiferida.trim());
+        const termino = normalizarTexto(busquedaDiferida.trim());
         return items
-            .filter((item) => !termino || normalizar(`${item.nombre} ${item.facultad ?? ''}`).includes(termino))
+            .filter((item) => !termino || normalizarTexto(`${item.nombre} ${item.facultad ?? ''}`).includes(termino))
             .sort((a, b) => (ascendente ? 1 : -1) * a.nombre.localeCompare(b.nombre, 'es'));
     }, [items, busquedaDiferida, ascendente]);
 

@@ -14,3 +14,8 @@ export function iniciales(nombres = '', apellidos = '') {
     const letras = `${nombres.trim()[0] ?? ''}${apellidos.trim()[0] ?? ''}`;
     return letras.toUpperCase() || '?';
 }
+
+/** Minúsculas y sin tildes, para búsquedas: "Ingeniería" -> "ingenieria". */
+export function normalizarTexto(texto = '') {
+    return texto.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+}

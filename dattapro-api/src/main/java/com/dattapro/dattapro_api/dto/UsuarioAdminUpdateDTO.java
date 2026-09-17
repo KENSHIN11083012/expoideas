@@ -8,6 +8,10 @@ import jakarta.validation.constraints.Size;
 /**
  * Actualización de un usuario por parte de un administrador.
  * Todos los campos son opcionales: solo se aplica lo que llegue.
+ *
+ * <p>Adscripción: si llega {@code facultadId}, se reemplaza completa (facultad y
+ * programa; {@code programaAcademicoId} en null significa "sin programa"). Si
+ * solo llega {@code programaAcademicoId}, la facultad se toma de ese programa.
  */
 public record UsuarioAdminUpdateDTO(
 
@@ -26,6 +30,8 @@ public record UsuarioAdminUpdateDTO(
                 RolUsuario rol,
 
                 Integer sedeId,
+
+                Integer facultadId,
 
                 Integer programaAcademicoId) {
 }

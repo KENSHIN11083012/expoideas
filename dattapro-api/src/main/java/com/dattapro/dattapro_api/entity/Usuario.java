@@ -73,6 +73,16 @@ public class Usuario {
     @JsonIgnore
     private Sede sede;
 
+    /**
+     * Facultad del usuario. Se guarda aparte del programa porque un docente o
+     * mentor pertenece a una facultad sin estar en un programa concreto.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_facultad")
+    @JsonIgnore
+    private Facultad facultad;
+
+    /** Opcional; si existe, pertenece a {@link #facultad}. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_programa_academico")
     @JsonIgnore

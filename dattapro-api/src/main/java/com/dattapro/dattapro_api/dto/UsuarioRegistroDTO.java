@@ -21,6 +21,13 @@ public record UsuarioRegistroDTO(
 
         @NotBlank(message = "La contraseña es obligatoria") @Pattern(regexp = Validaciones.PASSWORD_REGEX, message = Validaciones.PASSWORD_MENSAJE) String password,
 
+        @NotNull(message = "La sede es obligatoria") Integer sedeId,
+
+        @NotNull(message = "La facultad es obligatoria") Integer facultadId,
+
+        /** Opcional: si llega, debe pertenecer a la facultad. */
+        Integer programaAcademicoId,
+
         /** Autorización de tratamiento de datos personales: sin ella no hay registro. */
         @NotNull(message = "Debes indicar si autorizas el tratamiento de tus datos") @AssertTrue(message = "Debes autorizar el tratamiento de tus datos para registrarte") Boolean autorizaDatos) {
 }

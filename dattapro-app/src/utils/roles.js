@@ -48,6 +48,12 @@ export const hasRole = (role, allowed) => {
 
 export const roleLabel = (role) => ROLE_LABELS[normalizeRole(role)] ?? 'Usuario';
 
+/**
+ * Si el rol declara sede y facultad. El administrador es personal tecnico y no
+ * la tiene. Espejo de RolUsuario#requiereAdscripcion en la API.
+ */
+export const requiereAdscripcion = (role) => normalizeRole(role) !== ROLES.ADMIN;
+
 /** Ruta de aterrizaje tras el login. */
 export const homePathForRole = (role) =>
     normalizeRole(role) === ROLES.ADMIN ? '/admin/usuarios' : '/';

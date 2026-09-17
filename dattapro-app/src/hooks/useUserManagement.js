@@ -45,6 +45,13 @@ export const useUserManagement = () => {
         }
     };
 
+    /** Reemplaza sede, facultad y programa. Lanza el error para que el formulario lo muestre. */
+    const updateAdscripcion = async (usuario, adscripcion) => {
+        const actualizado = await put(`/admin/users/${usuario.id}`, adscripcion);
+        setUsuarios((prev) => prev.map((u) => (u.id === usuario.id ? { ...u, ...actualizado } : u)));
+        toast.success(`Adscripción de ${usuario.nombres} actualizada`);
+    };
+
     /** Lanza el error para que el formulario lo muestre. */
     const resetPassword = async (usuario, datos) => {
         await post(`/usuarios/admin/reset-password?email=${encodeURIComponent(usuario.correoInstitucional)}`, datos);
@@ -68,6 +75,7 @@ export const useUserManagement = () => {
         updatingId,
         fetchUsuarios,
         handleRoleChange,
+        updateAdscripcion,
         resetPassword,
         handleDeleteUser,
     };

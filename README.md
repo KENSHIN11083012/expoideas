@@ -1,16 +1,17 @@
 # Expoideas
 
-Red social para emprendedores universitarios. Construido sobre la arquitectura del proyecto
-semilla **Dattapro** (sistema de convocatorias de investigación cedido por TI), del que se reutiliza
+Repositorio académico y sistema de evaluación de los proyectos de la Cátedra INNPRENDE de la
+Universidad Simón Bolívar, con MacondoLab: inscripción de proyectos de INNPRENDE I (investigación) e
+INNPRENDE II (prototipado), evaluación por jurados y ranking.
+
+Construido sobre la arquitectura del proyecto semilla **Dattapro** (sistema de convocatorias de investigación cedido por TI), del que se reutiliza
 la infraestructura técnica — auth JWT, separación en capas, catálogos maestros, layout — pero no el
 dominio.
 
 | | |
 |---|---|
-| `dattapro-api` | Spring Boot 4 · Java 25 · MySQL · Spring Security + JWT · Flyway · Swagger |
-| `dattapro-app` | React 19 · Vite 7 · Tailwind 4 · react-router · Radix UI · react-hook-form + zod |
-
-> Los directorios conservan el nombre `dattapro-*` hasta que se complete el renombre a `expoideas-*`.
+| `expoideas-api` | Spring Boot 4 · Java 25 · MySQL · Spring Security + JWT · Flyway · Swagger |
+| `expoideas-app` | React 19 · Vite 7 · Tailwind 4 · react-router · Radix UI · react-hook-form + zod |
 
 ## Requisitos
 
@@ -37,14 +38,14 @@ docker run -d --name expoideas-mysql -e MYSQL_ROOT_PASSWORD=<elige-una> -e MYSQL
 
 Las siguientes veces basta con `docker start expoideas-mysql`.
 
-Flyway aplica las migraciones de `dattapro-api/src/main/resources/db/migration/` al arrancar la API.
-Los cambios de esquema van siempre en una migración nueva (`V3__...sql`, `V4__...sql`); nunca se
+Flyway aplica las migraciones de `expoideas-api/src/main/resources/db/migration/` al arrancar la API.
+Los cambios de esquema van siempre en una migración nueva (`V4__...sql`, `V5__...sql`); nunca se
 edita una que ya se aplicó.
 
 ### 2. Backend
 
 ```bash
-cd dattapro-api
+cd expoideas-api
 cp src/main/resources/application-local.properties.example src/main/resources/application-local.properties
 ```
 
@@ -73,7 +74,7 @@ Los tests no necesitan base de datos:
 ### 3. Frontend
 
 ```bash
-cd dattapro-app
+cd expoideas-app
 cp .env.example .env
 npm ci
 npm run dev
@@ -82,7 +83,7 @@ npm run dev
 App en `http://localhost:5173/expoideas/`
 
 El subdirectorio sale de `VITE_BASE_PATH` (por defecto `/expoideas/`). `App.jsx` lo
-reutiliza como `basename` del router, asi que no hay que tocarlo en dos sitios.
+reutiliza como `basename` del router, así que no hay que tocarlo en dos sitios.
 
 ## Notas
 

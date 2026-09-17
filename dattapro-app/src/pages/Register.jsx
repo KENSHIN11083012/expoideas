@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { post } from '../services/apiClient';
 import { DOMINIO_INSTITUCIONAL, PASSWORD_MENSAJE, PASSWORD_REGEX, mensajeDeCampos } from '../utils/validaciones';
 import logoApp from '../assets/brand/logo-app.png';
+import LogosInstitucionales from '../components/LogosInstitucionales';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -104,13 +105,17 @@ const Register = () => {
 
                     <div className="relative z-10 w-full">
                         {/* Logo */}
-                        <div className="flex items-center justify-center gap-3 mb-10">
+                        <div className="flex items-center justify-center gap-3 mb-6">
                             <div className="size-10">
                                 <img src={logoApp} alt="Logo de Expoideas" className="w-full h-full object-contain" />
                             </div>
                             <h2 className="text-2xl font-normal tracking-tight text-slate-900 dark:text-white font-montserrat">
                                 <span className="font-bold">Expo</span>ideas
                             </h2>
+                        </div>
+
+                        <div className="flex justify-center mb-10">
+                            <LogosInstitucionales className="dark:bg-white" />
                         </div>
 
                         {/* Header */}

@@ -5,8 +5,8 @@ import { post } from '../services/apiClient';
 import { jwtDecode } from 'jwt-decode';
 import { homePathForRole, roleFromToken, normalizeRole } from '../utils/roles';
 import fotoLogin from '../assets/brand/login-hero.jpeg';
-import logoUnisimon from '../assets/brand/logo-unisimon-negro.png';
 import logoApp from '../assets/brand/logo-app.png';
+import LogosInstitucionales from '../components/LogosInstitucionales';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -188,13 +188,9 @@ const Login = () => {
                     </div>
 
                     <div className="mt-auto pt-10 text-center text-xs text-slate-400">
-                        <p className="mb-1">© 2026 Expoideas · Universidad Simón Bolívar</p>
-                        <p>
-                            Elaborado por:{' '}
-                            <a href="https://github.com/JorgeOrVerMur" className="hover:text-primary transition-colors">Jorge Vera</a>,{' '}
-                            <a href="https://wa.me/573014800948" className="hover:text-primary transition-colors">Lorieth Duarte</a> y{' '}
-                            <a href="https://wa.me/573105371617" className="hover:text-primary transition-colors">Angel Neira</a>
-                        </p>
+                        {/* En pantallas grandes los logos van en la tarjeta de la foto, que por debajo de lg esta oculta. */}
+                        <LogosInstitucionales className="mb-6 lg:hidden dark:bg-white" />
+                        <p>© 2026 Expoideas · Universidad Simón Bolívar</p>
                     </div>
                 </div>
 
@@ -209,9 +205,7 @@ const Login = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent"></div>
                         <div className="absolute bottom-6 left-8 right-8 max-w-lg">
                             <div className="bg-white/10 backdrop-blur-2xl rounded-[1.5rem] p-6 border border-white/20 shadow-2xl">
-                                <div className="flex gap-2 mb-4 text-primary">
-                                    <img src={logoUnisimon} alt="Logo Unisimón" className="h-16 object-contain" />
-                                </div>
+                                <LogosInstitucionales className="mb-4 bg-white shadow-lg" />
                                 <h3 className="text-2xl font-bold text-white mb-2">Las ideas de la Unisimón, a la vista de todos</h3>
                                 <p className="text-white/80 text-base leading-relaxed mb-4">
                                     La vitrina donde los emprendimientos universitarios encuentran comunidad, mentores y visibilidad.

@@ -29,6 +29,7 @@ const MENSAJES_POR_ESTADO = {
     403: 'No tienes permiso para realizar esta accion.',
     404: 'El recurso no fue encontrado.',
     409: 'El recurso ya existe.',
+    413: 'El archivo supera el tamaño máximo permitido de 5 MB',
 };
 
 /**

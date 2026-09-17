@@ -91,13 +91,27 @@ npm test
 El subdirectorio sale de `VITE_BASE_PATH` (por defecto `/expoideas/`). `App.jsx` lo
 reutiliza como `basename` del router, así que no hay que tocarlo en dos sitios.
 
+## Despliegue
+
+La plataforma se despliega con Docker Compose (MySQL, API y app detrás de Nginx) o sin Docker.
+La guía para TI está en [docs/despliegue.md](docs/despliegue.md) y las preguntas pendientes para
+ellos, en [docs/preguntas-ti.md](docs/preguntas-ti.md).
+
+```bash
+cp .env.example .env   # rellenar contraseñas y JWT_SECRET
+docker compose up -d --build
+```
+
+Cada push a `main` y cada pull request pasan por GitHub Actions (`.github/workflows/ci.yml`):
+pruebas de la API, lint, pruebas y build de la app, e imágenes Docker.
+
 ## Notas
 
 - Los errores de la API siguen el estándar Problem Details (RFC 9457, `application/problem+json`): el
   mensaje para el usuario va en `detail` y los errores de validación añaden `campos` con el mensaje
   de cada campo. Sin sesión válida la API responde 401 y el frontend cierra la sesión.
-- Al desplegar, apaga Swagger con `springdoc.api-docs.enabled=false` y
-  `springdoc.swagger-ui.enabled=false`.
+- En producción se usa el perfil `prod` (`SPRING_PROFILES_ACTIVE=prod`, ya incluido en la imagen
+  Docker): apaga Swagger, oculta detalles de error y respeta las cabeceras del proxy.
 - Los archivos subidos (fotos, entregables) se guardan en disco, en `ARCHIVOS_DIR` (por defecto
   `uploads/` junto a la API, ignorada por git); la BD solo guarda sus metadatos. Esa carpeta debe
   quedar fuera de lo que publica el servidor web y entrar en las copias de seguridad junto con la BD.

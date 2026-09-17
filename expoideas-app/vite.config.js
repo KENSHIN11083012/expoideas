@@ -27,6 +27,9 @@ export default defineConfig(({ mode }) => {
       css: false,
     },
     build: {
+      // Las fuentes siempre como archivo, nunca incrustadas como data:. Así las
+      // permite la CSP de Nginx (font-src 'self') y el navegador las guarda en caché.
+      assetsInlineLimit: (archivo) => (/\.(woff2?|ttf|otf)$/.test(archivo) ? false : undefined),
       rollupOptions: {
         output: {
           // Dependencias en chunks propios: cambian menos que el código de la app,

@@ -78,6 +78,15 @@ class UsuarioControllerSecurityTest {
     }
 
     @Test
+    void healthCheckNoPideSesion() throws Exception {
+        // En este slice no hay Actuator: 404 (y no 401) prueba que la regla deja pasar sin sesión.
+        mockMvc.perform(get("/actuator/health/readiness"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/actuator/health"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void tokenInvalidoEs401() throws Exception {
         // El JwtService mockeado no reconoce el token: el filtro deja pasar sin sesión.
         mockMvc.perform(get("/api/v1/usuarios/me").header("Authorization", "Bearer basura"))

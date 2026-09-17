@@ -1,0 +1,57 @@
+# Expoideas con Docker Compose: MySQL, API y app (Nginx).
+#
+#   cp .env.example .env     # y rellenar los valores
+#   docker compose up -d --build
+#
+# Solo la app publica un puerto; MySQL y la API quedan en la red interna.
+# Guía completa: docs/despliegue.md
+
+name: expoideas
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: expoideas
+      MYSQL_USER: expoideas
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Define MYSQL_ROOT_PASSWORD en .env}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - datos-mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build: ./expoideas-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/expoideas
+      DB_USERNAME: expoideas
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env (openssl rand -base64 32)}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-14400000}
+      # La app llama a la API por el mismo origen: no hace falta abrir CORS.
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+    volumes:
+      - archivos:/data/archivos
+
+  app:
+    build: ./expoideas-app
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${HTTP_PORT:-8080}:8080"
+
+volumes:
+  datos-mysql:
+  archivos:

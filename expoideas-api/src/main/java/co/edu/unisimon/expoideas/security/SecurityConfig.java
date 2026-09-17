@@ -90,6 +90,9 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/usuarios/registro")
                                                 .permitAll()
+                                                // Salud para el orquestador: solo dice UP/DOWN, sin detalles.
+                                                .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**")
+                                                .permitAll()
 
                                                 // 4. Descarga de archivos: los publicos no piden sesion; los
                                                 // privados los autoriza ArchivoService.

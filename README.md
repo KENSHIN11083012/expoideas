@@ -15,18 +15,31 @@ dominio.
 ## Requisitos
 
 - Java 25
-- Node 20+
-- MySQL 8
+- Node 20.19+ o 22.12+ (lo exige Vite 7)
+- MySQL 8, instalado o en Docker
 
 ## Puesta en marcha
 
 ### 1. Base de datos
 
+Con MySQL instalado:
+
 ```sql
 CREATE DATABASE expoideas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
+O con Docker, sin instalar nada más:
+
+```bash
+docker run -d --name expoideas-mysql -e MYSQL_ROOT_PASSWORD=<elige-una> -e MYSQL_DATABASE=expoideas \
+  -p 3306:3306 mysql:8.4 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+```
+
+Las siguientes veces basta con `docker start expoideas-mysql`.
+
 Flyway aplica las migraciones de `dattapro-api/src/main/resources/db/migration/` al arrancar la API.
+Los cambios de esquema van siempre en una migración nueva (`V3__...sql`, `V4__...sql`); nunca se
+edita una que ya se aplicó.
 
 ### 2. Backend
 
@@ -44,9 +57,18 @@ Rellena `application-local.properties` con tus credenciales y un JWT secret nuev
 
 API en `http://localhost:8080` · Swagger en `http://localhost:8080/swagger-ui.html`
 
+**Si el puerto 8080 está ocupado**, descomenta `server.port` en `application-local.properties` (o
+usa la variable `PORT`) y apunta el frontend al mismo puerto con `VITE_API_URL` en su `.env`.
+
 Sin el perfil `local`, la configuración se toma de variables de entorno: `DB_URL`, `DB_USERNAME`,
 `DB_PASSWORD`, `JWT_SECRET` y, opcionalmente, `PORT`, `JWT_EXPIRATION` y `ALLOWED_ORIGINS`. No hay
 valores por defecto para las credenciales: si falta una, la app no arranca.
+
+Los tests no necesitan base de datos:
+
+```bash
+./mvnw test
+```
 
 ### 3. Frontend
 

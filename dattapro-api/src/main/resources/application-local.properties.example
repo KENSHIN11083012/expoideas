@@ -8,6 +8,9 @@ spring.datasource.password=CAMBIAME
 # openssl rand -base64 32
 application.security.jwt.secret-key=CAMBIAME
 
+# Si el 8080 esta ocupado en tu equipo. Ajusta tambien VITE_API_URL en dattapro-app/.env.
+# server.port=8081
+
 # Logs de SQL para desarrollo.
 # OJO: BasicBinder=TRACE imprime los valores de los parámetros (correos, etc.)
 # en el log. No lo actives en un entorno con datos reales.

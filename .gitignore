@@ -21,6 +21,12 @@ effective-pom
 .env.*.local
 application-local.properties
 
+# Referencias locales (DDL original de Dattapro)
+docs/legacy-schema/
+
+# Archivos subidos por usuarios en desarrollo local
+uploads/
+
 # Mockups y material de trabajo
 temporal/
 **/temporal/

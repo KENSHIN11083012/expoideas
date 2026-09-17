@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Entity
 @Table(name = "sede")
-public class Sede {
+public class Sede implements Catalogo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

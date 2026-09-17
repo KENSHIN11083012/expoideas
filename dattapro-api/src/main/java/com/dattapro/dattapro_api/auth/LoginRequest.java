@@ -1,15 +1,14 @@
 package com.dattapro.dattapro_api.auth;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.NotBlank;
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class LoginRequest {
-    private String email;
-    private String password;
+/**
+ * Credenciales de login. Solo se exige que lleguen: el formato del correo no se
+ * valida aquí para no dar pistas distintas de "Credenciales inválidas".
+ */
+public record LoginRequest(
+
+        @NotBlank(message = "El correo es obligatorio") String email,
+
+        @NotBlank(message = "La contraseña es obligatoria") String password) {
 }

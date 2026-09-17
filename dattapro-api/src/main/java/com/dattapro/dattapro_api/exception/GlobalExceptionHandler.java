@@ -1,93 +1,111 @@
 package com.dattapro.dattapro_api.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
- * Manejo centralizado de errores: garantiza que la API responda siempre el
- * mismo cuerpo JSON y evita filtrar trazas internas al cliente.
+ * Manejo centralizado de errores. Toda respuesta de error de la API sale en
+ * formato Problem Details (RFC 9457, {@code application/problem+json}):
+ * {@code type}, {@code title}, {@code status}, {@code detail} e {@code instance}.
+ * El frontend muestra {@code detail}; los errores de validación añaden
+ * {@code campos} con el mensaje de cada campo.
+ *
+ * <p>Las excepciones propias de Spring MVC (ruta inexistente, método no
+ * soportado, JSON mal formado, archivo demasiado grande...) las resuelve
+ * {@link ResponseEntityExceptionHandler}; sus textos en español están en
+ * {@code messages.properties}. Los rechazos de Spring Security llegan aquí
+ * desde SecurityConfig.
+ *
+ * <p>Nunca se envían trazas al cliente: van al log del servidor.
  */
 @Slf4j
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler({ BadCredentialsException.class, UsernameNotFoundException.class })
-    public ResponseEntity<Map<String, Object>> handleBadCredentials(Exception ex, WebRequest request) {
+    public ProblemDetail handleBadCredentials(AuthenticationException ex) {
         // Mismo mensaje para usuario inexistente y password incorrecta:
         // distinguirlos permitiría enumerar cuentas.
-        return build(HttpStatus.UNAUTHORIZED, "Credenciales inválidas", request);
+        return problem(HttpStatus.UNAUTHORIZED, "Credenciales inválidas");
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ProblemDetail handleUnauthenticated(AuthenticationException ex) {
+        return problem(HttpStatus.UNAUTHORIZED, "Debes iniciar sesión para acceder a este recurso");
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex, WebRequest request) {
-        return build(HttpStatus.FORBIDDEN, "No tienes permiso para realizar esta acción", request);
+    public ProblemDetail handleAccessDenied(AccessDeniedException ex) {
+        return problem(HttpStatus.FORBIDDEN, "No tienes permiso para realizar esta acción");
     }
 
     @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<Map<String, Object>> handleNotFound(NoSuchElementException ex, WebRequest request) {
-        return build(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    public ProblemDetail handleNotFound(NoSuchElementException ex) {
+        return problem(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ProblemDetail handleConflict(ConflictException ex) {
+        return problem(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    /** Violación de una restricción de la BD (p. ej. nombre único de categoría o keyword). */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
+        log.warn("Conflicto de integridad: {}", ex.getMostSpecificCause().getMessage());
+        return problem(HttpStatus.CONFLICT, "Ya existe un registro con esos datos");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex, WebRequest request) {
-        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex, WebRequest request) {
-        Map<String, String> campos = new HashMap<>();
-        ex.getBindingResult().getFieldErrors()
-                .forEach(error -> campos.put(error.getField(), error.getDefaultMessage()));
-
-        ResponseEntity<Map<String, Object>> response = build(HttpStatus.BAD_REQUEST, "Datos inválidos", request);
-        response.getBody().put("campos", campos);
-        return response;
-    }
-
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<Map<String, Object>> handleUnreadableBody(HttpMessageNotReadableException ex, WebRequest request) {
-        return build(HttpStatus.BAD_REQUEST, "El cuerpo de la petición no es un JSON válido", request);
+    public ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
+        return problem(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleUnexpected(Exception ex, WebRequest request) {
-        // Las excepciones propias de Spring MVC ya traen su estado: ruta inexistente
-        // (404), método no soportado (405), content-type no soportado (415)...
-        // Sin esto el catch-all las convertía todas en 500 con traza en el log.
-        if (ex instanceof ErrorResponse errorResponse) {
-            HttpStatus status = HttpStatus.resolve(errorResponse.getStatusCode().value());
-            if (status != null && status.is4xxClientError()) {
-                return build(status, status.getReasonPhrase(), request);
-            }
-        }
-        // La traza va al log del servidor, nunca al cliente.
+    public ProblemDetail handleUnexpected(Exception ex, WebRequest request) {
         log.error("Error no controlado en {}", request.getDescription(false), ex);
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor", request);
+        return problem(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor");
     }
 
-    private ResponseEntity<Map<String, Object>> build(HttpStatus status, String mensaje, WebRequest request) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now().toString());
-        body.put("status", status.value());
-        body.put("error", status.getReasonPhrase());
-        body.put("message", mensaje);
-        body.put("path", request.getDescription(false).replace("uri=", ""));
-        return ResponseEntity.status(status).body(body);
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        Map<String, String> campos = new LinkedHashMap<>();
+        ex.getBindingResult().getFieldErrors()
+                .forEach(error -> campos.putIfAbsent(error.getField(), error.getDefaultMessage()));
+
+        ProblemDetail body = ProblemDetail.forStatusAndDetail(status, "Datos inválidos");
+        body.setProperty("campos", campos);
+        return handleExceptionInternal(ex, body, headers, status, request);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        ProblemDetail body = ProblemDetail.forStatusAndDetail(status, "El cuerpo de la petición no es un JSON válido");
+        return handleExceptionInternal(ex, body, headers, status, request);
+    }
+
+    private static ProblemDetail problem(HttpStatus status, String detail) {
+        return ProblemDetail.forStatusAndDetail(status, detail);
     }
 }

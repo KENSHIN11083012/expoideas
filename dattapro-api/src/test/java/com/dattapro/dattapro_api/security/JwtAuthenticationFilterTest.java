@@ -1,4 +1,4 @@
-package com.dattapro.dattapro_api.config;
+package com.dattapro.dattapro_api.security;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

@@ -24,16 +24,23 @@ const MENSAJES_POR_ESTADO = {
     409: 'El recurso ya existe.',
 };
 
+/**
+ * Los errores de la API vienen en formato Problem Details (RFC 9457): el texto
+ * para el usuario esta en `detail`, y en los 400 de validacion `campos` trae el
+ * mensaje de cada campo (ver utils/validaciones.js).
+ */
 const mensajeDeError = (status, cuerpo) =>
-    cuerpo?.message
-    || cuerpo?.error
+    cuerpo?.detail
     || MENSAJES_POR_ESTADO[status]
     || (status >= 500 ? 'Error del servidor. Intenta nuevamente mas tarde.' : `Error inesperado (${status}).`);
+
+/** application/json y tambien application/problem+json, el tipo de los errores. */
+const esJson = (contentType) => /application\/([\w.-]+\+)?json/.test(contentType);
 
 const parsearCuerpo = async (response) => {
     if (response.status === 204) return null;
     const contentType = response.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) return null;
+    if (!esJson(contentType)) return null;
     return response.json().catch(() => null);
 };
 

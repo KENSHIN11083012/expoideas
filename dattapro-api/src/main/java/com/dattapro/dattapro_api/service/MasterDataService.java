@@ -1,7 +1,10 @@
 package com.dattapro.dattapro_api.service;
 
+import com.dattapro.dattapro_api.dto.CatalogoRequestDTO;
+import com.dattapro.dattapro_api.dto.CatalogoResponseDTO;
 import com.dattapro.dattapro_api.dto.ProgramaAcademicoRequestDTO;
 import com.dattapro.dattapro_api.dto.ProgramaAcademicoResponseDTO;
+import com.dattapro.dattapro_api.entity.Catalogo;
 import com.dattapro.dattapro_api.entity.Categoria;
 import com.dattapro.dattapro_api.entity.Facultad;
 import com.dattapro.dattapro_api.entity.Keyword;
@@ -13,18 +16,23 @@ import com.dattapro.dattapro_api.repository.KeywordRepository;
 import com.dattapro.dattapro_api.repository.ProgramaAcademicoRepository;
 import com.dattapro.dattapro_api.repository.SedeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.Supplier;
 
 /**
  * CRUD de los catalogos maestros: estructura academica y clasificacion.
  *
- * <p>Dattapro tenia catorce catalogos; aqui sobreviven los cinco del baseline.
- * El resto pertenecia al perfil docente y se retiro con el dominio de
- * convocatorias.
+ * <p>Sedes, facultades, categorias y keywords solo tienen nombre y comparten el
+ * mismo codigo a traves de {@link Catalogo}. Programas academicos llevan
+ * ademas su facultad.
+ *
+ * <p>Un nombre repetido en categorias o keywords (columna unica) sale como
+ * DataIntegrityViolationException, que GlobalExceptionHandler responde con 409.
  */
 @Service
 @RequiredArgsConstructor
@@ -41,24 +49,19 @@ public class MasterDataService {
     // ---------------------------------------------
 
     @Transactional(readOnly = true)
-    public List<Sede> listarSedes() {
-        return sedeRepository.findAll();
+    public List<CatalogoResponseDTO> listarSedes() {
+        return listar(sedeRepository);
     }
 
     @Transactional
-    public Sede crearSede(Sede sede) {
-        return sedeRepository.save(sede);
+    public CatalogoResponseDTO crearSede(CatalogoRequestDTO dto) {
+        return crear(sedeRepository, Sede::new, dto);
     }
 
-    /**
-     * @throws NoSuchElementException si el ID no existe
-     */
+    /** @throws NoSuchElementException si el ID no existe */
     @Transactional
-    public Sede actualizarSede(Integer id, Sede datos) {
-        Sede sede = sedeRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("No existe una sede con ID: " + id));
-        sede.setNombre(datos.getNombre());
-        return sedeRepository.save(sede);
+    public CatalogoResponseDTO actualizarSede(Integer id, CatalogoRequestDTO dto) {
+        return actualizar(sedeRepository, id, dto, "una sede");
     }
 
     // ---------------------------------------------
@@ -66,24 +69,19 @@ public class MasterDataService {
     // ---------------------------------------------
 
     @Transactional(readOnly = true)
-    public List<Facultad> listarFacultades() {
-        return facultadRepository.findAll();
+    public List<CatalogoResponseDTO> listarFacultades() {
+        return listar(facultadRepository);
     }
 
     @Transactional
-    public Facultad crearFacultad(Facultad facultad) {
-        return facultadRepository.save(facultad);
+    public CatalogoResponseDTO crearFacultad(CatalogoRequestDTO dto) {
+        return crear(facultadRepository, Facultad::new, dto);
     }
 
-    /**
-     * @throws NoSuchElementException si el ID no existe
-     */
+    /** @throws NoSuchElementException si el ID no existe */
     @Transactional
-    public Facultad actualizarFacultad(Integer id, Facultad datos) {
-        Facultad facultad = facultadRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("No existe una facultad con ID: " + id));
-        facultad.setNombre(datos.getNombre());
-        return facultadRepository.save(facultad);
+    public CatalogoResponseDTO actualizarFacultad(Integer id, CatalogoRequestDTO dto) {
+        return actualizar(facultadRepository, id, dto, "una facultad");
     }
 
     // ---------------------------------------------
@@ -97,9 +95,7 @@ public class MasterDataService {
                 .toList();
     }
 
-    /**
-     * @throws NoSuchElementException si la facultad no existe
-     */
+    /** @throws NoSuchElementException si la facultad no existe */
     @Transactional
     public ProgramaAcademicoResponseDTO crearProgramaAcademico(ProgramaAcademicoRequestDTO dto) {
         ProgramaAcademico programa = new ProgramaAcademico();
@@ -108,9 +104,7 @@ public class MasterDataService {
         return ProgramaAcademicoResponseDTO.from(programaAcademicoRepository.save(programa));
     }
 
-    /**
-     * @throws NoSuchElementException si el programa o la facultad no existen
-     */
+    /** @throws NoSuchElementException si el programa o la facultad no existen */
     @Transactional
     public ProgramaAcademicoResponseDTO actualizarProgramaAcademico(Integer id, ProgramaAcademicoRequestDTO dto) {
         ProgramaAcademico programa = programaAcademicoRepository.findById(id)
@@ -130,24 +124,19 @@ public class MasterDataService {
     // ---------------------------------------------
 
     @Transactional(readOnly = true)
-    public List<Categoria> listarCategorias() {
-        return categoriaRepository.findAll();
+    public List<CatalogoResponseDTO> listarCategorias() {
+        return listar(categoriaRepository);
     }
 
     @Transactional
-    public Categoria crearCategoria(Categoria categoria) {
-        return categoriaRepository.save(categoria);
+    public CatalogoResponseDTO crearCategoria(CatalogoRequestDTO dto) {
+        return crear(categoriaRepository, Categoria::new, dto);
     }
 
-    /**
-     * @throws NoSuchElementException si el ID no existe
-     */
+    /** @throws NoSuchElementException si el ID no existe */
     @Transactional
-    public Categoria actualizarCategoria(Integer id, Categoria datos) {
-        Categoria categoria = categoriaRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("No existe una categoria con ID: " + id));
-        categoria.setNombre(datos.getNombre());
-        return categoriaRepository.save(categoria);
+    public CatalogoResponseDTO actualizarCategoria(Integer id, CatalogoRequestDTO dto) {
+        return actualizar(categoriaRepository, id, dto, "una categoria");
     }
 
     // ---------------------------------------------
@@ -155,23 +144,46 @@ public class MasterDataService {
     // ---------------------------------------------
 
     @Transactional(readOnly = true)
-    public List<Keyword> listarKeywords() {
-        return keywordRepository.findAll();
+    public List<CatalogoResponseDTO> listarKeywords() {
+        return listar(keywordRepository);
     }
 
     @Transactional
-    public Keyword crearKeyword(Keyword keyword) {
-        return keywordRepository.save(keyword);
+    public CatalogoResponseDTO crearKeyword(CatalogoRequestDTO dto) {
+        return crear(keywordRepository, Keyword::new, dto);
     }
 
-    /**
-     * @throws NoSuchElementException si el ID no existe
-     */
+    /** @throws NoSuchElementException si el ID no existe */
     @Transactional
-    public Keyword actualizarKeyword(Integer id, Keyword datos) {
-        Keyword keyword = keywordRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("No existe una keyword con ID: " + id));
-        keyword.setNombre(datos.getNombre());
-        return keywordRepository.save(keyword);
+    public CatalogoResponseDTO actualizarKeyword(Integer id, CatalogoRequestDTO dto) {
+        return actualizar(keywordRepository, id, dto, "una keyword");
+    }
+
+    // ---------------------------------------------
+    // Comun a los catalogos que solo tienen nombre
+    // ---------------------------------------------
+
+    private <T extends Catalogo> List<CatalogoResponseDTO> listar(JpaRepository<T, Integer> repository) {
+        return repository.findAll().stream()
+                .map(CatalogoResponseDTO::from)
+                .toList();
+    }
+
+    private <T extends Catalogo> CatalogoResponseDTO crear(
+            JpaRepository<T, Integer> repository, Supplier<T> nuevo, CatalogoRequestDTO dto) {
+        T registro = nuevo.get();
+        registro.setNombre(dto.nombre().trim());
+        // saveAndFlush: si el nombre choca con una columna unica, falla aqui como
+        // DataIntegrityViolationException (409) y no al hacer commit, donde puede
+        // llegar envuelta en una TransactionSystemException (500).
+        return CatalogoResponseDTO.from(repository.saveAndFlush(registro));
+    }
+
+    private <T extends Catalogo> CatalogoResponseDTO actualizar(
+            JpaRepository<T, Integer> repository, Integer id, CatalogoRequestDTO dto, String descripcion) {
+        T registro = repository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("No existe " + descripcion + " con ID: " + id));
+        registro.setNombre(dto.nombre().trim());
+        return CatalogoResponseDTO.from(repository.saveAndFlush(registro));
     }
 }

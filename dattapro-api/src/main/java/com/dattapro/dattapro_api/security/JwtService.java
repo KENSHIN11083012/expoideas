@@ -1,4 +1,4 @@
-package com.dattapro.dattapro_api.config;
+package com.dattapro.dattapro_api.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

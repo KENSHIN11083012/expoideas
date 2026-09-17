@@ -1,14 +1,16 @@
 package com.dattapro.dattapro_api.auth;
 
-import com.dattapro.dattapro_api.config.JwtService;
+import com.dattapro.dattapro_api.entity.Usuario;
 import com.dattapro.dattapro_api.repository.UsuarioRepository;
+import com.dattapro.dattapro_api.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,25 +20,21 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
+    /**
+     * @throws org.springframework.security.core.AuthenticationException si las credenciales no son válidas
+     */
+    @Transactional(readOnly = true)
     public LoginResponse authenticate(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
-        var usuario = repository.findByCorreoInstitucional(request.getEmail())
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
-        
-        UserDetails userDetails = User.builder()
-                .username(usuario.getCorreoInstitucional())
-                .password(usuario.getPassword())
-                .roles(usuario.getRol().name().toUpperCase())
-                .build();
+        Authentication autenticado = authenticationManager.authenticate(
+                UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()));
 
-        var jwtToken = jwtService.generateToken(userDetails);
+        // El principal ya es el UserDetails que cargó UsuarioDetailsService, con sus roles.
+        UserDetails userDetails = (UserDetails) autenticado.getPrincipal();
+        Usuario usuario = repository.findByCorreoInstitucional(userDetails.getUsername())
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+
         return LoginResponse.builder()
-                .token(jwtToken)
+                .token(jwtService.generateToken(userDetails))
                 .rol(usuario.getRol().name())
                 .id(usuario.getId())
                 .nombres(usuario.getNombres())

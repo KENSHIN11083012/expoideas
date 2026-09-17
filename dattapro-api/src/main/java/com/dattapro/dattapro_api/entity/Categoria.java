@@ -1,14 +1,15 @@
 package com.dattapro.dattapro_api.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
+/**
+ * Entidad JPA mapeada a la tabla `categorias`.
+ */
 @Data
 @Entity
 @Table(name = "categorias")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Categoria {
+public class Categoria implements Catalogo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

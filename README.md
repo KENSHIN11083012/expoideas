@@ -86,5 +86,11 @@ reutiliza como `basename` del router, asi que no hay que tocarlo en dos sitios.
 
 ## Notas
 
+- Los errores de la API siguen el estándar Problem Details (RFC 9457, `application/problem+json`): el
+  mensaje para el usuario va en `detail` y los errores de validación añaden `campos` con el mensaje
+  de cada campo. Sin sesión válida la API responde 401 y el frontend cierra la sesión.
+- Al desplegar, apaga Swagger con `springdoc.api-docs.enabled=false` y
+  `springdoc.swagger-ui.enabled=false`.
+
 - `docs/legacy-schema/` guarda el DDL original de Dattapro como referencia. Está fuera de git.
 - Nunca commitees dumps de base de datos ni logs de ejecución: el `.gitignore` de la raíz los cubre.

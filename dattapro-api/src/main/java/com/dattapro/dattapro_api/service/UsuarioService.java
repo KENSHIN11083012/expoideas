@@ -9,25 +9,26 @@ import com.dattapro.dattapro_api.entity.ProgramaAcademico;
 import com.dattapro.dattapro_api.entity.RolUsuario;
 import com.dattapro.dattapro_api.entity.Sede;
 import com.dattapro.dattapro_api.entity.Usuario;
+import com.dattapro.dattapro_api.exception.ConflictException;
 import com.dattapro.dattapro_api.repository.ProgramaAcademicoRepository;
 import com.dattapro.dattapro_api.repository.SedeRepository;
 import com.dattapro.dattapro_api.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
  * Logica de negocio de Usuario: alta, consulta, actualizacion y contrasenas.
+ *
+ * <p>Los metodos publicos devuelven DTOs ya armados dentro de la transaccion:
+ * con open-in-view desactivado, fuera de aqui no se pueden recorrer relaciones
+ * lazy de las entidades.
  */
 @Slf4j
 @Service
@@ -47,13 +48,12 @@ public class UsuarioService {
      * Registra un usuario nuevo. Siempre nace con rol {@code emprendedor}:
      * el rol no se acepta desde el cliente.
      *
-     * @throws IllegalArgumentException si el correo ya esta en uso
+     * @throws ConflictException si el correo ya esta en uso
      */
     @Transactional
-    public Usuario registrarUsuario(UsuarioRegistroDTO dto) {
+    public UsuarioResponseDTO registrarUsuario(UsuarioRegistroDTO dto) {
         if (usuarioRepository.existsByCorreoInstitucional(dto.correoInstitucional())) {
-            throw new IllegalArgumentException(
-                    "El correo institucional " + dto.correoInstitucional() + " ya esta registrado.");
+            throw new ConflictException("El correo institucional ya está registrado.");
         }
 
         Usuario nuevoUsuario = Usuario.builder()
@@ -69,7 +69,7 @@ public class UsuarioService {
 
         Usuario guardado = usuarioRepository.save(nuevoUsuario);
         log.info("Usuario registrado con ID {}", guardado.getId());
-        return guardado;
+        return toResponseDTO(guardado);
     }
 
     // ---------------------------------------------
@@ -90,16 +90,7 @@ public class UsuarioService {
      */
     @Transactional(readOnly = true)
     public UsuarioResponseDTO obtenerPerfilPropio(String correo) {
-        return toResponseDTO(buscarPorCorreoConBaseInfo(correo));
-    }
-
-    /**
-     * @throws NoSuchElementException si el correo no existe
-     */
-    @Transactional(readOnly = true)
-    public Usuario obtenerUsuarioPorCorreo(String correo) {
-        return usuarioRepository.findByCorreoInstitucional(correo)
-                .orElseThrow(() -> new NoSuchElementException("No existe un usuario con correo: " + correo));
+        return toResponseDTO(buscarPorCorreo(correo));
     }
 
     // ---------------------------------------------
@@ -114,7 +105,7 @@ public class UsuarioService {
      */
     @Transactional
     public UsuarioResponseDTO actualizarPerfilPropio(String correo, UsuarioUpdateDTO dto) {
-        Usuario usuario = buscarPorCorreoConBaseInfo(correo);
+        Usuario usuario = buscarPorCorreo(correo);
 
         if (dto.nombres() != null && !dto.nombres().isBlank())
             usuario.setNombres(dto.nombres().trim());
@@ -128,11 +119,11 @@ public class UsuarioService {
      * Actualizacion por parte de un administrador: anade rol y adscripcion
      * academica sobre lo que puede cambiar el propio usuario.
      *
-     * @throws NoSuchElementException   si el usuario, la sede o el programa no existen
-     * @throws IllegalArgumentException si el correo nuevo ya es de otro usuario
+     * @throws NoSuchElementException si el usuario, la sede o el programa no existen
+     * @throws ConflictException      si el correo nuevo ya es de otro usuario
      */
     @Transactional
-    public Usuario actualizarDesdeAdmin(Integer id, UsuarioAdminUpdateDTO dto) {
+    public UsuarioResponseDTO actualizarDesdeAdmin(Integer id, UsuarioAdminUpdateDTO dto) {
         Usuario usuario = buscarPorId(id);
         validarCorreoDisponible(usuario, dto.correoInstitucional());
 
@@ -166,7 +157,7 @@ public class UsuarioService {
         }
 
         log.info("Usuario ID {} actualizado por un administrador", id);
-        return usuarioRepository.save(usuario);
+        return toResponseDTO(usuarioRepository.save(usuario));
     }
 
     // ---------------------------------------------
@@ -174,66 +165,40 @@ public class UsuarioService {
     // ---------------------------------------------
 
     /**
-     * Estado de la contrasena de un usuario, sin exponer el hash.
+     * Cambio de contrasena del usuario autenticado, verificando la actual.
      *
-     * @throws NoSuchElementException si el ID no existe
+     * @throws IllegalArgumentException si la actual no coincide o la nueva no es valida
      */
-    @Transactional(readOnly = true)
-    public Map<String, Object> obtenerInfoPassword(Integer id) {
-        Usuario usuario = buscarPorId(id);
-        Map<String, Object> info = new LinkedHashMap<>();
-        info.put("idUsuario", usuario.getId());
-        info.put("correoInstitucional", usuario.getCorreoInstitucional());
-        info.put("tienePassword", usuario.getPassword() != null && !usuario.getPassword().isBlank());
-        info.put("fechaCreacion", usuario.getFechaCreacion() != null ? usuario.getFechaCreacion().toString() : null);
-        return info;
-    }
-
-    /** Cambio de contrasena del usuario autenticado. */
     @Transactional
-    public void cambiarPasswordMe(CambiarPasswordDTO dto) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.getName() == null) {
-            throw new IllegalArgumentException("No hay una sesion activa.");
-        }
-        Usuario usuario = obtenerUsuarioPorCorreo(auth.getName());
-        validarYActualizarPassword(usuario, dto, true);
+    public void cambiarPasswordPropio(String correo, CambiarPasswordDTO dto) {
+        validarYActualizarPassword(buscarPorCorreo(correo), dto, true);
     }
 
-    /** Cambio de contrasena verificando la actual. */
-    @Transactional
-    public void cambiarPasswordUsuario(Integer id, CambiarPasswordDTO dto) {
-        validarYActualizarPassword(buscarPorId(id), dto, true);
-    }
-
-    /** Restablecimiento por parte de un admin, sin conocer la contrasena actual. */
+    /**
+     * Restablecimiento por parte de un admin, sin conocer la contrasena actual.
+     *
+     * @throws NoSuchElementException si el correo no existe
+     */
     @Transactional
     public void restablecerPasswordAdmin(String correo, CambiarPasswordDTO dto) {
-        validarYActualizarPassword(obtenerUsuarioPorCorreo(correo), dto, false);
-        log.info("Contrasena restablecida por un administrador");
-    }
-
-    /** Restablecimiento por parte de un admin, buscando por ID. */
-    @Transactional
-    public void restablecerPasswordAdminById(Integer id, CambiarPasswordDTO dto) {
-        validarYActualizarPassword(buscarPorId(id), dto, false);
+        validarYActualizarPassword(buscarPorCorreo(correo), dto, false);
         log.info("Contrasena restablecida por un administrador");
     }
 
     private void validarYActualizarPassword(Usuario usuario, CambiarPasswordDTO dto, boolean requiereActual) {
         if (requiereActual) {
             if (dto.passwordActual() == null || dto.passwordActual().isBlank()) {
-                throw new IllegalArgumentException("Debes proporcionar la contrasena actual.");
+                throw new IllegalArgumentException("Debes proporcionar la contraseña actual.");
             }
             if (!passwordEncoder.matches(dto.passwordActual(), usuario.getPassword())) {
-                throw new IllegalArgumentException("La contrasena actual es incorrecta.");
+                throw new IllegalArgumentException("La contraseña actual es incorrecta.");
             }
         }
         if (!dto.passwordNueva().equals(dto.confirmacionPassword())) {
-            throw new IllegalArgumentException("La nueva contrasena y su confirmacion no coinciden.");
+            throw new IllegalArgumentException("La nueva contraseña y su confirmación no coinciden.");
         }
         if (passwordEncoder.matches(dto.passwordNueva(), usuario.getPassword())) {
-            throw new IllegalArgumentException("La nueva contrasena no puede ser igual a la actual.");
+            throw new IllegalArgumentException("La nueva contraseña no puede ser igual a la actual.");
         }
 
         usuario.setPassword(passwordEncoder.encode(dto.passwordNueva()));
@@ -265,7 +230,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new NoSuchElementException("No existe un usuario con ID: " + id));
     }
 
-    private Usuario buscarPorCorreoConBaseInfo(String correo) {
+    private Usuario buscarPorCorreo(String correo) {
         return usuarioRepository.findByCorreoWithBaseInfo(correo)
                 .orElseThrow(() -> new NoSuchElementException("No existe un usuario con correo: " + correo));
     }
@@ -274,14 +239,11 @@ public class UsuarioService {
         if (correoNuevo != null
                 && !correoNuevo.equalsIgnoreCase(usuario.getCorreoInstitucional())
                 && usuarioRepository.existsByCorreoInstitucional(correoNuevo)) {
-            throw new IllegalArgumentException("El correo " + correoNuevo + " ya pertenece a otro usuario.");
+            throw new ConflictException("El correo " + correoNuevo + " ya pertenece a otro usuario.");
         }
     }
 
-    public UsuarioResponseDTO toResponseDTO(Usuario usuario) {
-        if (usuario == null) {
-            return null;
-        }
+    private UsuarioResponseDTO toResponseDTO(Usuario usuario) {
         ProgramaAcademico programa = usuario.getProgramaAcademico();
         return UsuarioResponseDTO.builder()
                 .id(usuario.getId())

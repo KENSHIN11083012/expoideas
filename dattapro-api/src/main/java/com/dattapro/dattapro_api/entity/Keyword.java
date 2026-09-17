@@ -10,7 +10,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "keywords")
-public class Keyword {
+public class Keyword implements Catalogo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,8 +1,5 @@
 package com.dattapro.dattapro_api.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,7 +12,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 @Table(name = "programas_academicos")
 public class ProgramaAcademico {
 
@@ -33,6 +29,5 @@ public class ProgramaAcademico {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_facultad", nullable = false)
-    @JsonIgnore
     private Facultad facultad;
 }

@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
  * Entidad JPA mapeada a la tabla `facultades`.
@@ -14,8 +13,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @AllArgsConstructor
 @Entity
 @Table(name = "facultades")
-@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
-public class Facultad {
+public class Facultad implements Catalogo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

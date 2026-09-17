@@ -60,6 +60,14 @@ public class Usuario {
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 
+    /** Autorización de tratamiento de datos personales dada en el registro. */
+    @Column(name = "autoriza_datos", nullable = false)
+    @Builder.Default
+    private Boolean autorizaDatos = false;
+
+    @Column(name = "fecha_autorizacion_datos")
+    private LocalDateTime fechaAutorizacionDatos;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_sede")
     @JsonIgnore

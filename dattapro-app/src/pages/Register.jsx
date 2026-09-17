@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { post } from '../services/apiClient';
+import { DOMINIO_INSTITUCIONAL, PASSWORD_MENSAJE, PASSWORD_REGEX, mensajeDeCampos } from '../utils/validaciones';
 import logoApp from '../assets/brand/logo-app.png';
 
 const Register = () => {
@@ -10,7 +11,7 @@ const Register = () => {
         correoInstitucional: '',
         password: '',
         confirmPassword: '',
-        autorizaDatos: '' // Nuevo campo
+        autorizaDatos: ''
     });
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
@@ -48,16 +49,13 @@ const Register = () => {
         }
         if (!formData.correoInstitucional.trim()) {
             tempErrors.correoInstitucional = 'Correo institucional es requerido';
-        } else if (!formData.correoInstitucional.endsWith('@unisimon.edu.co')) {
-            tempErrors.correoInstitucional = 'El correo debe terminar en @unisimon.edu.co';
+        } else if (!formData.correoInstitucional.endsWith(DOMINIO_INSTITUCIONAL)) {
+            tempErrors.correoInstitucional = `El correo debe terminar en ${DOMINIO_INSTITUCIONAL}`;
         }
         if (!formData.password) {
             tempErrors.password = 'La contraseña es requerida';
-        } else {
-            const passwordRegex = /^(?=.*\d)(?=.*[\W_]).{8,}$/;
-            if (!passwordRegex.test(formData.password)) {
-                tempErrors.password = 'La contraseña debe tener al menos 8 caracteres, incluyendo números y símbolos';
-            }
+        } else if (!PASSWORD_REGEX.test(formData.password)) {
+            tempErrors.password = PASSWORD_MENSAJE;
         }
         if (!formData.confirmPassword) {
             tempErrors.confirmPassword = 'Confirmar contraseña es requerido';
@@ -72,14 +70,21 @@ const Register = () => {
         }
 
         try {
-            const { confirmPassword, ...dataToSend } = formData;
+            const dataToSend = {
+                nombres: formData.nombres,
+                apellidos: formData.apellidos,
+                correoInstitucional: formData.correoInstitucional,
+                password: formData.password,
+                // Los radios guardan texto; la API espera un booleano.
+                autorizaDatos: formData.autorizaDatos === 'true',
+            };
             await post('/usuarios/registro', dataToSend, { auth: false });
             navigate('/login', { state: { message: 'Cuenta creada con exito. Inicia sesion.' } });
         } catch (error) {
             setErrorMessage(
                 error.status === 409
                     ? 'El correo institucional ya esta registrado.'
-                    : error.message,
+                    : mensajeDeCampos(error) ?? error.message,
             );
         } finally {
             setIsLoading(false);

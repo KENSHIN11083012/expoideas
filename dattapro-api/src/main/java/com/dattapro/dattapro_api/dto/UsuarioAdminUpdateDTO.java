@@ -2,6 +2,7 @@ package com.dattapro.dattapro_api.dto;
 
 import com.dattapro.dattapro_api.entity.RolUsuario;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -20,7 +21,7 @@ public record UsuarioAdminUpdateDTO(
 
                 @Size(max = 255, message = "La URL de la foto no puede exceder 255 caracteres") String fotoUrl,
 
-                @Size(min = 6, max = 100, message = "La contraseña debe tener entre 6 y 100 caracteres") String password,
+                @Pattern(regexp = Validaciones.PASSWORD_REGEX, message = Validaciones.PASSWORD_MENSAJE) String password,
 
                 RolUsuario rol,
 

@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +62,9 @@ public class UsuarioService {
                 .correoInstitucional(dto.correoInstitucional())
                 .password(passwordEncoder.encode(dto.password()))
                 .rol(RolUsuario.emprendedor)
+                // El DTO exige autorizaDatos == true: aqui solo se deja constancia.
+                .autorizaDatos(true)
+                .fechaAutorizacionDatos(LocalDateTime.now())
                 .build();
 
         Usuario guardado = usuarioRepository.save(nuevoUsuario);
@@ -80,11 +84,13 @@ public class UsuarioService {
     }
 
     /**
-     * @throws NoSuchElementException si el ID no existe
+     * Datos del usuario autenticado, con sede y programa ya resueltos.
+     *
+     * @throws NoSuchElementException si el correo no existe
      */
     @Transactional(readOnly = true)
-    public UsuarioResponseDTO obtenerUsuarioPorId(Integer id) {
-        return toResponseDTO(buscarPorId(id));
+    public UsuarioResponseDTO obtenerPerfilPropio(String correo) {
+        return toResponseDTO(buscarPorCorreoConBaseInfo(correo));
     }
 
     /**
@@ -101,26 +107,21 @@ public class UsuarioService {
     // ---------------------------------------------
 
     /**
-     * Actualiza los datos que el propio usuario puede cambiar.
+     * Actualiza los datos que el propio usuario puede cambiar. Se identifica por
+     * el correo de la sesion, nunca por un ID que venga del cliente.
      *
-     * @throws NoSuchElementException   si el ID no existe
-     * @throws IllegalArgumentException si el correo nuevo ya es de otro usuario
+     * @throws NoSuchElementException si el correo no existe
      */
     @Transactional
-    public Usuario actualizarUsuario(Integer id, UsuarioUpdateDTO dto) {
-        Usuario usuario = buscarPorId(id);
-        validarCorreoDisponible(usuario, dto.correoInstitucional());
+    public UsuarioResponseDTO actualizarPerfilPropio(String correo, UsuarioUpdateDTO dto) {
+        Usuario usuario = buscarPorCorreoConBaseInfo(correo);
 
-        if (dto.nombres() != null)
-            usuario.setNombres(dto.nombres());
-        if (dto.apellidos() != null)
-            usuario.setApellidos(dto.apellidos());
-        if (dto.correoInstitucional() != null)
-            usuario.setCorreoInstitucional(dto.correoInstitucional());
-        if (dto.password() != null && !dto.password().isBlank())
-            usuario.setPassword(passwordEncoder.encode(dto.password()));
+        if (dto.nombres() != null && !dto.nombres().isBlank())
+            usuario.setNombres(dto.nombres().trim());
+        if (dto.apellidos() != null && !dto.apellidos().isBlank())
+            usuario.setApellidos(dto.apellidos().trim());
 
-        return usuarioRepository.save(usuario);
+        return toResponseDTO(usuarioRepository.save(usuario));
     }
 
     /**
@@ -262,6 +263,11 @@ public class UsuarioService {
     private Usuario buscarPorId(Integer id) {
         return usuarioRepository.findByIdWithBaseInfo(id)
                 .orElseThrow(() -> new NoSuchElementException("No existe un usuario con ID: " + id));
+    }
+
+    private Usuario buscarPorCorreoConBaseInfo(String correo) {
+        return usuarioRepository.findByCorreoWithBaseInfo(correo)
+                .orElseThrow(() -> new NoSuchElementException("No existe un usuario con correo: " + correo));
     }
 
     private void validarCorreoDisponible(Usuario usuario, String correoNuevo) {

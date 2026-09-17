@@ -38,6 +38,9 @@ public class AuthService {
         return LoginResponse.builder()
                 .token(jwtToken)
                 .rol(usuario.getRol().name())
+                .id(usuario.getId())
+                .nombres(usuario.getNombres())
+                .apellidos(usuario.getApellidos())
                 .build();
     }
 }

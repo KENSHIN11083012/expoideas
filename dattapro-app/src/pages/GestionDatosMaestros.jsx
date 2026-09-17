@@ -5,11 +5,12 @@ import Toast from '../components/masterData/Toast';
 // ─────────────────────────────────────────────────────────────────────────────
 // Catalog configuration array — add a new catalog here and the UI handles it.
 // hasSubtitulo: true  → shows the Subtítulo column and field (centros only)
+// requiereFacultad: true → selector de facultad en el modal y columna Facultad
 // ─────────────────────────────────────────────────────────────────────────────
 const CATALOGS = [
     { key: 'sedes', label: 'Sedes', endpoint: 'sedes', hasSubtitulo: false },
     { key: 'facultades', label: 'Facultades', endpoint: 'facultades', hasSubtitulo: false },
-    { key: 'programas-academicos', label: 'Programas Academicos', endpoint: 'programas-academicos', hasSubtitulo: false },
+    { key: 'programas-academicos', label: 'Programas Academicos', endpoint: 'programas-academicos', hasSubtitulo: false, requiereFacultad: true },
     { key: 'categorias', label: 'Categorias', endpoint: 'categorias', hasSubtitulo: false },
     { key: 'keywords', label: 'Palabras clave', endpoint: 'keywords', hasSubtitulo: false },
 ];

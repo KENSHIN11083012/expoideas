@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useMasterData } from '../../hooks/useMasterData';
+import * as masterDataService from '../../services/masterDataService';
 import CatalogTable from './CatalogTable';
 import CatalogModal from './CatalogModal';
 
@@ -7,11 +8,12 @@ import CatalogModal from './CatalogModal';
  * Full CRUD tab for one catalog.
  *
  * Props:
- *   catalog   { key, label, endpoint, hasSubtitulo }
+ *   catalog   { key, label, endpoint, hasSubtitulo, requiereFacultad }
  *   toastRef  ref to the shared <Toast /> instance
  */
 const CatalogTab = ({ catalog, toastRef }) => {
     const { items, isLoading, error, refresh, createItem, updateItem } = useMasterData(catalog.endpoint);
+    const [facultades, setFacultades] = useState([]);
 
     const [searchInput, setSearchInput]   = useState('');
     const [searchTerm, setSearchTerm]     = useState('');
@@ -31,6 +33,26 @@ const CatalogTab = ({ catalog, toastRef }) => {
             refresh();
         }
     }, [refresh]);
+
+    // -----------------------------------------------------------------
+    // Opciones de facultad para los catalogos que la exigen (programas).
+    // La pestaña se remonta al cambiar de catalogo, asi que si se acaba de
+    // crear una facultad, aparece al volver aqui.
+    // -----------------------------------------------------------------
+    useEffect(() => {
+        if (!catalog.requiereFacultad) return;
+        let cancelado = false;
+
+        masterDataService.getAll('facultades')
+            .then((data) => {
+                if (!cancelado) setFacultades(Array.isArray(data) ? data : []);
+            })
+            .catch(() => {
+                if (!cancelado) toastRef.current?.show({ type: 'error', message: 'No se pudieron cargar las facultades.' });
+            });
+
+        return () => { cancelado = true; };
+    }, [catalog.requiereFacultad, toastRef]);
 
     // -----------------------------------------------------------------
     // Debounced search (300 ms)
@@ -144,6 +166,7 @@ const CatalogTab = ({ catalog, toastRef }) => {
                 error={error}
                 searchTerm={searchTerm}
                 hasSubtitulo={catalog.hasSubtitulo}
+                requiereFacultad={catalog.requiereFacultad}
                 onEdit={openEdit}
             />
 
@@ -156,6 +179,7 @@ const CatalogTab = ({ catalog, toastRef }) => {
                 item={selectedItem}
                 catalogLabel={catalog.label}
                 hasSubtitulo={catalog.hasSubtitulo}
+                facultades={catalog.requiereFacultad ? facultades : null}
                 isSaving={isSaving}
             />
         </div>

@@ -12,4 +12,8 @@ import lombok.NoArgsConstructor;
 public class LoginResponse {
     private String token;
     private String rol;
+    /** El frontend lo necesita para saber quién inició sesión sin pedir otra vez /usuarios/me. */
+    private Integer id;
+    private String nombres;
+    private String apellidos;
 }

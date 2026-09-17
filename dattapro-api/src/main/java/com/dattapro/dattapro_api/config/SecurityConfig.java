@@ -73,9 +73,11 @@ public class SecurityConfig {
                                                 // de registro antes de que exista sesion.
                                                 .requestMatchers(HttpMethod.GET, CATALOGOS).permitAll()
 
-                                                // 5. El resto exige sesion. En Dattapro, GET /api/v1/usuarios
-                                                // y /api/v1/usuarios/* eran permitAll: cualquiera sin
-                                                // autenticar listaba a todos los usuarios con su correo.
+                                                // 5. El resto exige sesion (incluye /api/v1/usuarios/me). En
+                                                // Dattapro, GET /api/v1/usuarios y /api/v1/usuarios/* eran
+                                                // permitAll y PUT/DELETE /usuarios/{id} no comprobaban
+                                                // dueño. Esas rutas ya no existen: gestionar a otros
+                                                // usuarios solo se hace desde /api/v1/admin/users.
                                                 .anyRequest().authenticated())
 
                                 // 4. Proveedor y Filtro JWT

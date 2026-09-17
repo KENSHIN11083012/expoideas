@@ -1,11 +1,13 @@
 package com.dattapro.dattapro_api.controller;
 
+import com.dattapro.dattapro_api.dto.ProgramaAcademicoRequestDTO;
+import com.dattapro.dattapro_api.dto.ProgramaAcademicoResponseDTO;
 import com.dattapro.dattapro_api.entity.Categoria;
 import com.dattapro.dattapro_api.entity.Facultad;
 import com.dattapro.dattapro_api.entity.Keyword;
-import com.dattapro.dattapro_api.entity.ProgramaAcademico;
 import com.dattapro.dattapro_api.entity.Sede;
 import com.dattapro.dattapro_api.service.MasterDataService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -74,20 +76,21 @@ public class MasterDataController {
     // ---------------------------------------------
 
     @GetMapping("/programas-academicos")
-    public ResponseEntity<List<ProgramaAcademico>> listarProgramasAcademicos() {
+    public ResponseEntity<List<ProgramaAcademicoResponseDTO>> listarProgramasAcademicos() {
         return ResponseEntity.ok(masterDataService.listarProgramasAcademicos());
     }
 
     @PostMapping("/programas-academicos")
-    public ResponseEntity<ProgramaAcademico> crearProgramaAcademico(@RequestBody ProgramaAcademico programa) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(masterDataService.crearProgramaAcademico(programa));
+    public ResponseEntity<ProgramaAcademicoResponseDTO> crearProgramaAcademico(
+            @Valid @RequestBody ProgramaAcademicoRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(masterDataService.crearProgramaAcademico(dto));
     }
 
     @PutMapping("/programas-academicos/{id}")
-    public ResponseEntity<ProgramaAcademico> actualizarProgramaAcademico(
+    public ResponseEntity<ProgramaAcademicoResponseDTO> actualizarProgramaAcademico(
             @PathVariable Integer id,
-            @RequestBody ProgramaAcademico programa) {
-        return ResponseEntity.ok(masterDataService.actualizarProgramaAcademico(id, programa));
+            @Valid @RequestBody ProgramaAcademicoRequestDTO dto) {
+        return ResponseEntity.ok(masterDataService.actualizarProgramaAcademico(id, dto));
     }
 
     // ---------------------------------------------

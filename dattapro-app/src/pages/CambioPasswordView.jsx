@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { ROLES, normalizeRole } from '../utils/roles';
 import { get, post, put } from '../services/apiClient';
+import { PASSWORD_MENSAJE, PASSWORD_REGEX, mensajeDeCampos } from '../utils/validaciones';
 import { toast } from 'sonner';
 import Select from 'react-select';
 import { Eye, EyeOff, Lock, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
@@ -72,8 +73,8 @@ const CambioPasswordView = () => {
             return;
         }
 
-        if (formData.passwordNueva.length < 6) {
-            toast.error('La contraseña debe tener al menos 6 caracteres');
+        if (!PASSWORD_REGEX.test(formData.passwordNueva)) {
+            toast.error(PASSWORD_MENSAJE);
             return;
         }
 
@@ -113,7 +114,7 @@ const CambioPasswordView = () => {
             if (selectedUser) setSelectedUser(null);
 
         } catch (error) {
-            toast.error(error.message);
+            toast.error(mensajeDeCampos(error) ?? error.message);
         } finally {
             setIsLoading(false);
         }
@@ -257,7 +258,7 @@ const CambioPasswordView = () => {
                                             name="passwordNueva"
                                             value={formData.passwordNueva}
                                             onChange={handleChange}
-                                            placeholder="Mínimo 6 caracteres"
+                                            placeholder="Mínimo 8, con número y símbolo"
                                             required
                                             className="w-full pl-11 pr-12 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium text-slate-900 dark:text-white"
                                         />

@@ -71,10 +71,12 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- Migraciones de esquema -->
+		<!-- Migraciones de esquema. En Boot 4 la autoconfiguracion de Flyway vive en
+		     su propio starter: con solo flyway-core las migraciones nunca se ejecutan
+		     y ddl-auto=validate tumba el arranque por tablas inexistentes. -->
 		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-core</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
@@ -95,9 +97,17 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- En Boot 4 @WebMvcTest y la integracion de Spring Security con MockMvc
+		     viven en modulos propios. Sin el segundo, @WithMockUser no llega a la
+		     cadena de filtros y toda peticion autenticada sale 403. -->
 		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-test</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

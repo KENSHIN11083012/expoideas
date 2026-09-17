@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { get } from '../services/apiClient';
 import { useAuth } from '../hooks/useAuth';
 import { roleLabel } from '../utils/roles';
 
@@ -13,21 +12,6 @@ import { roleLabel } from '../utils/roles';
  */
 const Inicio = () => {
     const { user, role, isAdmin } = useAuth();
-    const [totalUsuarios, setTotalUsuarios] = useState(null);
-
-    useEffect(() => {
-        let cancelado = false;
-
-        get('/usuarios')
-            .then((data) => {
-                if (!cancelado) setTotalUsuarios(Array.isArray(data) ? data.length : 0);
-            })
-            .catch(() => {
-                if (!cancelado) setTotalUsuarios(null);
-            });
-
-        return () => { cancelado = true; };
-    }, []);
 
     return (
         <div className="p-8 max-w-5xl mx-auto">
@@ -44,16 +28,9 @@ const Inicio = () => {
                 </p>
             </header>
 
+            {/* El contador de usuarios registrados se quito: leia GET /usuarios, que
+                exponia correos a cualquier sesion y ahora es solo de administracion. */}
             <section className="grid gap-4 sm:grid-cols-2">
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/50 p-6">
-                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                        Usuarios registrados
-                    </p>
-                    <p className="text-4xl font-black text-slate-800 dark:text-white mt-2">
-                        {totalUsuarios ?? '—'}
-                    </p>
-                </div>
-
                 <Link
                     to="/perfil"
                     className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/50 p-6 hover:shadow-md transition-shadow"

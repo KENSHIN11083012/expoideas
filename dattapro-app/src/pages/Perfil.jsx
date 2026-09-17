@@ -12,27 +12,24 @@ import { roleLabel } from '../utils/roles';
  * Cuando Expoideas tenga perfiles por rol, cada uno anadira su propia seccion.
  */
 const Perfil = () => {
-    const { user, role, updateUser } = useAuth();
+    const { role, updateUser } = useAuth();
     const [perfil, setPerfil] = useState(null);
-    const [form, setForm] = useState({ nombres: '', apellidos: '', correoInstitucional: '' });
+    const [form, setForm] = useState({ nombres: '', apellidos: '' });
     const [cargando, setCargando] = useState(true);
     const [guardando, setGuardando] = useState(false);
 
+    // /usuarios/me identifica al usuario por la sesion: no depende de un id
+    // guardado en localStorage, que en Dattapro llegaba como undefined.
     useEffect(() => {
-        if (!user?.id) {
-            setCargando(false);
-            return;
-        }
         let cancelado = false;
 
-        get(`/usuarios/${user.id}`)
+        get('/usuarios/me')
             .then((data) => {
                 if (cancelado) return;
                 setPerfil(data);
                 setForm({
                     nombres: data.nombres ?? '',
                     apellidos: data.apellidos ?? '',
-                    correoInstitucional: data.correoInstitucional ?? '',
                 });
             })
             .catch((error) => {
@@ -43,7 +40,7 @@ const Perfil = () => {
             });
 
         return () => { cancelado = true; };
-    }, [user?.id]);
+    }, []);
 
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -51,8 +48,9 @@ const Perfil = () => {
         e.preventDefault();
         setGuardando(true);
         try {
-            await put(`/usuarios/${user.id}`, form);
-            updateUser({ name: `${form.nombres} ${form.apellidos}`.trim(), email: form.correoInstitucional });
+            const actualizado = await put('/usuarios/me', form);
+            setPerfil(actualizado);
+            updateUser({ name: `${actualizado.nombres} ${actualizado.apellidos}`.trim() });
             toast.success('Perfil actualizado');
         } catch (error) {
             toast.error(error.message);
@@ -65,14 +63,13 @@ const Perfil = () => {
         return <div className="p-8 text-slate-500">Cargando perfil...</div>;
     }
 
-    if (!user?.id) {
-        return <div className="p-8 text-slate-500">No se pudo identificar tu usuario.</div>;
+    if (!perfil) {
+        return <div className="p-8 text-slate-500">No se pudo cargar tu perfil.</div>;
     }
 
     const campos = [
         { name: 'nombres', label: 'Nombres', type: 'text' },
         { name: 'apellidos', label: 'Apellidos', type: 'text' },
-        { name: 'correoInstitucional', label: 'Correo institucional', type: 'email' },
     ];
 
     return (
@@ -101,8 +98,13 @@ const Perfil = () => {
                     </div>
                 ))}
 
-                {/* Solo un admin puede cambiar estos campos, asi que se muestran como lectura. */}
+                {/* Solo un admin puede cambiar estos campos, asi que se muestran como lectura.
+                    El correo es el usuario de login: cambiarlo invalidaria la sesion. */}
                 <dl className="grid grid-cols-2 gap-4 pt-2">
+                    <div className="col-span-2">
+                        <dt className="text-xs font-bold uppercase tracking-widest text-slate-400">Correo institucional</dt>
+                        <dd className="text-slate-700 dark:text-slate-300 mt-1">{perfil.correoInstitucional}</dd>
+                    </div>
                     <div>
                         <dt className="text-xs font-bold uppercase tracking-widest text-slate-400">Sede</dt>
                         <dd className="text-slate-700 dark:text-slate-300 mt-1">{perfil?.sede ?? 'Sin asignar'}</dd>

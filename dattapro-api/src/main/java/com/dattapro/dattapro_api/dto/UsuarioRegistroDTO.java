@@ -1,7 +1,10 @@
 package com.dattapro.dattapro_api.dto;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -14,7 +17,10 @@ public record UsuarioRegistroDTO(
 
         @NotBlank(message = "Los apellidos son obligatorios") @Size(max = 100, message = "Los apellidos no pueden exceder 100 caracteres") String apellidos,
 
-        @NotBlank(message = "El correo institucional es obligatorio") @Email(message = "El formato del correo no es válido") @Size(max = 150, message = "El correo no puede exceder 150 caracteres") String correoInstitucional,
+        @NotBlank(message = "El correo institucional es obligatorio") @Email(message = "El formato del correo no es válido") @Size(max = 150, message = "El correo no puede exceder 150 caracteres") @Pattern(regexp = Validaciones.CORREO_INSTITUCIONAL_REGEX, message = Validaciones.CORREO_INSTITUCIONAL_MENSAJE) String correoInstitucional,
 
-        @NotBlank(message = "La contraseña es obligatoria") @Size(min = 6, max = 100, message = "La contraseña debe tener entre 6 y 100 caracteres") String password) {
+        @NotBlank(message = "La contraseña es obligatoria") @Pattern(regexp = Validaciones.PASSWORD_REGEX, message = Validaciones.PASSWORD_MENSAJE) String password,
+
+        /** Autorización de tratamiento de datos personales: sin ella no hay registro. */
+        @NotNull(message = "Debes indicar si autorizas el tratamiento de tus datos") @AssertTrue(message = "Debes autorizar el tratamiento de tus datos para registrarte") Boolean autorizaDatos) {
 }

@@ -1,7 +1,7 @@
 package com.dattapro.dattapro_api.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 
 /**
  * DTO para el cambio de contraseña de un usuario.
@@ -22,7 +22,7 @@ public record CambiarPasswordDTO(
         String passwordActual,
 
         @NotBlank(message = "La nueva contraseña no puede estar vacía")
-        @Size(min = 6, message = "La nueva contraseña debe tener al menos 6 caracteres")
+        @Pattern(regexp = Validaciones.PASSWORD_REGEX, message = Validaciones.PASSWORD_MENSAJE)
         String passwordNueva,
 
         @NotBlank(message = "La confirmación de contraseña no puede estar vacía")

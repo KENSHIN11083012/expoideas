@@ -28,8 +28,8 @@ public class ProgramaAcademico {
     private String nombre;
 
     /**
-     * Facultad a la que pertenece el programa.
-     * Se llenará en el segundo formulario.
+     * Facultad a la que pertenece el programa. Por la API viaja como
+     * {@code facultadId} en ProgramaAcademicoRequestDTO/ResponseDTO.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_facultad", nullable = false)

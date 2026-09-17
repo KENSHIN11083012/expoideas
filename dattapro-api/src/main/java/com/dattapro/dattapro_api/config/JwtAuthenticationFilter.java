@@ -8,8 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -18,8 +16,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
 
 @Slf4j
 @Component
@@ -56,10 +52,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
+                    // Las autoridades salen de la BD (userDetails), no del claim "role"
+                    // del token: si un admin pierde el rol, lo pierde en la siguiente
+                    // petición y no cuando caduque su token. El claim sigue viajando
+                    // porque el frontend lo usa para pintar la UI.
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
-                            resolveAuthorities(jwt, userDetails));
+                            userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
@@ -73,23 +73,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
-    }
-
-    /**
-     * Usa el claim "role" del token y, si no viene, cae a las autoridades del UserDetails.
-     * Normaliza al formato ROLE_X que espera Spring Security.
-     */
-    private Collection<? extends GrantedAuthority> resolveAuthorities(String jwt, UserDetails userDetails) {
-        List<?> roles = jwtService.extractClaim(jwt, claims -> claims.get("role", List.class));
-        if (roles == null || roles.isEmpty()) {
-            return userDetails.getAuthorities();
-        }
-        return roles.stream()
-                .map(r -> String.valueOf(r))
-                .map(role -> role.toUpperCase().startsWith("ROLE_")
-                        ? role.toUpperCase()
-                        : "ROLE_" + role.toUpperCase())
-                .map(SimpleGrantedAuthority::new)
-                .toList();
     }
 }

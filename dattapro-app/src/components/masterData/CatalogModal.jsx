@@ -10,16 +10,19 @@ import React, { useState } from 'react';
  *   item          {object|null}     null = create mode; object = edit mode
  *   catalogLabel  {string}          Human-readable catalog name (for title)
  *   hasSubtitulo  {boolean}         Whether to show the subtitulo field
+ *   facultades    {array|null}      Si llega, muestra el selector de facultad (obligatorio)
  *   isSaving      {boolean}         Whether save is in progress (disables form)
  */
-const CatalogModal = ({ isOpen, onClose, onSave, item, catalogLabel, hasSubtitulo, isSaving }) => {
+const CatalogModal = ({ isOpen, onClose, onSave, item, catalogLabel, hasSubtitulo, facultades, isSaving }) => {
     const isEditMode = item !== null && item !== undefined;
+    const requiereFacultad = Array.isArray(facultades);
 
     // El estado arranca del item. CatalogTab remonta el modal con una key
     // distinta por item, asi que no hace falta sincronizarlo con un effect.
     const [form, setForm] = useState({
-        nombre:    item?.nombre    ?? '',
-        subtitulo: item?.subtitulo ?? '',
+        nombre:     item?.nombre    ?? '',
+        subtitulo:  item?.subtitulo ?? '',
+        facultadId: item?.facultadId != null ? String(item.facultadId) : '',
     });
     const [errors, setErrors] = useState({});
 
@@ -35,6 +38,9 @@ const CatalogModal = ({ isOpen, onClose, onSave, item, catalogLabel, hasSubtitul
         }
         if (hasSubtitulo && !form.subtitulo.trim()) {
             errs.subtitulo = 'El subtítulo es obligatorio para este catálogo.';
+        }
+        if (requiereFacultad && !form.facultadId) {
+            errs.facultadId = 'Selecciona la facultad a la que pertenece.';
         }
         return errs;
     };
@@ -60,6 +66,7 @@ const CatalogModal = ({ isOpen, onClose, onSave, item, catalogLabel, hasSubtitul
 
         const payload = { nombre: form.nombre.trim() };
         if (hasSubtitulo) payload.subtitulo = form.subtitulo.trim();
+        if (requiereFacultad) payload.facultadId = Number(form.facultadId);
 
         await onSave(payload);
     };
@@ -158,6 +165,41 @@ const CatalogModal = ({ isOpen, onClose, onSave, item, catalogLabel, hasSubtitul
                                 />
                                 {errors.subtitulo && (
                                     <p className="mt-1.5 text-xs text-red-500 font-medium">{errors.subtitulo}</p>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Facultad — programas academicos */}
+                        {requiereFacultad && (
+                            <div>
+                                <label htmlFor="modal-facultad" className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                                    Facultad <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    id="modal-facultad"
+                                    value={form.facultadId}
+                                    onChange={handleChange('facultadId')}
+                                    disabled={isSaving}
+                                    className={`w-full px-4 py-2.5 text-sm rounded-xl border bg-white dark:bg-slate-800 text-slate-900 dark:text-white
+                                        transition-colors outline-none
+                                        focus:ring-2 focus:ring-red-400 focus:border-red-400
+                                        disabled:opacity-50 disabled:cursor-not-allowed
+                                        ${errors.facultadId
+                                            ? 'border-red-400 dark:border-red-500'
+                                            : 'border-slate-200 dark:border-slate-700'
+                                        }`}
+                                >
+                                    <option value="">
+                                        {facultades.length === 0 ? 'No hay facultades registradas' : 'Selecciona una facultad...'}
+                                    </option>
+                                    {facultades.map((facultad) => (
+                                        <option key={facultad.id} value={String(facultad.id)}>
+                                            {facultad.nombre}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.facultadId && (
+                                    <p className="mt-1.5 text-xs text-red-500 font-medium">{errors.facultadId}</p>
                                 )}
                             </div>
                         )}

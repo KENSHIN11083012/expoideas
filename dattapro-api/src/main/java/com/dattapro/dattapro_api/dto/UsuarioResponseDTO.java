@@ -6,10 +6,11 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * Vista pública de un usuario.
+ * Datos de un usuario para el propio usuario (/usuarios/me) y para el admin.
  *
  * <p>No incluye el hash de la contraseña: la versión de Dattapro sí lo exponía,
- * y GET /api/v1/usuarios es un endpoint permitAll.
+ * y GET /api/v1/usuarios era permitAll. Tampoco es apto para un listado público
+ * (lleva correo y número de identificación).
  */
 @Data
 @Builder

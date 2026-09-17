@@ -10,6 +10,7 @@ import SkeletonTable from './SkeletonTable';
  *   error         {string}    Error message to display (null = no error)
  *   searchTerm    {string}    Debounced search string (filtered against nombre)
  *   hasSubtitulo  {boolean}   Show Subtítulo column for centros-investigativos
+ *   requiereFacultad {boolean} Muestra la columna Facultad (programas academicos)
  *   onEdit        {function}  Called with the item to edit
  */
 // Definido fuera del componente: si se declara dentro, React lo trata como un
@@ -23,7 +24,7 @@ const SortIcon = ({ sortDir }) => (
     </svg>
 );
 
-const CatalogTable = ({ items, isLoading, error, searchTerm, hasSubtitulo, onEdit }) => {
+const CatalogTable = ({ items, isLoading, error, searchTerm, hasSubtitulo, requiereFacultad, onEdit }) => {
     const [sortDir, setSortDir] = useState('asc'); // 'asc' | 'desc'
 
     // -------------------------------------------------------------------
@@ -110,6 +111,12 @@ const CatalogTable = ({ items, isLoading, error, searchTerm, hasSubtitulo, onEdi
                                 </th>
                             )}
 
+                            {requiereFacultad && (
+                                <th className="px-6 py-4 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                                    Facultad
+                                </th>
+                            )}
+
                             {/* Acciones */}
                             <th className="px-6 py-4 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">
                                 Acciones
@@ -142,6 +149,14 @@ const CatalogTable = ({ items, isLoading, error, searchTerm, hasSubtitulo, onEdi
                                     <td className="px-6 py-4">
                                         <span className="text-sm text-slate-500 dark:text-slate-400">
                                             {item.subtitulo || '—'}
+                                        </span>
+                                    </td>
+                                )}
+
+                                {requiereFacultad && (
+                                    <td className="px-6 py-4">
+                                        <span className="text-sm text-slate-500 dark:text-slate-400">
+                                            {item.facultad || '—'}
                                         </span>
                                     </td>
                                 )}

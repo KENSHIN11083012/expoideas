@@ -1,5 +1,7 @@
 package com.dattapro.dattapro_api.service;
 
+import com.dattapro.dattapro_api.dto.ProgramaAcademicoRequestDTO;
+import com.dattapro.dattapro_api.dto.ProgramaAcademicoResponseDTO;
 import com.dattapro.dattapro_api.entity.Categoria;
 import com.dattapro.dattapro_api.entity.Facultad;
 import com.dattapro.dattapro_api.entity.Keyword;
@@ -89,31 +91,38 @@ public class MasterDataService {
     // ---------------------------------------------
 
     @Transactional(readOnly = true)
-    public List<ProgramaAcademico> listarProgramasAcademicos() {
-        return programaAcademicoRepository.findAll();
+    public List<ProgramaAcademicoResponseDTO> listarProgramasAcademicos() {
+        return programaAcademicoRepository.findAllWithFacultad().stream()
+                .map(ProgramaAcademicoResponseDTO::from)
+                .toList();
     }
 
+    /**
+     * @throws NoSuchElementException si la facultad no existe
+     */
     @Transactional
-    public ProgramaAcademico crearProgramaAcademico(ProgramaAcademico programa) {
-        return programaAcademicoRepository.save(programa);
+    public ProgramaAcademicoResponseDTO crearProgramaAcademico(ProgramaAcademicoRequestDTO dto) {
+        ProgramaAcademico programa = new ProgramaAcademico();
+        programa.setNombre(dto.nombre().trim());
+        programa.setFacultad(buscarFacultad(dto.facultadId()));
+        return ProgramaAcademicoResponseDTO.from(programaAcademicoRepository.save(programa));
     }
 
     /**
      * @throws NoSuchElementException si el programa o la facultad no existen
      */
     @Transactional
-    public ProgramaAcademico actualizarProgramaAcademico(Integer id, ProgramaAcademico datos) {
+    public ProgramaAcademicoResponseDTO actualizarProgramaAcademico(Integer id, ProgramaAcademicoRequestDTO dto) {
         ProgramaAcademico programa = programaAcademicoRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("No existe un programa academico con ID: " + id));
-        programa.setNombre(datos.getNombre());
+        programa.setNombre(dto.nombre().trim());
+        programa.setFacultad(buscarFacultad(dto.facultadId()));
+        return ProgramaAcademicoResponseDTO.from(programaAcademicoRepository.save(programa));
+    }
 
-        if (datos.getFacultad() != null && datos.getFacultad().getId() != null) {
-            Integer facultadId = datos.getFacultad().getId();
-            Facultad facultad = facultadRepository.findById(facultadId)
-                    .orElseThrow(() -> new NoSuchElementException("No existe una facultad con ID: " + facultadId));
-            programa.setFacultad(facultad);
-        }
-        return programaAcademicoRepository.save(programa);
+    private Facultad buscarFacultad(Integer facultadId) {
+        return facultadRepository.findById(facultadId)
+                .orElseThrow(() -> new NoSuchElementException("No existe una facultad con ID: " + facultadId));
     }
 
     // ---------------------------------------------

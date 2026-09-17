@@ -36,7 +36,8 @@ const Login = () => {
             // normalizeRole resuelve las dos formas.
             const rol = roleFromToken(jwtDecode(data.token)) ?? normalizeRole(data.rol);
 
-            login(data.token, { id: data.userId, email }, rol);
+            const name = [data.nombres, data.apellidos].filter(Boolean).join(' ');
+            login(data.token, { id: data.id, email, name }, rol);
             navigate(homePathForRole(rol));
 
         } catch (err) {

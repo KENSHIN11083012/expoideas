@@ -31,6 +31,14 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
            "WHERE u.id = :id")
     Optional<Usuario> findByIdWithBaseInfo(@Param("id") Integer id);
 
+    /** Igual que {@link #findByIdWithBaseInfo}, buscando por el correo de la sesión. */
+    @Query("SELECT u FROM Usuario u " +
+           "LEFT JOIN FETCH u.sede " +
+           "LEFT JOIN FETCH u.programaAcademico p " +
+           "LEFT JOIN FETCH p.facultad " +
+           "WHERE u.correoInstitucional = :correo")
+    Optional<Usuario> findByCorreoWithBaseInfo(@Param("correo") String correo);
+
     /**
      * Versión de listado del fetch join anterior: evita el N+1 al mapear
      * la lista completa de usuarios a DTOs.

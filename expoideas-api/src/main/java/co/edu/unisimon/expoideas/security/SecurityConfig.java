@@ -38,6 +38,8 @@ public class SecurityConfig {
         };
 
         /** Clasificacion de proyectos: la escribe MacondoLab (y el administrador). */
+        static final String ARCHIVOS = "/api/v1/archivos/**";
+
         static final String[] CATALOGOS_DE_CLASIFICACION = {
                         "/api/v1/categorias/**",
                         "/api/v1/keywords/**"
@@ -89,12 +91,16 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/usuarios/registro")
                                                 .permitAll()
 
-                                                // 4. Lectura de catalogos: publica, la necesita el formulario
+                                                // 4. Descarga de archivos: los publicos no piden sesion; los
+                                                // privados los autoriza ArchivoService.
+                                                .requestMatchers(HttpMethod.GET, ARCHIVOS).permitAll()
+
+                                                // 5. Lectura de catalogos: publica, la necesita el formulario
                                                 // de registro antes de que exista sesion.
                                                 .requestMatchers(HttpMethod.GET, CATALOGOS_INSTITUCIONALES).permitAll()
                                                 .requestMatchers(HttpMethod.GET, CATALOGOS_DE_CLASIFICACION).permitAll()
 
-                                                // 5. El resto exige sesion (incluye /api/v1/usuarios/me).
+                                                // 6. El resto exige sesion (incluye /api/v1/usuarios/me).
                                                 // Gestionar a otros usuarios solo se hace desde
                                                 // /api/v1/admin/users.
                                                 // Docentes, jurados y estudiantes aun no tienen rutas
@@ -112,14 +118,16 @@ public class SecurityConfig {
                                                                 .resolveException(request, response, null, e)))
                                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                                 // Con la sesion ya resuelta: bloquea todo menos el primer ingreso si esta pendiente.
-                                .addFilterAfter(new PrimerIngresoFilter(handlerExceptionResolver, catalogosPublicos()),
+                                .addFilterAfter(new PrimerIngresoFilter(handlerExceptionResolver, lecturasPublicas()),
                                                 JwtAuthenticationFilter.class);
 
                 return http.build();
         }
 
-        private static String[] catalogosPublicos() {
-                return Stream.concat(Arrays.stream(CATALOGOS_INSTITUCIONALES), Arrays.stream(CATALOGOS_DE_CLASIFICACION))
+        /** GET que no piden sesion: siguen abiertos aunque la peticion traiga una con primer ingreso pendiente. */
+        private static String[] lecturasPublicas() {
+                return Stream.of(Arrays.stream(CATALOGOS_INSTITUCIONALES), Arrays.stream(CATALOGOS_DE_CLASIFICACION), Stream.of(ARCHIVOS))
+                                .flatMap(s -> s)
                                 .toArray(String[]::new);
         }
 

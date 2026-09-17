@@ -55,11 +55,14 @@ public class Usuario {
     private RolUsuario rol = RolUsuario.estudiante;
 
     /**
-     * Ruta o URL de la foto. En Dattapro era un MEDIUMBLOB dentro de esta misma
-     * tabla: inviable para un feed y por encima del límite de 5 MB/archivo de TI.
+     * Foto de perfil: un archivo público subido por el propio usuario. En Dattapro
+     * era un MEDIUMBLOB en esta tabla y luego una URL libre; ahora el contenido
+     * vive en el almacenamiento de archivos.
      */
-    @Column(name = "foto_url", length = 255)
-    private String fotoUrl;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_foto")
+    @JsonIgnore
+    private Archivo foto;
 
     @Column(name = "numero_identificacion", length = 50, unique = true)
     private String numeroIdentificacion;

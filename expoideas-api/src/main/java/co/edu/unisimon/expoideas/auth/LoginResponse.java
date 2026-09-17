@@ -20,6 +20,8 @@ public class LoginResponse {
     private Integer id;
     private String nombres;
     private String apellidos;
+    /** Foto de perfil para el menú de la cuenta (GET /api/v1/archivos/{fotoId}), o null. */
+    private String fotoId;
     /** Si no está vacío, el frontend lleva a la pantalla de primer ingreso en vez de la de inicio. */
     private List<PendienteDeIngreso> pendientes;
 }

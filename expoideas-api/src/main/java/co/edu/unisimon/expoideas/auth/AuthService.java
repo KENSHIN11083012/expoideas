@@ -39,6 +39,7 @@ public class AuthService {
                 .id(usuario.getId())
                 .nombres(usuario.getNombres())
                 .apellidos(usuario.getApellidos())
+                .fotoId(usuario.getFoto() != null ? usuario.getFoto().getUuid() : null)
                 .pendientes(usuario.pendientesDeIngreso())
                 .build();
     }

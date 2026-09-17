@@ -45,6 +45,7 @@ class UsuarioServicePrimerIngresoTest {
     @Mock private FacultadRepository facultadRepository;
     @Mock private ProgramaAcademicoRepository programaAcademicoRepository;
     @Mock private PasswordEncoder passwordEncoder;
+    @Mock private ArchivoService archivoService;
 
     @InjectMocks private UsuarioService service;
 

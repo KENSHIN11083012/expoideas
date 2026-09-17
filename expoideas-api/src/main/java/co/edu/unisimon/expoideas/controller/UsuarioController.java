@@ -12,9 +12,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 
 /**
@@ -53,6 +55,21 @@ public class UsuarioController {
             Authentication authentication,
             @Valid @RequestBody UsuarioUpdateDTO dto) {
         return ResponseEntity.ok(usuarioService.actualizarPerfilPropio(authentication.getName(), dto));
+    }
+
+    /** Sube o reemplaza la foto de perfil: JPG, PNG o WEBP de hasta 5 MB. 200 con el perfil actualizado. */
+    @PutMapping(path = "/me/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UsuarioResponseDTO> actualizarFotoPropia(
+            Authentication authentication,
+            @RequestPart("archivo") MultipartFile archivo) {
+        return ResponseEntity.ok(usuarioService.actualizarFotoPropia(authentication.getName(), archivo));
+    }
+
+    /** Quita la foto de perfil. 204. */
+    @DeleteMapping("/me/foto")
+    public ResponseEntity<Void> eliminarFotoPropia(Authentication authentication) {
+        usuarioService.eliminarFotoPropia(authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 
     /**

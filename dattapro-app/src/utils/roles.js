@@ -20,7 +20,7 @@ export const ROLE_LABELS = {
     [ROLES.ADMIN]: 'Administrador',
     [ROLES.DOCENTE]: 'Docente',
     [ROLES.EMPRENDEDOR]: 'Emprendedor',
-    [ROLES.MENTOR]: 'Mentor / Juez',
+    [ROLES.MENTOR]: 'Mentor / Jurado',
     [ROLES.VISITANTE]: 'Visitante',
 };
 
@@ -50,4 +50,4 @@ export const roleLabel = (role) => ROLE_LABELS[normalizeRole(role)] ?? 'Usuario'
 
 /** Ruta de aterrizaje tras el login. */
 export const homePathForRole = (role) =>
-    normalizeRole(role) === ROLES.ADMIN ? '/admin' : '/';
+    normalizeRole(role) === ROLES.ADMIN ? '/admin/usuarios' : '/';

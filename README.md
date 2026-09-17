@@ -8,7 +8,7 @@ dominio.
 | | |
 |---|---|
 | `dattapro-api` | Spring Boot 4 · Java 25 · MySQL · Spring Security + JWT · Flyway · Swagger |
-| `dattapro-app` | React 19 · Vite 7 · Tailwind 4 · react-router-dom |
+| `dattapro-app` | React 19 · Vite 7 · Tailwind 4 · react-router · Radix UI · react-hook-form + zod |
 
 > Los directorios conservan el nombre `dattapro-*` hasta que se complete el renombre a `expoideas-*`.
 

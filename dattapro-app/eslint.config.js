@@ -25,7 +25,7 @@ export default defineConfig([
       },
     },
     rules: {
-      // Sin esta regla, no-unused-vars no ve que <motion.div> usa `motion`.
+      // Sin esta regla, no-unused-vars no ve las variables usadas solo en JSX.
       'react/jsx-uses-vars': 'error',
       'no-unused-vars': ['error', {
         varsIgnorePattern: '^[A-Z_]',
@@ -38,7 +38,7 @@ export default defineConfig([
   },
   {
     // Los archivos de configuracion corren en Node, no en el navegador.
-    files: ['vite.config.js', 'eslint.config.js', 'postcss.config.js', 'tailwind.config.js'],
+    files: ['vite.config.js', 'eslint.config.js'],
     languageOptions: { globals: globals.node },
   },
 ])

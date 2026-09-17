@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { get, put, del } from '../services/apiClient';
+import { get, put, post, del } from '@/services/apiClient';
 
 /**
- * Lista y edicion de usuarios desde el panel de administracion.
- *
- * handleStatusChange desaparecio con el campo estadoFormulario, que pertenecia
- * al flujo de validacion del perfil docente de Dattapro.
+ * Lista y gestión de usuarios desde el panel de administración. Las
+ * confirmaciones las pide la interfaz (AlertDialog), no el hook.
  */
 export const useUserManagement = () => {
     const [usuarios, setUsuarios] = useState([]);
@@ -31,14 +29,15 @@ export const useUserManagement = () => {
         fetchUsuarios();
     }, [fetchUsuarios]);
 
+    /** @param {string} nuevoRol valor de la API (minúsculas) */
     const handleRoleChange = async (usuario, nuevoRol) => {
         if (usuario.rol === nuevoRol || !usuario.id) return;
 
         setUpdatingId(usuario.id);
         try {
-            await put(`/admin/users/${usuario.id}`, { rol: nuevoRol });
-            setUsuarios((prev) => prev.map((u) => (u.id === usuario.id ? { ...u, rol: nuevoRol } : u)));
-            toast.success('Rol actualizado');
+            const actualizado = await put(`/admin/users/${usuario.id}`, { rol: nuevoRol });
+            setUsuarios((prev) => prev.map((u) => (u.id === usuario.id ? { ...u, ...actualizado } : u)));
+            toast.success(`Rol de ${usuario.nombres} actualizado`);
         } catch (err) {
             toast.error(err.message);
         } finally {
@@ -46,14 +45,17 @@ export const useUserManagement = () => {
         }
     };
 
-    const handleDeleteUser = async (id) => {
-        if (!window.confirm('Vas a eliminar este usuario. Esta accion no se puede deshacer.')) {
-            return;
-        }
+    /** Lanza el error para que el formulario lo muestre. */
+    const resetPassword = async (usuario, datos) => {
+        await post(`/usuarios/admin/reset-password?email=${encodeURIComponent(usuario.correoInstitucional)}`, datos);
+        toast.success(`Contraseña restablecida para ${usuario.correoInstitucional}`);
+    };
+
+    const handleDeleteUser = async (usuario) => {
         try {
-            await del(`/admin/users/${id}`);
-            setUsuarios((prev) => prev.filter((u) => u.id !== id));
-            toast.success('Usuario eliminado');
+            await del(`/admin/users/${usuario.id}`);
+            setUsuarios((prev) => prev.filter((u) => u.id !== usuario.id));
+            toast.success(`${usuario.nombres} ${usuario.apellidos} fue eliminado`);
         } catch (err) {
             toast.error(err.message);
         }
@@ -61,12 +63,12 @@ export const useUserManagement = () => {
 
     return {
         usuarios,
-        setUsuarios,
         isLoading,
         error,
         updatingId,
         fetchUsuarios,
         handleRoleChange,
+        resetPassword,
         handleDeleteUser,
     };
 };

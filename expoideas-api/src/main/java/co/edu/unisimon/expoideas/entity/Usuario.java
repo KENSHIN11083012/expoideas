@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Entidad JPA mapeada a la tabla `usuarios`.
@@ -41,6 +43,11 @@ public class Usuario {
     @JsonIgnore
     @Column(name = "password", nullable = false, length = 255)
     private String password;
+
+    /** La contraseña la puso la gestión (cuenta creada o restablecida): es temporal. */
+    @Column(name = "debe_cambiar_password", nullable = false)
+    @Builder.Default
+    private Boolean debeCambiarPassword = false;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "rol", nullable = false, length = 30)
@@ -87,6 +94,16 @@ public class Usuario {
     @JoinColumn(name = "id_programa_academico")
     @JsonIgnore
     private ProgramaAcademico programaAcademico;
+
+    /** Lo que la cuenta debe resolver antes de usar la plataforma, en el orden en que se pide. */
+    public List<PendienteDeIngreso> pendientesDeIngreso() {
+        List<PendienteDeIngreso> pendientes = new ArrayList<>();
+        if (Boolean.TRUE.equals(debeCambiarPassword))
+            pendientes.add(PendienteDeIngreso.cambiarPassword);
+        if (!Boolean.TRUE.equals(autorizaDatos))
+            pendientes.add(PendienteDeIngreso.autorizarDatos);
+        return pendientes;
+    }
 
     @PrePersist
     protected void onCreate() {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowRight } from 'lucide-react';
 import { post } from '@/services/apiClient';
@@ -11,8 +11,8 @@ import { useCatalogosAdscripcion } from '@/hooks/useCatalogosAdscripcion';
 import { CamposAdscripcion } from '@/components/forms/CamposAdscripcion';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { RequisitosPassword } from '@/components/forms/RequisitosPassword';
+import { CampoAutorizacionDatos } from '@/components/forms/CampoAutorizacionDatos';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -119,35 +119,7 @@ const Registro = () => {
                     <PasswordInput autoComplete="new-password" {...register('confirmPassword')} />
                 </Field>
 
-                <Controller
-                    control={control}
-                    name="autorizaDatos"
-                    render={({ field, fieldState }) => (
-                        <div className="flex flex-col gap-1.5">
-                            <div className="flex items-start gap-3 rounded-lg border border-outline-variant/70 bg-surface-container-low p-4">
-                                <Checkbox
-                                    id="autorizaDatos"
-                                    checked={field.value}
-                                    onCheckedChange={(valor) => field.onChange(valor === true)}
-                                    onBlur={field.onBlur}
-                                    ref={field.ref}
-                                    aria-invalid={fieldState.error ? true : undefined}
-                                    aria-describedby={fieldState.error ? 'autorizaDatos-error' : undefined}
-                                    className="mt-0.5"
-                                />
-                                <label htmlFor="autorizaDatos" className="text-sm leading-relaxed text-on-surface">
-                                    Autorizo a la Universidad Simón Bolívar el tratamiento de mis datos personales conforme a la
-                                    Ley 1581 de 2012.
-                                </label>
-                            </div>
-                            {fieldState.error && (
-                                <p id="autorizaDatos-error" role="alert" className="text-xs font-medium text-error">
-                                    {fieldState.error.message}
-                                </p>
-                            )}
-                        </div>
-                    )}
-                />
+                <CampoAutorizacionDatos control={control} />
 
                 <Button type="submit" size="lg" loading={isSubmitting} className="mt-1 w-full">
                     {isSubmitting ? 'Creando cuenta…' : <>Crear cuenta <ArrowRight /></>}

@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { AuthContext } from './authContext';
-import { UNAUTHORIZED_EVENT } from '../services/apiClient';
+import { PRIMER_INGRESO_EVENT, UNAUTHORIZED_EVENT } from '../services/apiClient';
 import { ROLES, esDeGestion, normalizeRole, roleFromToken } from '../utils/roles';
 
-const STORAGE_KEYS = ['token', 'role', 'userId', 'userEmail', 'userName'];
+const STORAGE_KEYS = ['token', 'role', 'userId', 'userEmail', 'userName', 'pendientes'];
 
 /** Devuelve null tambien para los "undefined"/"null" que dejaban versiones viejas. */
 const readStored = (key) => {
@@ -14,6 +14,16 @@ const readStored = (key) => {
 
 const isExpired = (decoded) =>
     typeof decoded?.exp === 'number' && decoded.exp < Date.now() / 1000;
+
+/** Pasos de primer ingreso guardados con la sesión; lista vacía si no hay o están corruptos. */
+const pendientesGuardados = () => {
+    try {
+        const lista = JSON.parse(localStorage.getItem('pendientes') ?? '[]');
+        return Array.isArray(lista) ? lista : [];
+    } catch {
+        return [];
+    }
+};
 
 const perfilGuardado = () => ({
     id: readStored('userId'),
@@ -25,11 +35,19 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(() => readStored('token'));
     const [rolGuardado, setRolGuardado] = useState(() => normalizeRole(readStored('role')));
     const [perfil, setPerfil] = useState(perfilGuardado);
+    const [pendientes, setPendientes] = useState(pendientesGuardados);
+
+    const guardarPendientes = useCallback((lista) => {
+        setPendientes(lista);
+        if (lista.length > 0) localStorage.setItem('pendientes', JSON.stringify(lista));
+        else localStorage.removeItem('pendientes');
+    }, []);
 
     const logout = useCallback(() => {
         setToken(null);
         setRolGuardado(null);
         setPerfil({ id: null, email: null, name: null });
+        setPendientes([]);
         STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
     }, []);
 
@@ -64,8 +82,18 @@ export const AuthProvider = ({ children }) => {
         return () => window.removeEventListener(UNAUTHORIZED_EVENT, logout);
     }, [logout]);
 
-    const login = useCallback((newToken, userData = {}, newRole) => {
+    // Un 403 por primer ingreso pendiente (p. ej. le restablecieron la contraseña
+    // con la sesion abierta) actualiza los pasos y las rutas llevan a resolverlos.
+    useEffect(() => {
+        const alRecibir = (evento) => guardarPendientes(evento.detail);
+        window.addEventListener(PRIMER_INGRESO_EVENT, alRecibir);
+        return () => window.removeEventListener(PRIMER_INGRESO_EVENT, alRecibir);
+    }, [guardarPendientes]);
+
+    /** @param {string[]} [nuevosPendientes] pasos de primer ingreso que devolvio el login */
+    const login = useCallback((newToken, userData = {}, newRole, nuevosPendientes = []) => {
         const rolNormalizado = normalizeRole(newRole);
+        guardarPendientes(nuevosPendientes);
 
         setToken(newToken);
         setRolGuardado(rolNormalizado);
@@ -80,7 +108,12 @@ export const AuthProvider = ({ children }) => {
         if (userData.id) localStorage.setItem('userId', userData.id);
         if (userData.email) localStorage.setItem('userEmail', userData.email);
         if (userData.name) localStorage.setItem('userName', userData.name);
-    }, []);
+    }, [guardarPendientes]);
+
+    const completarPendiente = useCallback(
+        (paso) => guardarPendientes(pendientes.filter((pendiente) => pendiente !== paso)),
+        [pendientes, guardarPendientes],
+    );
 
     const updateUser = useCallback((data) => {
         setPerfil((prev) => ({ ...prev, ...data }));
@@ -99,13 +132,16 @@ export const AuthProvider = ({ children }) => {
         user,
         token: sesion ? token : null,
         role,
+        /** Pasos de primer ingreso sin completar; mientras haya, las rutas protegidas llevan a /primer-ingreso. */
+        pendientes: sesion ? pendientes : [],
+        completarPendiente,
         login,
         logout,
         updateUser,
         isAdmin: () => role === ROLES.ADMIN,
         /** MacondoLab o administrador: acceso a Usuarios y Catálogos. */
         esGestion: () => esDeGestion(role),
-    }), [user, token, sesion, role, login, logout, updateUser]);
+    }), [user, token, sesion, role, pendientes, completarPendiente, login, logout, updateUser]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

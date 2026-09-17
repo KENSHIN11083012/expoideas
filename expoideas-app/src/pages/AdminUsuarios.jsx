@@ -93,6 +93,16 @@ function SelectorDeRol({ usuario, actor, esPropio, deshabilitado, onChange }) {
     );
 }
 
+/** La persona aún no cambia su contraseña temporal o no ha autorizado sus datos. */
+function PrimerIngresoPendiente({ usuario, className }) {
+    if (!usuario.pendientes?.length) return null;
+    return (
+        <Badge variant="outline" mono className={className} title="Aún no completa su primer ingreso">
+            Primer ingreso pendiente
+        </Badge>
+    );
+}
+
 /** Facultad arriba; sede y programa debajo. Gestión y jurados no tienen adscripción. */
 function ResumenAdscripcion({ usuario }) {
     if (!requiereAdscripcion(usuario.rol)) {
@@ -177,7 +187,7 @@ function DialogoResetPassword({ usuario, onClose, onConfirmar }) {
                         <DialogTitle>Restablecer contraseña</DialogTitle>
                         <DialogDescription>
                             Nueva contraseña para {usuario.nombres} {usuario.apellidos} ({usuario.correoInstitucional}).
-                            Compártela por un canal seguro.
+                            Compártela por un canal seguro: se le pedirá cambiarla al ingresar.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogBody>
@@ -344,7 +354,7 @@ function DialogoNuevaCuenta({ actor, onClose, onCrear }) {
                             <Field
                                 label="Contraseña temporal"
                                 error={errors.password?.message}
-                                hint="Entrégala por un canal seguro; la persona puede cambiarla en Seguridad."
+                                hint="Entrégala por un canal seguro; se le pedirá cambiarla en su primer ingreso."
                                 required
                             >
                                 <PasswordInput autoComplete="new-password" {...register('password')} />
@@ -514,6 +524,7 @@ const AdminUsuarios = () => {
                                                     <p className="font-semibold text-on-surface">
                                                         {u.nombres} {u.apellidos}
                                                         {esPropio(u) && <Badge variant="lima" mono className="ml-2">Tú</Badge>}
+                                                        <PrimerIngresoPendiente usuario={u} className="ml-2" />
                                                     </p>
                                                     <p className="truncate text-on-surface-variant">{u.correoInstitucional}</p>
                                                 </div>
@@ -556,6 +567,7 @@ const AdminUsuarios = () => {
                                         <Avatar nombres={u.nombres} apellidos={u.apellidos} fotoUrl={u.fotoUrl} />
                                         <div className="min-w-0 flex-1">
                                             <p className="font-semibold">{u.nombres} {u.apellidos}</p>
+                                            <PrimerIngresoPendiente usuario={u} className="mt-1" />
                                             <p className="truncate text-sm text-on-surface-variant">{u.correoInstitucional}</p>
                                             <div className="mt-1 text-sm text-on-surface-variant">
                                                 <ResumenAdscripcion usuario={u} />

@@ -39,6 +39,7 @@ public class AuthService {
                 .id(usuario.getId())
                 .nombres(usuario.getNombres())
                 .apellidos(usuario.getApellidos())
+                .pendientes(usuario.pendientesDeIngreso())
                 .build();
     }
 }

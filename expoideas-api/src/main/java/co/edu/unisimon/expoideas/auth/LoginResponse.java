@@ -5,6 +5,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import co.edu.unisimon.expoideas.entity.PendienteDeIngreso;
+
+import java.util.List;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -16,4 +20,6 @@ public class LoginResponse {
     private Integer id;
     private String nombres;
     private String apellidos;
+    /** Si no está vacío, el frontend lleva a la pantalla de primer ingreso en vez de la de inicio. */
+    private List<PendienteDeIngreso> pendientes;
 }

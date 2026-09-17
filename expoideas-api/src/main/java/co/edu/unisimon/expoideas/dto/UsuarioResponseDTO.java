@@ -3,7 +3,10 @@ package co.edu.unisimon.expoideas.dto;
 import lombok.Builder;
 import lombok.Data;
 
+import co.edu.unisimon.expoideas.entity.PendienteDeIngreso;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Datos de un usuario para el propio usuario (/usuarios/me) y para el admin.
@@ -32,4 +35,7 @@ public class UsuarioResponseDTO {
     private String facultad;
     private Integer programaAcademicoId;
     private String programaAcademico;
+
+    /** Pasos de primer ingreso sin completar; vacío si la cuenta puede usar la plataforma. */
+    private List<PendienteDeIngreso> pendientes;
 }

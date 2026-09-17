@@ -179,6 +179,8 @@ public class UsuarioService {
                 .password(passwordEncoder.encode(dto.password()))
                 .rol(dto.rol())
                 .autorizaDatos(false)
+                // La contraseña la pone quien crea la cuenta: se cambia en el primer ingreso.
+                .debeCambiarPassword(true)
                 .build();
         if (dto.rol().requiereAdscripcion()) {
             nuevo.setSede(buscarSede(dto.sedeId()));
@@ -265,7 +267,25 @@ public class UsuarioService {
     }
 
     /**
-     * Restablecimiento desde la gestion, sin conocer la contrasena actual.
+     * Autorizacion de tratamiento de datos dada por el propio usuario. Si ya la
+     * habia dado, conserva la fecha original.
+     *
+     * @throws NoSuchElementException si el correo no existe
+     */
+    @Transactional
+    public void autorizarDatosPropio(String correo) {
+        Usuario usuario = buscarPorCorreo(correo);
+        if (!Boolean.TRUE.equals(usuario.getAutorizaDatos())) {
+            usuario.setAutorizaDatos(true);
+            usuario.setFechaAutorizacionDatos(LocalDateTime.now());
+            usuarioRepository.save(usuario);
+            log.info("Usuario ID {} autorizo el tratamiento de datos", usuario.getId());
+        }
+    }
+
+    /**
+     * Restablecimiento desde la gestion, sin conocer la contrasena actual. La
+     * contrasena queda como temporal: se cambia en el siguiente ingreso.
      *
      * @throws AccionNoPermitidaException si el actor no puede gestionar al usuario o es su propia cuenta
      * @throws NoSuchElementException     si el correo no existe
@@ -300,6 +320,8 @@ public class UsuarioService {
         }
 
         usuario.setPassword(passwordEncoder.encode(dto.passwordNueva()));
+        // La que pone la gestion es temporal; la que elige la propia persona, no.
+        usuario.setDebeCambiarPassword(!requiereActual);
         usuarioRepository.save(usuario);
     }
 
@@ -416,6 +438,7 @@ public class UsuarioService {
                 .facultad(facultad != null ? facultad.getNombre() : null)
                 .programaAcademicoId(programa != null ? programa.getId() : null)
                 .programaAcademico(programa != null ? programa.getNombre() : null)
+                .pendientes(usuario.pendientesDeIngreso())
                 .build();
     }
 }

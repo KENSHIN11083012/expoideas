@@ -8,9 +8,10 @@ import { ROLES, ROLES_DE_GESTION, esDeGestion } from '@/utils/roles';
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: vi.fn() }));
 
-const sesionDe = (role) =>
+const sesionDe = (role, pendientes = []) =>
     useAuth.mockReturnValue({
         token: 'token',
+        pendientes,
         user: { name: 'Marta Ríos', email: 'marta@empresa.com' },
         role,
         esGestion: () => esDeGestion(role),
@@ -48,6 +49,7 @@ describe('Rutas de gestión', () => {
                         element={<ProtectedRoute allowedRoles={ROLES_DE_GESTION}><p>Pantalla de usuarios</p></ProtectedRoute>}
                     />
                     <Route path="/unauthorized" element={<p>Sin permiso</p>} />
+                    <Route path="/primer-ingreso" element={<p>Primer ingreso</p>} />
                     <Route path="/login" element={<p>Inicia sesión</p>} />
                 </Routes>
             </MemoryRouter>,
@@ -65,6 +67,13 @@ describe('Rutas de gestión', () => {
         renderRuta();
 
         expect(screen.getByText('Pantalla de usuarios')).toBeInTheDocument();
+    });
+
+    it('con el primer ingreso pendiente va a resolverlo antes que nada', () => {
+        sesionDe(ROLES.MACONDOLAB, ['cambiarPassword']);
+        renderRuta();
+
+        expect(screen.getByText('Primer ingreso')).toBeInTheDocument();
     });
 
     it('sin sesión va al login', () => {

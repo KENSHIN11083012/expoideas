@@ -77,3 +77,8 @@ export const rolesAsignablesPor = (actor) => Object.values(ROLES).filter((rol) =
 
 /** Ruta de aterrizaje tras el login. */
 export const homePathForRole = (role) => (esDeGestion(role) ? '/admin/usuarios' : '/');
+
+export const RUTA_PRIMER_INGRESO = '/primer-ingreso';
+
+/** Con pasos de primer ingreso pendientes, se resuelven antes de ir a cualquier otro sitio. */
+export const rutaDeInicio = (role, pendientes = []) => (pendientes.length > 0 ? RUTA_PRIMER_INGRESO : homePathForRole(role));

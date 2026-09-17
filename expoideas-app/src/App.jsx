@@ -4,12 +4,13 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { AppShell } from '@/components/layout/AppShell';
 import { Spinner } from '@/components/ui/feedback';
 import { useAuth } from '@/hooks/useAuth';
-import { homePathForRole, ROLES_DE_GESTION } from '@/utils/roles';
+import { RUTA_PRIMER_INGRESO, ROLES_DE_GESTION, rutaDeInicio } from '@/utils/roles';
 
 // Cada página se descarga cuando se visita por primera vez.
 const Inicio = lazy(() => import('@/pages/Inicio'));
 const Login = lazy(() => import('@/pages/Login'));
 const Registro = lazy(() => import('@/pages/Registro'));
+const PrimerIngreso = lazy(() => import('@/pages/PrimerIngreso'));
 const Perfil = lazy(() => import('@/pages/Perfil'));
 const Seguridad = lazy(() => import('@/pages/Seguridad'));
 const AdminUsuarios = lazy(() => import('@/pages/AdminUsuarios'));
@@ -23,8 +24,8 @@ const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 /** Login y registro no tienen sentido con sesión iniciada. */
 function SoloInvitados({ children }) {
-    const { token, role } = useAuth();
-    return token ? <Navigate to={homePathForRole(role)} replace /> : children;
+    const { token, role, pendientes } = useAuth();
+    return token ? <Navigate to={rutaDeInicio(role, pendientes)} replace /> : children;
 }
 
 function App() {
@@ -35,6 +36,8 @@ function App() {
                     {/* Acceso: pantalla completa, sin navegación */}
                     <Route path="/login" element={<SoloInvitados><Login /></SoloInvitados>} />
                     <Route path="/register" element={<SoloInvitados><Registro /></SoloInvitados>} />
+                    {/* La página misma decide: sin sesión va al login y sin pendientes, al inicio. */}
+                    <Route path={RUTA_PRIMER_INGRESO} element={<PrimerIngreso />} />
 
                     <Route element={<AppShell />}>
                         {/* Públicas */}

@@ -1,5 +1,6 @@
 package co.edu.unisimon.expoideas.controller;
 
+import co.edu.unisimon.expoideas.dto.AutorizacionDatosDTO;
 import co.edu.unisimon.expoideas.dto.CambiarPasswordDTO;
 import co.edu.unisimon.expoideas.dto.UsuarioRegistroDTO;
 import co.edu.unisimon.expoideas.dto.UsuarioResponseDTO;
@@ -54,7 +55,19 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.actualizarPerfilPropio(authentication.getName(), dto));
     }
 
-    /** Cambio de contraseña del usuario autenticado; exige la actual. 204 si se cambió. */
+    /**
+     * Autorización de tratamiento de datos dada por el propio usuario, p. ej. en
+     * el primer ingreso de una cuenta creada por la gestión. 204.
+     */
+    @PutMapping("/me/autorizacion-datos")
+    public ResponseEntity<Void> autorizarDatosPropio(
+            Authentication authentication,
+            @Valid @RequestBody AutorizacionDatosDTO dto) {
+        usuarioService.autorizarDatosPropio(authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Cambio de contraseña del usuario autenticado; exige la actual y quita la marca de temporal. 204. */
     @PutMapping("/me/password")
     public ResponseEntity<Void> cambiarPasswordPropio(
             Authentication authentication,

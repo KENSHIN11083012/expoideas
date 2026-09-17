@@ -55,5 +55,12 @@ export const cambioPasswordSchema = z
         path: ['passwordNueva'],
     });
 
+/** Autorización de datos en el primer ingreso de una cuenta creada desde la gestión. */
+export const autorizacionDatosSchema = z.object({
+    autorizaDatos: z.boolean().refine((valor) => valor === true, {
+        message: 'Debes autorizar el tratamiento de tus datos para usar la plataforma',
+    }),
+});
+
 /** Restablecimiento por un administrador: sin la actual. */
 export const resetPasswordSchema = z.object(passwordNuevaConConfirmacion).refine(coinciden, errorCoinciden);

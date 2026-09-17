@@ -24,20 +24,21 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.util.Arrays;
+import java.util.stream.Stream;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
         /** Estructura de la universidad: la escribe solo el administrador. */
-        private static final String[] CATALOGOS_INSTITUCIONALES = {
+        static final String[] CATALOGOS_INSTITUCIONALES = {
                         "/api/v1/sedes/**",
                         "/api/v1/facultades/**",
                         "/api/v1/programas-academicos/**"
         };
 
         /** Clasificacion de proyectos: la escribe MacondoLab (y el administrador). */
-        private static final String[] CATALOGOS_DE_CLASIFICACION = {
+        static final String[] CATALOGOS_DE_CLASIFICACION = {
                         "/api/v1/categorias/**",
                         "/api/v1/keywords/**"
         };
@@ -109,9 +110,17 @@ public class SecurityConfig {
                                                                 .resolveException(request, response, null, e))
                                                 .accessDeniedHandler((request, response, e) -> handlerExceptionResolver
                                                                 .resolveException(request, response, null, e)))
-                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                                // Con la sesion ya resuelta: bloquea todo menos el primer ingreso si esta pendiente.
+                                .addFilterAfter(new PrimerIngresoFilter(handlerExceptionResolver, catalogosPublicos()),
+                                                JwtAuthenticationFilter.class);
 
                 return http.build();
+        }
+
+        private static String[] catalogosPublicos() {
+                return Stream.concat(Arrays.stream(CATALOGOS_INSTITUCIONALES), Arrays.stream(CATALOGOS_DE_CLASIFICACION))
+                                .toArray(String[]::new);
         }
 
         /**

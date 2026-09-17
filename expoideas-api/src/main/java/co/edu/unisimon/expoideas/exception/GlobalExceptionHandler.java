@@ -64,6 +64,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problem(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
+    /** Primer ingreso sin completar: el cliente lleva a la persona a resolver {@code pendientes}. */
+    @ExceptionHandler(PrimerIngresoPendienteException.class)
+    public ProblemDetail handlePrimerIngresoPendiente(PrimerIngresoPendienteException ex) {
+        ProblemDetail body = problem(HttpStatus.FORBIDDEN, ex.getMessage());
+        body.setProperty("pendientes", ex.getPendientes());
+        return body;
+    }
+
     @ExceptionHandler(NoSuchElementException.class)
     public ProblemDetail handleNotFound(NoSuchElementException ex) {
         return problem(HttpStatus.NOT_FOUND, ex.getMessage());

@@ -41,9 +41,9 @@ const gestion = {
 };
 
 /** Renderiza la página con la sesión de `cuenta` y devuelve la tabla de escritorio. */
-function renderComo(cuenta, role) {
+function renderComo(cuenta, role, usuarios = [ana, luis, carla]) {
     useAuth.mockReturnValue({ user: { email: cuenta.correoInstitucional }, role });
-    useUserManagement.mockReturnValue({ usuarios: [ana, luis, carla], isLoading: false, error: null, updatingId: null, ...gestion });
+    useUserManagement.mockReturnValue({ usuarios, isLoading: false, error: null, updatingId: null, ...gestion });
     render(<AdminUsuarios />);
     // La página pinta tabla (escritorio) y tarjetas (celular); sin CSS en jsdom se ven ambas.
     return within(screen.getByRole('table'));
@@ -100,6 +100,16 @@ describe('Usuarios como administrador', () => {
         await user.click(tabla.getByRole('button', { name: 'Acciones para Ana María Pérez' }));
 
         expect(await screen.findByRole('menuitem', { name: 'Eliminar usuario' })).toBeInTheDocument();
+    });
+});
+
+describe('Primer ingreso en la lista', () => {
+    it('marca las cuentas que aún no completan su primer ingreso', () => {
+        const marta = { id: 4, nombres: 'Marta', apellidos: 'Ríos', correoInstitucional: 'marta@empresa.com', rol: 'jurado', pendientes: ['cambiarPassword'] };
+        const tabla = renderComo(carla, 'MACONDOLAB', [ana, marta]);
+
+        expect(within(fila(tabla, 'Marta Ríos')).getByText('Primer ingreso pendiente')).toBeInTheDocument();
+        expect(within(fila(tabla, 'Ana María Pérez')).queryByText('Primer ingreso pendiente')).not.toBeInTheDocument();
     });
 });
 

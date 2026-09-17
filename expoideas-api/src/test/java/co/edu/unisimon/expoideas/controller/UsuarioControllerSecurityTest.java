@@ -13,7 +13,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -32,6 +34,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -336,6 +339,73 @@ class UsuarioControllerSecurityTest {
                         .content("{\"passwordActual\":\"Mala#2026\",\"passwordNueva\":\"Nueva#2026\",\"confirmacionPassword\":\"Nueva#2026\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("La contraseña actual es incorrecta."));
+    }
+
+    // ── Foto de perfil ─────────────────────────────────────────────────────
+
+    private static final MockMultipartFile FOTO = new MockMultipartFile(
+            "archivo", "yo.png", "image/png", new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A });
+
+    @Test
+    @WithMockUser(username = CORREO, roles = "ESTUDIANTE")
+    void subirFotoPropiaConMultipart() throws Exception {
+        when(usuarioService.actualizarFotoPropia(eq(CORREO), any()))
+                .thenReturn(UsuarioResponseDTO.builder().id(7).fotoId("0b0f3f7e-8c1a-4c55-9d3e-2f1a6b7c8d9e").build());
+
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/v1/usuarios/me/foto").file(FOTO))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fotoId").value("0b0f3f7e-8c1a-4c55-9d3e-2f1a6b7c8d9e"));
+
+        verify(usuarioService).actualizarFotoPropia(eq(CORREO), any());
+    }
+
+    @Test
+    void subirFotoSinSesionEs401() throws Exception {
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/v1/usuarios/me/foto").file(FOTO))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(usuarioService);
+    }
+
+    @Test
+    @WithMockUser(username = CORREO, roles = "ESTUDIANTE")
+    void subirFotoSinArchivoEs400() throws Exception {
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/v1/usuarios/me/foto").param("otro", "x"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Falta el archivo \"archivo\""));
+
+        verifyNoInteractions(usuarioService);
+    }
+
+    @Test
+    @WithMockUser(username = CORREO, roles = "ESTUDIANTE")
+    void subirFotoComoJsonEs415() throws Exception {
+        mockMvc.perform(put("/api/v1/usuarios/me/foto")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"url\":\"https://sitio-externo.com/foto.png\"}"))
+                .andExpect(status().isUnsupportedMediaType());
+
+        verifyNoInteractions(usuarioService);
+    }
+
+    @Test
+    @WithMockUser(username = CORREO, roles = "ESTUDIANTE")
+    void formatoNoPermitidoEs400EnElCampo() throws Exception {
+        when(usuarioService.actualizarFotoPropia(eq(CORREO), any()))
+                .thenThrow(new CamposInvalidosException(Map.of("archivo", "Formato no permitido. Usa un archivo JPG, PNG o WEBP.")));
+
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/v1/usuarios/me/foto").file(FOTO))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.campos.archivo").value("Formato no permitido. Usa un archivo JPG, PNG o WEBP."));
+    }
+
+    @Test
+    @WithMockUser(username = CORREO, roles = "ESTUDIANTE")
+    void quitarFotoPropiaEs204() throws Exception {
+        mockMvc.perform(delete("/api/v1/usuarios/me/foto"))
+                .andExpect(status().isNoContent());
+
+        verify(usuarioService).eliminarFotoPropia(CORREO);
     }
 
     // ── Registro ───────────────────────────────────────────────────────────

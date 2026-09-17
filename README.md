@@ -62,8 +62,8 @@ API en `http://localhost:8080` · Swagger en `http://localhost:8080/swagger-ui.h
 usa la variable `PORT`) y apunta el frontend al mismo puerto con `VITE_API_URL` en su `.env`.
 
 Sin el perfil `local`, la configuración se toma de variables de entorno: `DB_URL`, `DB_USERNAME`,
-`DB_PASSWORD`, `JWT_SECRET` y, opcionalmente, `PORT`, `JWT_EXPIRATION` y `ALLOWED_ORIGINS`. No hay
-valores por defecto para las credenciales: si falta una, la app no arranca.
+`DB_PASSWORD`, `JWT_SECRET` y, opcionalmente, `PORT`, `JWT_EXPIRATION`, `ALLOWED_ORIGINS` y `ARCHIVOS_DIR`.
+No hay valores por defecto para las credenciales: si falta una, la app no arranca.
 
 Los tests no necesitan base de datos:
 
@@ -98,6 +98,10 @@ reutiliza como `basename` del router, así que no hay que tocarlo en dos sitios.
   de cada campo. Sin sesión válida la API responde 401 y el frontend cierra la sesión.
 - Al desplegar, apaga Swagger con `springdoc.api-docs.enabled=false` y
   `springdoc.swagger-ui.enabled=false`.
+- Los archivos subidos (fotos, entregables) se guardan en disco, en `ARCHIVOS_DIR` (por defecto
+  `uploads/` junto a la API, ignorada por git); la BD solo guarda sus metadatos. Esa carpeta debe
+  quedar fuera de lo que publica el servidor web y entrar en las copias de seguridad junto con la BD.
+  Se aceptan JPG, PNG, WEBP y PDF de hasta 5 MB, validados por su contenido.
 
 - `docs/legacy-schema/` guarda el DDL original de Dattapro como referencia. Está fuera de git.
 - Nunca commitees dumps de base de datos ni logs de ejecución: el `.gitignore` de la raíz los cubre.

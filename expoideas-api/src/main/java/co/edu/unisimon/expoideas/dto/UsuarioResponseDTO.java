@@ -25,7 +25,8 @@ public class UsuarioResponseDTO {
     private String apellidos;
     private String correoInstitucional;
     private String numeroIdentificacion;
-    private String fotoUrl;
+    /** Identificador de la foto de perfil (GET /api/v1/archivos/{fotoId}), o null. */
+    private String fotoId;
     private String rol;
     private LocalDateTime fechaCreacion;
 

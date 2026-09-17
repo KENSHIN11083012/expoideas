@@ -4,7 +4,7 @@ import { AuthContext } from './authContext';
 import { PRIMER_INGRESO_EVENT, UNAUTHORIZED_EVENT } from '../services/apiClient';
 import { ROLES, esDeGestion, normalizeRole, roleFromToken } from '../utils/roles';
 
-const STORAGE_KEYS = ['token', 'role', 'userId', 'userEmail', 'userName', 'pendientes'];
+const STORAGE_KEYS = ['token', 'role', 'userId', 'userEmail', 'userName', 'userFotoId', 'pendientes'];
 
 /** Devuelve null tambien para los "undefined"/"null" que dejaban versiones viejas. */
 const readStored = (key) => {
@@ -29,6 +29,7 @@ const perfilGuardado = () => ({
     id: readStored('userId'),
     email: readStored('userEmail'),
     name: readStored('userName'),
+    fotoId: readStored('userFotoId'),
 });
 
 export const AuthProvider = ({ children }) => {
@@ -46,7 +47,7 @@ export const AuthProvider = ({ children }) => {
     const logout = useCallback(() => {
         setToken(null);
         setRolGuardado(null);
-        setPerfil({ id: null, email: null, name: null });
+        setPerfil({ id: null, email: null, name: null, fotoId: null });
         setPendientes([]);
         STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
     }, []);
@@ -101,6 +102,7 @@ export const AuthProvider = ({ children }) => {
             id: userData.id ?? null,
             email: userData.email ?? null,
             name: userData.name ?? null,
+            fotoId: userData.fotoId ?? null,
         });
 
         if (newToken) localStorage.setItem('token', newToken);
@@ -108,6 +110,8 @@ export const AuthProvider = ({ children }) => {
         if (userData.id) localStorage.setItem('userId', userData.id);
         if (userData.email) localStorage.setItem('userEmail', userData.email);
         if (userData.name) localStorage.setItem('userName', userData.name);
+        if (userData.fotoId) localStorage.setItem('userFotoId', userData.fotoId);
+        else localStorage.removeItem('userFotoId');
     }, [guardarPendientes]);
 
     const completarPendiente = useCallback(
@@ -119,6 +123,11 @@ export const AuthProvider = ({ children }) => {
         setPerfil((prev) => ({ ...prev, ...data }));
         if (data.email) localStorage.setItem('userEmail', data.email);
         if (data.name) localStorage.setItem('userName', data.name);
+        // La foto se puede quitar: null borra la guardada.
+        if ('fotoId' in data) {
+            if (data.fotoId) localStorage.setItem('userFotoId', data.fotoId);
+            else localStorage.removeItem('userFotoId');
+        }
     }, []);
 
     const user = useMemo(

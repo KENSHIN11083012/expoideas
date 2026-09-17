@@ -53,11 +53,13 @@ const parsearCuerpo = async (response) => {
 
 /**
  * @param {string} path  ruta relativa a la API, p. ej. '/usuarios'
- * @param {object} options  method, body (objeto plano), auth (por defecto true)
+ * @param {object} options  method, body (objeto plano o FormData), auth (por defecto true)
  * @throws {Error} con .status y, si la hubo, .body
  */
 export const request = async (path, { method = 'GET', body, auth = true, headers = {} } = {}) => {
     const token = auth ? readToken() : '';
+    // Con FormData (archivos) el navegador arma el Content-Type multipart con su boundary.
+    const esFormulario = body instanceof FormData;
 
     let response;
     try {
@@ -65,11 +67,11 @@ export const request = async (path, { method = 'GET', body, auth = true, headers
             method,
             headers: {
                 Accept: 'application/json',
-                ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+                ...(body !== undefined && !esFormulario ? { 'Content-Type': 'application/json' } : {}),
                 ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 ...headers,
             },
-            ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+            ...(body !== undefined ? { body: esFormulario ? body : JSON.stringify(body) } : {}),
         });
     } catch {
         const networkError = new Error('Error de red. Verifica tu conexion.');

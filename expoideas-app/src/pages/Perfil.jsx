@@ -15,7 +15,7 @@ import { CamposAdscripcion } from '@/components/forms/CamposAdscripcion';
 import { PageContainer } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar } from '@/components/ui/avatar';
+import { FotoDePerfil } from '@/components/perfil/FotoDePerfil';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
@@ -45,11 +45,11 @@ function Dato({ icon: Icono, etiqueta, valor, vacio = 'Sin asignar' }) {
     );
 }
 
-function TarjetaIdentidad({ perfil }) {
+function TarjetaIdentidad({ perfil, onActualizado }) {
     return (
         <Card acento="primary" className="h-fit">
             <CardContent className="flex flex-col items-center gap-3 pt-8 text-center">
-                <Avatar nombres={perfil.nombres} apellidos={perfil.apellidos} fotoUrl={perfil.fotoUrl} size="lg" />
+                <FotoDePerfil perfil={perfil} onActualizado={onActualizado} />
                 <div className="flex flex-col items-center gap-2">
                     <p className="font-heading text-xl font-bold leading-tight">{perfil.nombres} {perfil.apellidos}</p>
                     <Badge variant="lima" mono>{roleLabel(perfil.rol)}</Badge>
@@ -227,7 +227,7 @@ const Perfil = () => {
                 <CargandoPerfil />
             ) : (
                 <div className="grid gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
-                    <TarjetaIdentidad perfil={perfil} />
+                    <TarjetaIdentidad perfil={perfil} onActualizado={setPerfil} />
 
                     <div className="flex flex-col gap-6">
                         <FormularioPerfil perfil={perfil} onGuardado={setPerfil} />

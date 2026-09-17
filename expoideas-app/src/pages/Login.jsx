@@ -41,7 +41,7 @@ const Login = () => {
             const rol = roleFromToken(jwtDecode(data.token)) ?? normalizeRole(data.rol);
             const name = [data.nombres, data.apellidos].filter(Boolean).join(' ');
             const pendientes = data.pendientes ?? [];
-            login(data.token, { id: data.id, email, name }, rol, pendientes);
+            login(data.token, { id: data.id, email, name, fotoId: data.fotoId ?? null }, rol, pendientes);
 
             // Primero el primer ingreso; si no, vuelve a la página protegida de la que venía.
             const destino = pendientes.length > 0

@@ -1,5 +1,6 @@
 package co.edu.unisimon.expoideas.service;
 
+import co.edu.unisimon.expoideas.archivos.FormatoArchivo;
 import co.edu.unisimon.expoideas.dto.CambiarPasswordDTO;
 import co.edu.unisimon.expoideas.dto.UsuarioAdminCreateDTO;
 import co.edu.unisimon.expoideas.dto.UsuarioAdminUpdateDTO;
@@ -7,11 +8,13 @@ import co.edu.unisimon.expoideas.dto.UsuarioRegistroDTO;
 import co.edu.unisimon.expoideas.dto.UsuarioResponseDTO;
 import co.edu.unisimon.expoideas.dto.UsuarioUpdateDTO;
 import co.edu.unisimon.expoideas.dto.Validaciones;
+import co.edu.unisimon.expoideas.entity.Archivo;
 import co.edu.unisimon.expoideas.entity.Facultad;
 import co.edu.unisimon.expoideas.entity.ProgramaAcademico;
 import co.edu.unisimon.expoideas.entity.RolUsuario;
 import co.edu.unisimon.expoideas.entity.Sede;
 import co.edu.unisimon.expoideas.entity.Usuario;
+import co.edu.unisimon.expoideas.entity.VisibilidadArchivo;
 import co.edu.unisimon.expoideas.exception.AccionNoPermitidaException;
 import co.edu.unisimon.expoideas.exception.CamposInvalidosException;
 import co.edu.unisimon.expoideas.exception.ConflictException;
@@ -24,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -48,6 +52,7 @@ public class UsuarioService {
     private final FacultadRepository facultadRepository;
     private final ProgramaAcademicoRepository programaAcademicoRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ArchivoService archivoService;
 
     // ---------------------------------------------
     // POST - Registro
@@ -224,8 +229,6 @@ public class UsuarioService {
             usuario.setNumeroIdentificacion(dto.numeroIdentificacion());
         if (dto.correoInstitucional() != null)
             usuario.setCorreoInstitucional(dto.correoInstitucional());
-        if (dto.fotoUrl() != null)
-            usuario.setFotoUrl(dto.fotoUrl());
         if (dto.password() != null && !dto.password().isBlank())
             usuario.setPassword(passwordEncoder.encode(dto.password()));
         if (dto.rol() != null)
@@ -264,6 +267,41 @@ public class UsuarioService {
     @Transactional
     public void cambiarPasswordPropio(String correo, CambiarPasswordDTO dto) {
         validarYActualizarPassword(buscarPorCorreo(correo), dto, true);
+    }
+
+    // ---------------------------------------------
+    // Foto de perfil
+    // ---------------------------------------------
+
+    /**
+     * Sube o reemplaza la foto de perfil. La foto anterior se borra cuando la
+     * nueva queda guardada.
+     *
+     * @throws co.edu.unisimon.expoideas.exception.CamposInvalidosException si no es JPG, PNG o WEBP, esta vacia o pasa de 5 MB
+     */
+    @Transactional
+    public UsuarioResponseDTO actualizarFotoPropia(String correo, MultipartFile contenido) {
+        Usuario usuario = buscarPorCorreo(correo);
+        Archivo anterior = usuario.getFoto();
+
+        usuario.setFoto(archivoService.guardar(contenido, FormatoArchivo.IMAGENES, VisibilidadArchivo.publico, usuario));
+        usuarioRepository.save(usuario);
+        if (anterior != null) {
+            archivoService.eliminar(anterior);
+        }
+        return toResponseDTO(usuario);
+    }
+
+    /** Quita la foto de perfil, si tiene. */
+    @Transactional
+    public void eliminarFotoPropia(String correo) {
+        Usuario usuario = buscarPorCorreo(correo);
+        Archivo foto = usuario.getFoto();
+        if (foto != null) {
+            usuario.setFoto(null);
+            usuarioRepository.save(usuario);
+            archivoService.eliminar(foto);
+        }
     }
 
     /**
@@ -342,6 +380,9 @@ public class UsuarioService {
         if (actor.getId().equals(usuario.getId())) {
             throw new AccionNoPermitidaException("No puedes eliminar tu propia cuenta.");
         }
+        // Sus archivos no pueden quedar sin dueno: se borran con la cuenta.
+        usuario.setFoto(null);
+        archivoService.eliminarDePropietario(usuario);
         usuarioRepository.delete(usuario);
         log.info("Usuario ID {} eliminado", id);
     }
@@ -429,7 +470,7 @@ public class UsuarioService {
                 .apellidos(usuario.getApellidos())
                 .correoInstitucional(usuario.getCorreoInstitucional())
                 .numeroIdentificacion(usuario.getNumeroIdentificacion())
-                .fotoUrl(usuario.getFotoUrl())
+                .fotoId(usuario.getFoto() != null ? usuario.getFoto().getUuid() : null)
                 .rol(usuario.getRol() != null ? usuario.getRol().name() : null)
                 .fechaCreacion(usuario.getFechaCreacion())
                 .sedeId(sede != null ? sede.getId() : null)

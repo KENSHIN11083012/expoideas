@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Database, House, KeyRound, LogIn, LogOut, Menu, User, UserPlus, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { roleLabel } from '@/utils/roles';
+import { urlDeArchivo } from '@/utils/archivos';
 import { cn } from '@/lib/utils';
 import { MarcaExpoideas } from '@/components/brand/MarcaExpoideas';
 import { LogosInstitucionales } from '@/components/brand/LogosInstitucionales';
@@ -56,7 +57,7 @@ function MenuDeUsuario({ user, role, onLogout }) {
                     className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-surface-container-low"
                     aria-label="Abrir menú de la cuenta"
                 >
-                    <Avatar nombres={nombres} apellidos={resto.join(' ')} size="sm" />
+                    <Avatar nombres={nombres} apellidos={resto.join(' ')} fotoUrl={urlDeArchivo(user?.fotoId)} size="sm" />
                     <span className="hidden flex-col items-start text-left lg:flex">
                         <span className="max-w-40 truncate text-sm font-semibold leading-tight text-on-surface">{nombreVisible(user)}</span>
                         <span className="font-mono text-[10px] uppercase tracking-wider text-on-surface-variant">{roleLabel(role)}</span>
@@ -115,7 +116,11 @@ function MenuMovil({ enlaces, autenticado, user, role, onLogout }) {
 
                 {autenticado && (
                     <div className="flex items-center gap-3 border-b border-outline-variant/60 px-5 py-4">
-                        <Avatar nombres={user?.name?.split(' ')[0]} apellidos={user?.name?.split(' ').slice(1).join(' ')} />
+                        <Avatar
+                            nombres={user?.name?.split(' ')[0]}
+                            apellidos={user?.name?.split(' ').slice(1).join(' ')}
+                            fotoUrl={urlDeArchivo(user?.fotoId)}
+                        />
                         <div className="min-w-0">
                             <p className="truncate text-sm font-semibold">{nombreVisible(user)}</p>
                             <p className="font-mono text-[10px] uppercase tracking-wider text-on-surface-variant">{roleLabel(role)}</p>

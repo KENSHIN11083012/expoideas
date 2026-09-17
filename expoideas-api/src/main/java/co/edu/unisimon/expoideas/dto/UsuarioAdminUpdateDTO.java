@@ -7,7 +7,8 @@ import jakarta.validation.constraints.Size;
 
 /**
  * Actualización de un usuario por parte de un administrador.
- * Todos los campos son opcionales: solo se aplica lo que llegue.
+ * Todos los campos son opcionales: solo se aplica lo que llegue. La foto no está
+ * aquí: la sube cada persona desde su perfil.
  *
  * <p>Adscripción: si llega {@code facultadId}, se reemplaza completa (facultad y
  * programa; {@code programaAcademicoId} en null significa "sin programa"). Si
@@ -22,8 +23,6 @@ public record UsuarioAdminUpdateDTO(
                 @Size(max = 50, message = "El número de identificación no puede exceder 50 caracteres") String numeroIdentificacion,
 
                 @Email(message = "El formato del correo no es válido") @Size(max = 150, message = "El correo no puede exceder 150 caracteres") String correoInstitucional,
-
-                @Size(max = 255, message = "La URL de la foto no puede exceder 255 caracteres") String fotoUrl,
 
                 @Pattern(regexp = Validaciones.PASSWORD_REGEX, message = Validaciones.PASSWORD_MENSAJE) String password,
 

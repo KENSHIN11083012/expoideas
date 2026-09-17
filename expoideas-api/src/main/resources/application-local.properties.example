@@ -11,6 +11,9 @@ application.security.jwt.secret-key=CAMBIAME
 # Si el 8080 esta ocupado en tu equipo. Ajusta tambien VITE_API_URL en expoideas-app/.env.
 # server.port=8081
 
+# Carpeta de los archivos subidos (por defecto uploads/ junto a la API).
+# app.archivos.directorio=uploads
+
 # Logs de SQL para desarrollo.
 # OJO: BasicBinder=TRACE imprime los valores de los parámetros (correos, etc.)
 # en el log. No lo actives en un entorno con datos reales.

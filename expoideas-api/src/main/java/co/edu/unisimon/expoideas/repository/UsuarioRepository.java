@@ -20,8 +20,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
     Optional<Usuario> findByCorreoInstitucional(String correoInstitucional);
 
     /**
-     * Carga un usuario con sede, programa y facultad ya resueltos.
-     * Sin el fetch join, construir el UsuarioResponseDTO dispara tres consultas
+     * Carga un usuario con sede, programa, facultad y foto ya resueltos.
+     * Sin el fetch join, construir el UsuarioResponseDTO dispara varias consultas
      * extra por usuario.
      */
     @Query("SELECT u FROM Usuario u " +
@@ -29,6 +29,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
            "LEFT JOIN FETCH u.facultad " +
            "LEFT JOIN FETCH u.programaAcademico p " +
            "LEFT JOIN FETCH p.facultad " +
+           "LEFT JOIN FETCH u.foto " +
            "WHERE u.id = :id")
     Optional<Usuario> findByIdWithBaseInfo(@Param("id") Integer id);
 
@@ -38,6 +39,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
            "LEFT JOIN FETCH u.facultad " +
            "LEFT JOIN FETCH u.programaAcademico p " +
            "LEFT JOIN FETCH p.facultad " +
+           "LEFT JOIN FETCH u.foto " +
            "WHERE u.correoInstitucional = :correo")
     Optional<Usuario> findByCorreoWithBaseInfo(@Param("correo") String correo);
 
@@ -49,6 +51,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
            "LEFT JOIN FETCH u.sede " +
            "LEFT JOIN FETCH u.facultad " +
            "LEFT JOIN FETCH u.programaAcademico p " +
-           "LEFT JOIN FETCH p.facultad")
+           "LEFT JOIN FETCH p.facultad " +
+           "LEFT JOIN FETCH u.foto")
     List<Usuario> findAllWithBaseInfo();
 }

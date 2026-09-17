@@ -34,7 +34,7 @@ public class PrimerIngresoFilter extends OncePerRequestFilter {
     private final HandlerExceptionResolver handlerExceptionResolver;
     private final RequestMatcher permitidas;
 
-    public PrimerIngresoFilter(HandlerExceptionResolver handlerExceptionResolver, String... catalogosPublicos) {
+    public PrimerIngresoFilter(HandlerExceptionResolver handlerExceptionResolver, String... lecturasPublicas) {
         this.handlerExceptionResolver = handlerExceptionResolver;
 
         PathPatternRequestMatcher.Builder ruta = PathPatternRequestMatcher.withDefaults();
@@ -44,8 +44,8 @@ public class PrimerIngresoFilter extends OncePerRequestFilter {
                 ruta.matcher(HttpMethod.PUT, "/api/v1/usuarios/me/password"),
                 ruta.matcher(HttpMethod.PUT, "/api/v1/usuarios/me/autorizacion-datos")));
         // Lo público sigue siendo público aunque la petición lleve sesión.
-        for (String catalogo : catalogosPublicos) {
-            matchers.add(ruta.matcher(HttpMethod.GET, catalogo));
+        for (String lectura : lecturasPublicas) {
+            matchers.add(ruta.matcher(HttpMethod.GET, lectura));
         }
         this.permitidas = new OrRequestMatcher(matchers);
     }

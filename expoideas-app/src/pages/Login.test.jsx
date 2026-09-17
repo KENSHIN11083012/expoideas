@@ -53,7 +53,7 @@ describe('Login', () => {
 
         expect(login).toHaveBeenCalledWith(
             expect.any(String),
-            { id: 3, email: 'coordinacion@unisimon.edu.co', name: 'Carla Díaz' },
+            { id: 3, email: 'coordinacion@unisimon.edu.co', name: 'Carla Díaz', fotoId: null },
             'MACONDOLAB',
             ['cambiarPassword', 'autorizarDatos'],
         );

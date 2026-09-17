@@ -30,6 +30,7 @@ import { RequisitosPassword } from '@/components/forms/RequisitosPassword';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
+import { urlDeArchivo } from '@/utils/archivos';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -519,7 +520,7 @@ const AdminUsuarios = () => {
                                     <tr key={u.id} className="transition-colors hover:bg-surface-container-low/60">
                                         <td className="px-5 py-3">
                                             <div className="flex items-center gap-3">
-                                                <Avatar nombres={u.nombres} apellidos={u.apellidos} fotoUrl={u.fotoUrl} />
+                                                <Avatar nombres={u.nombres} apellidos={u.apellidos} fotoUrl={urlDeArchivo(u.fotoId)} />
                                                 <div className="min-w-0">
                                                     <p className="font-semibold text-on-surface">
                                                         {u.nombres} {u.apellidos}
@@ -564,7 +565,7 @@ const AdminUsuarios = () => {
                             <li key={u.id}>
                                 <Card className="flex flex-col gap-4 p-4">
                                     <div className="flex items-start gap-3">
-                                        <Avatar nombres={u.nombres} apellidos={u.apellidos} fotoUrl={u.fotoUrl} />
+                                        <Avatar nombres={u.nombres} apellidos={u.apellidos} fotoUrl={urlDeArchivo(u.fotoId)} />
                                         <div className="min-w-0 flex-1">
                                             <p className="font-semibold">{u.nombres} {u.apellidos}</p>
                                             <PrimerIngresoPendiente usuario={u} className="mt-1" />

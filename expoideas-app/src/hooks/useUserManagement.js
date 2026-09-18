@@ -13,22 +13,29 @@ export const useUserManagement = () => {
     const [error, setError] = useState(null);
     const [updatingId, setUpdatingId] = useState(null);
 
-    const fetchUsuarios = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const data = await get('/admin/users');
-            setUsuarios(Array.isArray(data) ? data : []);
-            setError(null);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+    /** Lleva el resultado de una carga al estado, salvo que ya no esté vigente. */
+    const aplicar = useCallback((carga, vigente = () => true) =>
+        carga
+            .then((data) => {
+                if (!vigente()) return;
+                setUsuarios(Array.isArray(data) ? data : []);
+                setError(null);
+            })
+            .catch((err) => vigente() && setError(err.message))
+            .finally(() => vigente() && setIsLoading(false)), []);
 
     useEffect(() => {
-        fetchUsuarios();
-    }, [fetchUsuarios]);
+        let vigente = true;
+        aplicar(get('/admin/users'), () => vigente);
+        return () => {
+            vigente = false;
+        };
+    }, [aplicar]);
+
+    const fetchUsuarios = useCallback(() => {
+        setIsLoading(true);
+        return aplicar(get('/admin/users'));
+    }, [aplicar]);
 
     /** Crea una cuenta con rol y contraseña temporal. Lanza el error para que el formulario lo muestre. */
     const crearUsuario = async (datos) => {

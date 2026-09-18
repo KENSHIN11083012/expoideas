@@ -38,7 +38,7 @@ const sesion = ({ role = null, pendientes = [] } = {}) =>
         token: role ? 'token' : null,
         role,
         pendientes,
-        user: role ? { name: 'Marta Ríos', email: PERFIL.correoInstitucional, fotoId: null } : null,
+        user: role ? { nombres: 'Marta', apellidos: 'Ríos', nombreCompleto: 'Marta Ríos', email: PERFIL.correoInstitucional, fotoId: null } : null,
         login: vi.fn(),
         logout: vi.fn(),
         updateUser: vi.fn(),

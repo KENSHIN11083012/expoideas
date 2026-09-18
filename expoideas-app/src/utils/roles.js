@@ -1,15 +1,13 @@
 /**
- * Roles de Expoideas y normalizacion.
+ * Roles de Expoideas y su normalización.
  *
- * El backend emite el rol de dos formas segun el camino: el claim "role" del
- * JWT llega como ROLE_ADMIN y el campo "rol" de la respuesta de login llega
- * como admin. Dattapro resolvia esa diferencia en tres sitios distintos
- * (Login, AuthContext y ProtectedRoute), cada uno con su propio parche.
- * Aqui se resuelve una sola vez.
+ * La API escribe el rol de dos formas: el claim "role" del JWT llega como
+ * ["ROLE_ADMIN"] y el campo "rol" de sus respuestas como "admin". Aquí ambas se
+ * llevan a las constantes de ROLES.
  *
  * Las reglas de permisos son espejo de RolUsuario en la API, que es quien
- * decide de verdad: aqui solo sirven para no ofrecer acciones que la API
- * rechazaria.
+ * decide de verdad: aquí solo sirven para no ofrecer acciones que la API
+ * rechazaría.
  */
 
 /** En orden de menor a mayor alcance, que es como se listan en los selectores. */
@@ -44,9 +42,8 @@ export const normalizeRole = (role) => {
     return Object.values(ROLES).includes(normalized) ? normalized : null;
 };
 
-/** Extrae el rol de un JWT ya decodificado, mirando las claves que usa la API. */
-export const roleFromToken = (decoded) =>
-    normalizeRole(decoded?.role ?? decoded?.rol ?? decoded?.roles);
+/** Rol del claim "role" de un JWT ya decodificado. */
+export const roleFromToken = (decoded) => normalizeRole(decoded?.role);
 
 export const hasRole = (role, allowed) => {
     if (!allowed || allowed.length === 0) return true;

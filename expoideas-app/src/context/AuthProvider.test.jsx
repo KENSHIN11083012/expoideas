@@ -37,7 +37,7 @@ describe('Pendientes de primer ingreso en la sesión', () => {
     it('el login los guarda y completarlos los quita, también de localStorage', () => {
         renderSesion();
 
-        act(() => sesion.actual.login(tokenDe('ROLE_JURADO'), { email: 'marta@empresa.com' }, 'jurado', ['cambiarPassword', 'autorizarDatos']));
+        act(() => sesion.actual.login(tokenDe(['ROLE_JURADO']), { email: 'marta@empresa.com' }, ['cambiarPassword', 'autorizarDatos']));
         expect(screen.getByText('cambiarPassword,autorizarDatos')).toBeInTheDocument();
         expect(JSON.parse(localStorage.getItem('pendientes'))).toEqual(['cambiarPassword', 'autorizarDatos']);
 
@@ -50,7 +50,7 @@ describe('Pendientes de primer ingreso en la sesión', () => {
     });
 
     it('sobreviven a recargar la página', () => {
-        localStorage.setItem('token', tokenDe('ROLE_JURADO'));
+        localStorage.setItem('token', tokenDe(['ROLE_JURADO']));
         localStorage.setItem('pendientes', JSON.stringify(['autorizarDatos']));
 
         renderSesion();
@@ -60,7 +60,7 @@ describe('Pendientes de primer ingreso en la sesión', () => {
 
     it('un 403 de la API por primer ingreso los actualiza aunque la sesión ya estuviera al día', async () => {
         renderSesion();
-        act(() => sesion.actual.login(tokenDe('ROLE_MACONDOLAB'), { email: 'carla@unisimon.edu.co' }, 'macondolab', []));
+        act(() => sesion.actual.login(tokenDe(['ROLE_MACONDOLAB']), { email: 'carla@unisimon.edu.co' }, []));
         expect(screen.getByText('sin pendientes')).toBeInTheDocument();
 
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
@@ -95,7 +95,7 @@ describe('Pendientes de primer ingreso en la sesión', () => {
 
     it('cerrar sesión los borra', () => {
         renderSesion();
-        act(() => sesion.actual.login(tokenDe('ROLE_JURADO'), {}, 'jurado', ['autorizarDatos']));
+        act(() => sesion.actual.login(tokenDe(['ROLE_JURADO']), {}, ['autorizarDatos']));
 
         act(() => sesion.actual.logout());
 

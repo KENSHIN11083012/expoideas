@@ -82,7 +82,7 @@ class UsuarioServiceGestionTest {
 
     @Test
     void macondoLabNoModificaUnaCuentaDeAdministrador() {
-        assertThatThrownBy(() -> service.actualizarDesdeAdmin(CORREO_MACONDOLAB, 1, conNombres("Otro")))
+        assertThatThrownBy(() -> service.actualizarDesdeAdmin(CORREO_MACONDOLAB, 1, conRol(RolUsuario.admin)))
                 .isInstanceOf(AccionNoPermitidaException.class)
                 .hasMessageContaining("Solo un administrador puede modificar");
         verify(usuarioRepository, never()).save(any());
@@ -112,11 +112,9 @@ class UsuarioServiceGestionTest {
 
     @Test
     void enviarElMismoRolNoEsUnCambio() {
-        UsuarioAdminUpdateDTO dto = new UsuarioAdminUpdateDTO("Luis Alberto", null, null, null, null, RolUsuario.admin, null, null, null);
+        UsuarioResponseDTO actualizado = service.actualizarDesdeAdmin(CORREO_ADMIN, 1, conRol(RolUsuario.admin));
 
-        UsuarioResponseDTO actualizado = service.actualizarDesdeAdmin(CORREO_ADMIN, 1, dto);
-
-        assertThat(actualizado.getNombres()).isEqualTo("Luis Alberto");
+        assertThat(actualizado.getRol()).isEqualTo("admin");
     }
 
     // ── Contraseñas y eliminación ──────────────────────────────────────────
@@ -213,11 +211,7 @@ class UsuarioServiceGestionTest {
     }
 
     private static UsuarioAdminUpdateDTO conRol(RolUsuario rol) {
-        return new UsuarioAdminUpdateDTO(null, null, null, null, null, rol, null, null, null);
-    }
-
-    private static UsuarioAdminUpdateDTO conNombres(String nombres) {
-        return new UsuarioAdminUpdateDTO(nombres, null, null, null, null, null, null, null, null);
+        return new UsuarioAdminUpdateDTO(rol, null, null, null);
     }
 
     private static UsuarioAdminCreateDTO nueva(String correo, RolUsuario rol, Integer sedeId, Integer facultadId) {

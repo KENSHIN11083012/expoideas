@@ -43,12 +43,10 @@ const claseEnlace = ({ isActive }) =>
     );
 
 function nombreVisible(user) {
-    return user?.name || user?.email || 'Mi cuenta';
+    return user?.nombreCompleto || user?.email || 'Mi cuenta';
 }
 
 function MenuDeUsuario({ user, role, onLogout }) {
-    const [nombres = '', ...resto] = (user?.name ?? '').split(' ');
-
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -57,7 +55,7 @@ function MenuDeUsuario({ user, role, onLogout }) {
                     className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-surface-container-low"
                     aria-label="Abrir menú de la cuenta"
                 >
-                    <Avatar nombres={nombres} apellidos={resto.join(' ')} fotoUrl={urlDeArchivo(user?.fotoId)} size="sm" />
+                    <Avatar nombres={user?.nombres} apellidos={user?.apellidos} fotoUrl={urlDeArchivo(user?.fotoId)} size="sm" />
                     <span className="hidden flex-col items-start text-left lg:flex">
                         <span className="max-w-40 truncate text-sm font-semibold leading-tight text-on-surface">{nombreVisible(user)}</span>
                         <span className="font-mono text-[10px] uppercase tracking-wider text-on-surface-variant">{roleLabel(role)}</span>
@@ -117,8 +115,8 @@ function MenuMovil({ enlaces, autenticado, user, role, onLogout }) {
                 {autenticado && (
                     <div className="flex items-center gap-3 border-b border-outline-variant/60 px-5 py-4">
                         <Avatar
-                            nombres={user?.name?.split(' ')[0]}
-                            apellidos={user?.name?.split(' ').slice(1).join(' ')}
+                            nombres={user?.nombres}
+                            apellidos={user?.apellidos}
                             fotoUrl={urlDeArchivo(user?.fotoId)}
                         />
                         <div className="min-w-0">
@@ -152,7 +150,7 @@ function MenuMovil({ enlaces, autenticado, user, role, onLogout }) {
                             </Button>
                         </>
                     )}
-                    <LogosInstitucionales size="sm" className="mt-3 self-center" />
+                    <LogosInstitucionales className="mt-3 self-center" />
                 </div>
             </SheetContent>
         </Sheet>
@@ -183,7 +181,7 @@ export function SiteHeader() {
                 </Link>
 
                 <span className="hidden h-8 w-px bg-outline-variant xl:block" aria-hidden="true" />
-                <LogosInstitucionales size="sm" className="hidden xl:inline-flex" />
+                <LogosInstitucionales className="hidden xl:inline-flex" />
 
                 <nav className="ml-auto hidden h-full items-stretch md:flex" aria-label="Principal">
                     {enlaces.map(({ to, label, end }) => (

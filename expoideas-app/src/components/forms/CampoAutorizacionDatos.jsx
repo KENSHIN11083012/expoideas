@@ -6,7 +6,8 @@ import { Checkbox } from '@/components/ui/checkbox';
  * formularios de react-hook-form. La usan el registro y el primer ingreso de
  * las cuentas creadas desde la gestión.
  */
-export function CampoAutorizacionDatos({ control, name = 'autorizaDatos' }) {
+export function CampoAutorizacionDatos({ control }) {
+    const name = 'autorizaDatos';
     return (
         <Controller
             control={control}

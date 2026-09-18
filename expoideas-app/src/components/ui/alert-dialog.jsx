@@ -7,7 +7,6 @@ import { buttonVariants } from './button-variants';
  * cierra al hacer clic fuera: hay que elegir.
  */
 export const AlertDialog = AlertDialogPrimitive.Root;
-export const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
 
 export function AlertDialogContent({ className, children, ...props }) {
     return (

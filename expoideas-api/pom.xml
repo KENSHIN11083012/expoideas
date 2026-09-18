@@ -5,29 +5,17 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.3</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<version>4.0.8</version>
+		<relativePath/>
 	</parent>
 	<groupId>co.edu.unisimon</groupId>
 	<artifactId>expoideas-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>expoideas-api</name>
 	<description>API de Expoideas: inscripción, evaluación y ranking de proyectos de INNPRENDE I y II (Universidad Simón Bolívar)</description>
-	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
-	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
-	</scm>
 	<properties>
 		<java.version>25</java.version>
+		<jjwt.version>0.12.7</jjwt.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -40,7 +28,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
+			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -55,18 +43,18 @@
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>
-			<version>0.12.6</version>
+			<version>${jjwt.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-impl</artifactId>
-			<version>0.12.6</version>
+			<version>${jjwt.version}</version>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-jackson</artifactId>
-			<version>0.12.6</version>
+			<version>${jjwt.version}</version>
 			<scope>runtime</scope>
 		</dependency>
 
@@ -76,7 +64,7 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- Migraciones de esquema. En Boot 4 la autoconfiguracion de Flyway vive en
+		<!-- Migraciones de esquema. En Boot 4 la autoconfiguración de Flyway vive en
 		     su propio starter: con solo flyway-core las migraciones nunca se ejecutan
 		     y ddl-auto=validate tumba el arranque por tablas inexistentes. -->
 		<dependency>
@@ -95,17 +83,13 @@
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<!-- La linea 3.0.x es la que soporta Spring Boot 4.0; la 2.x es para Boot 3 -->
+			<!-- La línea 3.0.x es la que soporta Spring Boot 4.0; la 2.x es para Boot 3 -->
 			<version>3.0.3</version>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<!-- En Boot 4 @WebMvcTest y la integracion de Spring Security con MockMvc
-		     viven en modulos propios. Sin el segundo, @WithMockUser no llega a la
-		     cadena de filtros y toda peticion autenticada sale 403. -->
+		<!-- En Boot 4 @WebMvcTest y la integración de Spring Security con MockMvc
+		     viven en módulos propios; los dos ya traen spring-boot-starter-test.
+		     Sin el segundo, @WithMockUser no llega a la cadena de filtros y toda
+		     petición autenticada sale 403. -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>

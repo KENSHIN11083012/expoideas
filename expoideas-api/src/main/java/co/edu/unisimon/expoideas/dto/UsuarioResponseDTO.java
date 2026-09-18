@@ -13,7 +13,7 @@ import java.util.List;
  *
  * <p>No incluye el hash de la contraseña: la versión de Dattapro sí lo exponía,
  * y GET /api/v1/usuarios era permitAll. Tampoco es apto para un listado público
- * (lleva correo y número de identificación).
+ * (lleva el correo).
  *
  * <p>La adscripción viaja con nombre (para mostrar) e id (para los formularios).
  */
@@ -24,7 +24,6 @@ public class UsuarioResponseDTO {
     private String nombres;
     private String apellidos;
     private String correoInstitucional;
-    private String numeroIdentificacion;
     /** Identificador de la foto de perfil (GET /api/v1/archivos/{fotoId}), o null. */
     private String fotoId;
     private String rol;

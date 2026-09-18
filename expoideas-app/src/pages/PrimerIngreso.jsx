@@ -175,7 +175,7 @@ const PrimerIngreso = () => {
             </div>
 
             <p className="mt-6 text-center text-sm text-on-surface-variant">
-                {user?.name ? `¿No eres ${user.name}? ` : ''}
+                {user?.nombreCompleto ? `¿No eres ${user.nombreCompleto}? ` : ''}
                 <button type="button" onClick={cerrarSesion} className="font-semibold text-primary underline-offset-4 hover:underline">
                     Cerrar sesión
                 </button>

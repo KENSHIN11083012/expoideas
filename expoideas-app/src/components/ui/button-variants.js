@@ -1,9 +1,9 @@
 import { cva } from 'class-variance-authority';
 
 /**
- * Variantes de botón de Academic Nexus. Vive aparte de button.jsx para que ese
- * archivo solo exporte componentes (Fast Refresh) y para poder dar aspecto de
- * botón a un <Link> con buttonVariants().
+ * Variantes de botón de Academic Nexus. Viven aparte de button.jsx para que ese
+ * archivo solo exporte componentes (Fast Refresh); las usan también AlertDialog
+ * y los enlaces con <Button asChild>.
  */
 export const buttonVariants = cva(
     [
@@ -24,7 +24,6 @@ export const buttonVariants = cva(
                     'border border-outline-variant bg-surface-container-lowest text-on-surface hover:border-primary hover:text-primary',
                 ghost: 'text-on-surface hover:bg-surface-container-low hover:text-primary',
                 destructive: 'bg-error text-on-error hover:bg-on-error-container active:translate-y-px',
-                link: 'text-primary underline-offset-4 hover:underline',
             },
             size: {
                 sm: 'h-8 px-3 text-xs',

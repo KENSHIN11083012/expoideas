@@ -39,7 +39,7 @@ public class Usuario {
     @Column(name = "correo_institucional", nullable = false, unique = true, length = 150)
     private String correoInstitucional;
 
-    /** Hash BCrypt. @JsonIgnore para que no salga por la API ni por error. */
+    /** Hash BCrypt. La API responde con DTOs; @JsonIgnore es solo una red por si acaso. */
     @JsonIgnore
     @Column(name = "password", nullable = false, length = 255)
     private String password;
@@ -61,11 +61,7 @@ public class Usuario {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_foto")
-    @JsonIgnore
     private Archivo foto;
-
-    @Column(name = "numero_identificacion", length = 50, unique = true)
-    private String numeroIdentificacion;
 
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
@@ -80,7 +76,6 @@ public class Usuario {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_sede")
-    @JsonIgnore
     private Sede sede;
 
     /**
@@ -89,13 +84,11 @@ public class Usuario {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_facultad")
-    @JsonIgnore
     private Facultad facultad;
 
     /** Opcional; si existe, pertenece a {@link #facultad}. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_programa_academico")
-    @JsonIgnore
     private ProgramaAcademico programaAcademico;
 
     /** Lo que la cuenta debe resolver antes de usar la plataforma, en el orden en que se pide. */

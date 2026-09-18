@@ -132,7 +132,7 @@ const Inicio = () => {
                         </div>
                         <figcaption className="glass absolute -bottom-6 left-4 right-4 flex flex-col gap-3 rounded-lg border border-outline-variant/70 p-4 shadow-lg sm:left-auto sm:right-6 sm:w-80">
                             <p className="font-mono text-[10px] uppercase tracking-wider text-on-surface-variant">Con el respaldo de</p>
-                            <LogosInstitucionales size="sm" />
+                            <LogosInstitucionales />
                         </figcaption>
                     </figure>
                 </div>

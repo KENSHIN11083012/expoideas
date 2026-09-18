@@ -1,6 +1,8 @@
 package co.edu.unisimon.expoideas.integration;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 
 import java.util.List;
@@ -43,6 +45,24 @@ class PlatformIT extends IntegrationTest {
         Response response = get("/api/v1/usuarios/me", null).expect(401);
         assertThat(response.headers().getContentType()).isEqualTo(MediaType.APPLICATION_PROBLEM_JSON);
         assertThat(response.<Integer>json("$.status")).isEqualTo(401);
+    }
+
+    @Test
+    void corsPreflightAllowsTheFrontendOriginWithoutCredentials() {
+        Response allowed = preflight("http://localhost:5173").expect(200);
+        assertThat(allowed.headers().getAccessControlAllowOrigin()).isEqualTo("http://localhost:5173");
+        assertThat(allowed.headers().getAccessControlAllowMethods()).contains(HttpMethod.PUT, HttpMethod.DELETE);
+        assertThat(allowed.headers().getAccessControlAllowCredentials()).isFalse();
+
+        preflight("https://otro-sitio.example").expect(403);
+    }
+
+    private Response preflight(String origin) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setOrigin(origin);
+        headers.setAccessControlRequestMethod(HttpMethod.PUT);
+        headers.setAccessControlRequestHeaders(List.of("authorization", "content-type"));
+        return send(HttpMethod.OPTIONS, "/api/v1/usuarios/me", null, null, headers);
     }
 
     @Test

@@ -21,7 +21,7 @@ export function SiteFooter() {
                         Los proyectos de la Cátedra UNISIMÓN INNPRENDE de la Universidad Simón Bolívar, con el
                         acompañamiento de MacondoLab.
                     </p>
-                    <LogosInstitucionales size="sm" />
+                    <LogosInstitucionales />
                 </div>
 
                 <nav className="flex flex-col gap-3" aria-label="Plataforma">

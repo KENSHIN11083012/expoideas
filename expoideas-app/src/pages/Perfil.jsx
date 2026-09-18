@@ -103,7 +103,7 @@ function FormularioPerfil({ perfil, onGuardado }) {
             const actualizado = await put('/usuarios/me', cuerpo);
             onGuardado(actualizado);
             reset(valoresDelFormulario(actualizado, conAdscripcion));
-            updateUser({ name: `${actualizado.nombres} ${actualizado.apellidos}`.trim() });
+            updateUser({ nombres: actualizado.nombres, apellidos: actualizado.apellidos });
             toast.success('Tus datos se actualizaron');
         } catch (error) {
             if (!aplicarErroresDelServidor(error, setError) && !aplicarErrorDePrograma(error, setError)) {

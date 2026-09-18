@@ -192,7 +192,7 @@ class UsuarioServiceAdscripcionTest {
     }
 
     private static UsuarioAdminUpdateDTO adminUpdate(Integer sedeId, Integer facultadId, Integer programaId) {
-        return new UsuarioAdminUpdateDTO(null, null, null, null, null, null, sedeId, facultadId, programaId);
+        return new UsuarioAdminUpdateDTO(null, sedeId, facultadId, programaId);
     }
 
     private static Usuario usuario() {

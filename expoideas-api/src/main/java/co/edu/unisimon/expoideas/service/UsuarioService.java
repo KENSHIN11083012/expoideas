@@ -198,13 +198,11 @@ public class UsuarioService {
     }
 
     /**
-     * Actualizacion desde la gestion: anade rol y adscripcion academica sobre lo
-     * que puede cambiar el propio usuario.
+     * Actualización desde la gestión: rol y adscripción académica.
      *
      * @throws AccionNoPermitidaException si el actor no puede gestionar al usuario o el rol pedido, o cambia su propio rol
      * @throws NoSuchElementException     si el usuario, la sede, la facultad o el programa no existen
      * @throws IllegalArgumentException   si el programa no es de la facultad o el rol no lleva adscripcion
-     * @throws ConflictException          si el correo nuevo ya es de otro usuario
      */
     @Transactional
     public UsuarioResponseDTO actualizarDesdeAdmin(String correoActor, Integer id, UsuarioAdminUpdateDTO dto) {
@@ -219,20 +217,9 @@ public class UsuarioService {
                 throw new AccionNoPermitidaException("Solo un administrador puede asignar los roles Administrador o MacondoLab.");
             }
         }
-        validarCorreoDisponible(usuario, dto.correoInstitucional());
-
-        if (dto.nombres() != null)
-            usuario.setNombres(dto.nombres());
-        if (dto.apellidos() != null)
-            usuario.setApellidos(dto.apellidos());
-        if (dto.numeroIdentificacion() != null)
-            usuario.setNumeroIdentificacion(dto.numeroIdentificacion());
-        if (dto.correoInstitucional() != null)
-            usuario.setCorreoInstitucional(dto.correoInstitucional());
-        if (dto.password() != null && !dto.password().isBlank())
-            usuario.setPassword(passwordEncoder.encode(dto.password()));
-        if (dto.rol() != null)
+        if (dto.rol() != null) {
             usuario.setRol(dto.rol());
+        }
 
         boolean traeAdscripcion = dto.sedeId() != null || dto.facultadId() != null || dto.programaAcademicoId() != null;
         if (traeAdscripcion && !usuario.getRol().requiereAdscripcion()) {
@@ -452,14 +439,6 @@ public class UsuarioService {
         usuario.setProgramaAcademico(programa);
     }
 
-    private void validarCorreoDisponible(Usuario usuario, String correoNuevo) {
-        if (correoNuevo != null
-                && !correoNuevo.equalsIgnoreCase(usuario.getCorreoInstitucional())
-                && usuarioRepository.existsByCorreoInstitucional(correoNuevo)) {
-            throw new ConflictException("El correo " + correoNuevo + " ya pertenece a otro usuario.");
-        }
-    }
-
     private UsuarioResponseDTO toResponseDTO(Usuario usuario) {
         Sede sede = usuario.getSede();
         Facultad facultad = usuario.getFacultad();
@@ -469,7 +448,6 @@ public class UsuarioService {
                 .nombres(usuario.getNombres())
                 .apellidos(usuario.getApellidos())
                 .correoInstitucional(usuario.getCorreoInstitucional())
-                .numeroIdentificacion(usuario.getNumeroIdentificacion())
                 .fotoId(usuario.getFoto() != null ? usuario.getFoto().getUuid() : null)
                 .rol(usuario.getRol() != null ? usuario.getRol().name() : null)
                 .fechaCreacion(usuario.getFechaCreacion())

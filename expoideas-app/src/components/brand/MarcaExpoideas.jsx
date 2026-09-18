@@ -10,11 +10,10 @@ import { cn } from '@/lib/utils';
 const TAMANOS = {
     sm: { icono: 'size-7', texto: 'text-lg' },
     md: { icono: 'size-9', texto: 'text-xl' },
-    lg: { icono: 'size-11', texto: 'text-3xl' },
 };
 
 /** Solo el monograma; mismo dibujo que public/favicon.svg. */
-export function MonogramaExpoideas({ className }) {
+function MonogramaExpoideas({ className }) {
     return (
         <svg viewBox="0 0 32 32" className={className} aria-hidden="true" focusable="false">
             <rect width="32" height="32" rx="7" fill="#006735" />
@@ -30,29 +29,17 @@ export function MonogramaExpoideas({ className }) {
 /**
  * Monograma + nombre.
  *
- * @param {'sm'|'md'|'lg'} [size]
- * @param {'oscuro'|'claro'} [tono] "claro" para fondos oscuros o verdes
- * @param {boolean} [soloIcono]
+ * @param {'sm'|'md'} [size]
  */
-export function MarcaExpoideas({ size = 'md', tono = 'oscuro', soloIcono = false, className }) {
+export function MarcaExpoideas({ size = 'md', className }) {
     const t = TAMANOS[size];
 
     return (
         <span className={cn('inline-flex items-center gap-2.5', className)}>
             <MonogramaExpoideas className={cn('shrink-0', t.icono)} />
-            {soloIcono ? (
-                <span className="sr-only">Expoideas</span>
-            ) : (
-                <span
-                    className={cn(
-                        'font-heading font-extrabold leading-none tracking-tight',
-                        t.texto,
-                        tono === 'claro' ? 'text-on-primary' : 'text-on-surface',
-                    )}
-                >
-                    Expo<span className={tono === 'claro' ? 'text-secondary-container' : 'text-primary'}>ideas</span>
-                </span>
-            )}
+            <span className={cn('font-heading font-extrabold leading-none tracking-tight text-on-surface', t.texto)}>
+                Expo<span className="text-primary">ideas</span>
+            </span>
         </span>
     );
 }

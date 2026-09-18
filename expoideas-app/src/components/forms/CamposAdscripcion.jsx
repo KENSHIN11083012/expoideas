@@ -12,7 +12,7 @@ import { Alert, Skeleton } from '@/components/ui/feedback';
  * @param {object} form      { register, control, setValue, errors } del useForm
  * @param {object} catalogos resultado de useCatalogosAdscripcion()
  */
-export function CamposAdscripcion({ form, catalogos, className }) {
+export function CamposAdscripcion({ form, catalogos }) {
     const { register, control, setValue, errors } = form;
     const { sedes, facultades, programas, isLoading, error } = catalogos;
     const facultadId = useWatch({ control, name: 'facultadId' });
@@ -30,14 +30,14 @@ export function CamposAdscripcion({ form, catalogos, className }) {
     };
 
     if (error) {
-        return <Alert variant="error" title="No pudimos cargar las sedes y facultades" className={className}>{error}</Alert>;
+        return <Alert variant="error" title="No pudimos cargar las sedes y facultades">{error}</Alert>;
     }
 
     // Los <select> se montan cuando ya tienen opciones: si se montaran vacíos, el
     // valor inicial del formulario no encontraría su opción y se vería en blanco.
     if (isLoading) {
         return (
-            <div className={className} aria-busy="true">
+            <div aria-busy="true">
                 <div className="grid gap-5 sm:grid-cols-2">
                     {[0, 1, 2].map((i) => (
                         <div key={i} className={i === 2 ? 'flex flex-col gap-1.5 sm:col-span-2' : 'flex flex-col gap-1.5'}>
@@ -51,7 +51,7 @@ export function CamposAdscripcion({ form, catalogos, className }) {
     }
 
     return (
-        <div className={className}>
+        <div>
             <div className="grid gap-5 sm:grid-cols-2">
                 <Field label="Sede" error={errors.sedeId?.message} required>
                     <NativeSelect {...register('sedeId')}>

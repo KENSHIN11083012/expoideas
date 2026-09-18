@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 const ACENTOS = {
     primary: 'border-t-4 border-t-primary',
     lima: 'border-t-4 border-t-secondary-container',
-    tertiary: 'border-t-4 border-t-tertiary',
 };
 
 export function Card({ className, acento, ...props }) {

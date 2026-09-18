@@ -12,22 +12,29 @@ export const useMasterData = (endpoint) => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const refresh = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const data = await masterDataService.getAll(endpoint);
-            setItems(Array.isArray(data) ? data : []);
-        } catch (err) {
-            setError(err.message || 'Error desconocido.');
-        } finally {
-            setIsLoading(false);
-        }
-    }, [endpoint]);
+    /** Lleva el resultado de una carga al estado, salvo que ya no esté vigente. */
+    const aplicar = useCallback((carga, vigente = () => true) =>
+        carga
+            .then((data) => {
+                if (!vigente()) return;
+                setItems(Array.isArray(data) ? data : []);
+                setError(null);
+            })
+            .catch((err) => vigente() && setError(err.message || 'Error desconocido.'))
+            .finally(() => vigente() && setIsLoading(false)), []);
 
     useEffect(() => {
-        refresh();
-    }, [refresh]);
+        let vigente = true;
+        aplicar(masterDataService.getAll(endpoint), () => vigente);
+        return () => {
+            vigente = false;
+        };
+    }, [endpoint, aplicar]);
+
+    const refresh = useCallback(() => {
+        setIsLoading(true);
+        return aplicar(masterDataService.getAll(endpoint));
+    }, [endpoint, aplicar]);
 
     /** Lanza el error para que el formulario lo muestre. */
     const createItem = useCallback(async (body) => {

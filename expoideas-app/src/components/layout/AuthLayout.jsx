@@ -25,7 +25,7 @@ export function AuthLayout({ titulo, panelTitulo, panelTexto, children }) {
                 <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10">{children}</main>
 
                 <footer className="flex flex-col items-center gap-4 text-center text-xs text-on-surface-variant">
-                    <LogosInstitucionales size="sm" className="lg:hidden" />
+                    <LogosInstitucionales className="lg:hidden" />
                     <p>© {new Date().getFullYear()} Universidad Simón Bolívar · Vigilada Mineducación</p>
                 </footer>
             </div>
@@ -54,7 +54,7 @@ export function AuthLayout({ titulo, panelTitulo, panelTexto, children }) {
                             className="aspect-[16/10] w-full object-cover"
                         />
                         <figcaption className="absolute inset-x-4 bottom-4">
-                            <LogosInstitucionales size="sm" className="bg-surface-container-lowest px-4 py-2.5 shadow-lg" />
+                            <LogosInstitucionales className="bg-surface-container-lowest px-4 py-2.5 shadow-lg" />
                         </figcaption>
                     </figure>
                 </div>

@@ -16,7 +16,7 @@ export default defineConfig([
     ],
     plugins: { react },
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: 'latest',
       globals: globals.browser,
       parserOptions: {
         ecmaVersion: 'latest',
@@ -28,7 +28,8 @@ export default defineConfig([
       // Sin esta regla, no-unused-vars no ve las variables usadas solo en JSX.
       'react/jsx-uses-vars': 'error',
       'no-unused-vars': ['error', {
-        varsIgnorePattern: '^[A-Z_]',
+        // Solo se ignoran las variables marcadas a propósito con _.
+        varsIgnorePattern: '^_',
         // Permite el idioma `const { campo, ...resto } = obj` para omitir campos.
         ignoreRestSiblings: true,
         // Un catch puede no necesitar el error.
@@ -37,7 +38,7 @@ export default defineConfig([
     },
   },
   {
-    // Los archivos de configuracion corren en Node, no en el navegador.
+    // Los archivos de configuración corren en Node, no en el navegador.
     files: ['vite.config.js', 'eslint.config.js'],
     languageOptions: { globals: globals.node },
   },

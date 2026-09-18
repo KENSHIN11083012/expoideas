@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils';
 /** Menú desplegable accesible (Radix): navegable con teclado y cierre con Escape. */
 export const DropdownMenu = DropdownMenuPrimitive.Root;
 export const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
-export const DropdownMenuGroup = DropdownMenuPrimitive.Group;
 
 export function DropdownMenuContent({ className, sideOffset = 6, align = 'end', ...props }) {
     return (

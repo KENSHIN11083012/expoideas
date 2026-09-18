@@ -1,12 +1,11 @@
-import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { hasRole, RUTA_PRIMER_INGRESO } from '../utils/roles';
+import { useAuth } from '@/hooks/useAuth';
+import { hasRole, RUTA_PRIMER_INGRESO } from '@/utils/roles';
 
 /**
- * Guarda una ruta segun autenticacion y roles permitidos.
+ * Guarda una ruta según la sesión y los roles permitidos.
  *
- * - Sin sesion  -> /login
+ * - Sin sesión  -> /login
  * - Primer ingreso pendiente -> /primer-ingreso
  * - Sin permiso -> /unauthorized
  *

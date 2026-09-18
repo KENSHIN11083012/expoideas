@@ -12,7 +12,7 @@ const sesionDe = (role, pendientes = []) =>
     useAuth.mockReturnValue({
         token: 'token',
         pendientes,
-        user: { name: 'Marta Ríos', email: 'marta@empresa.com' },
+        user: { nombres: 'Marta', apellidos: 'Ríos', nombreCompleto: 'Marta Ríos', email: 'marta@empresa.com' },
         role,
         esGestion: () => esDeGestion(role),
         logout: vi.fn(),
@@ -36,6 +36,24 @@ describe('Menú principal por rol', () => {
         render(<SiteHeader />, { wrapper: MemoryRouter });
 
         expect(enlacesDelMenu()).toEqual(['Inicio', 'Mi perfil', 'Usuarios', 'Catálogos']);
+    });
+});
+
+describe('Cuenta en la cabecera', () => {
+    it('las iniciales toman el primer nombre y el primer apellido, aunque sean compuestos', () => {
+        useAuth.mockReturnValue({
+            token: 'token',
+            pendientes: [],
+            role: ROLES.ESTUDIANTE,
+            user: { nombres: 'Ana María', apellidos: 'Pérez Gómez', nombreCompleto: 'Ana María Pérez Gómez', email: 'ana@unisimon.edu.co' },
+            esGestion: () => false,
+            logout: vi.fn(),
+        });
+        render(<SiteHeader />, { wrapper: MemoryRouter });
+
+        expect(screen.getAllByText('AP').length).toBeGreaterThan(0);
+        expect(screen.queryByText('AM')).not.toBeInTheDocument();
+        expect(screen.getByText('Ana María Pérez Gómez')).toBeInTheDocument();
     });
 });
 

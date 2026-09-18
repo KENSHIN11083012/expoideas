@@ -9,8 +9,6 @@ const VARIANTES = {
     lima: 'bg-secondary-container text-on-secondary-fixed border-secondary-fixed-dim',
     dark: 'bg-on-surface text-surface-container-lowest border-on-surface',
     outline: 'bg-surface-container-lowest text-on-surface-variant border-outline-variant',
-    tertiary: 'bg-tertiary-fixed text-on-tertiary-fixed-variant border-tertiary-fixed-dim',
-    error: 'bg-error-container text-on-error-container border-error/20',
 };
 
 export function Badge({ className, variant = 'primary', mono = false, ...props }) {

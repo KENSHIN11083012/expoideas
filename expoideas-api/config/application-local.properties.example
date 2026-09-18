@@ -1,0 +1,22 @@
+# Configuración de desarrollo. Copia este archivo a application-local.properties
+# en esta misma carpeta (ignorado por git) y rellena los valores. Spring Boot lee
+# config/ solo, sin empaquetarlo en el jar, al arrancar desde expoideas-api/:
+#   ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+
+spring.datasource.url=jdbc:mysql://localhost:3306/expoideas
+spring.datasource.username=root
+spring.datasource.password=CAMBIAME
+
+# openssl rand -base64 32
+application.security.jwt.secret-key=CAMBIAME
+
+# Si el 8080 está ocupado en tu equipo. Ajusta también VITE_API_URL en expoideas-app/.env.
+# server.port=8081
+
+# Carpeta de los archivos subidos (por defecto uploads/ junto a la API).
+# app.archivos.directorio=uploads
+
+# SQL que ejecuta Hibernate, formateado. Solo las sentencias: los valores de los
+# parámetros (correos, etc.) no se imprimen.
+logging.level.org.hibernate.SQL=DEBUG
+spring.jpa.properties.hibernate.format_sql=true

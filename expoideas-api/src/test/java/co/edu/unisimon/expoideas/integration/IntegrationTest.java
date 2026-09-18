@@ -198,7 +198,7 @@ abstract class IntegrationTest {
         return Response.of(request.exchange().returnResult(byte[].class));
     }
 
-    private Response send(HttpMethod method, String uri, String token, Object body, HttpHeaders headers) {
+    protected Response send(HttpMethod method, String uri, String token, Object body, HttpHeaders headers) {
         RestTestClient.RequestBodySpec request = client.method(method).uri(uri);
         if (token != null) {
             request = request.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);

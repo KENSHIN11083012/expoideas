@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { jwtDecode } from 'jwt-decode';
 import { ArrowRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { post } from '@/services/apiClient';
-import { homePathForRole, normalizeRole, RUTA_PRIMER_INGRESO, roleFromToken } from '@/utils/roles';
+import { normalizeRole, rutaDeInicio } from '@/utils/roles';
 import { DOMINIO_INSTITUCIONAL } from '@/utils/validaciones';
 import { loginSchema } from '@/schemas/auth';
 import { AuthLayout } from '@/components/layout/AuthLayout';
@@ -38,15 +37,12 @@ const Login = () => {
         setErrorGeneral('');
         try {
             const data = await post('/auth/login', { email, password }, { auth: false });
-            const rol = roleFromToken(jwtDecode(data.token)) ?? normalizeRole(data.rol);
-            const name = [data.nombres, data.apellidos].filter(Boolean).join(' ');
             const pendientes = data.pendientes ?? [];
-            login(data.token, { id: data.id, email, name, fotoId: data.fotoId ?? null }, rol, pendientes);
+            login(data.token, { email, nombres: data.nombres, apellidos: data.apellidos, fotoId: data.fotoId ?? null }, pendientes);
 
             // Primero el primer ingreso; si no, vuelve a la página protegida de la que venía.
-            const destino = pendientes.length > 0
-                ? RUTA_PRIMER_INGRESO
-                : location.state?.from?.pathname ?? homePathForRole(rol);
+            const desde = location.state?.from?.pathname;
+            const destino = pendientes.length === 0 && desde ? desde : rutaDeInicio(normalizeRole(data.rol), pendientes);
             navigate(destino, { replace: true });
         } catch (error) {
             setErrorGeneral(error.message);

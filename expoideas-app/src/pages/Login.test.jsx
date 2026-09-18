@@ -33,7 +33,7 @@ function renderLogin() {
 async function ingresar(user, correo) {
     await user.type(screen.getByLabelText(/^Correo institucional/), correo);
     await user.type(screen.getByLabelText(/^Contraseña/), 'Temporal#2026');
-    await user.click(screen.getByRole('button', { name: /Ingresar|Iniciar sesión/ }));
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
 }
 
 describe('Login', () => {
@@ -53,8 +53,7 @@ describe('Login', () => {
 
         expect(login).toHaveBeenCalledWith(
             expect.any(String),
-            { id: 3, email: 'coordinacion@unisimon.edu.co', name: 'Carla Díaz', fotoId: null },
-            'MACONDOLAB',
+            { email: 'coordinacion@unisimon.edu.co', nombres: 'Carla', apellidos: 'Díaz', fotoId: null },
             ['cambiarPassword', 'autorizarDatos'],
         );
         expect(await screen.findByText('Pantalla de primer ingreso')).toBeInTheDocument();

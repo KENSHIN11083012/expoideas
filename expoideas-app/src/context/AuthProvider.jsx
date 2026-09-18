@@ -1,42 +1,39 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import { AuthContext } from './authContext';
-import { PRIMER_INGRESO_EVENT, UNAUTHORIZED_EVENT } from '../services/apiClient';
-import { ROLES, esDeGestion, normalizeRole, roleFromToken } from '../utils/roles';
+import { AuthContext } from '@/context/authContext';
+import { PRIMER_INGRESO_EVENT, UNAUTHORIZED_EVENT } from '@/services/apiClient';
+import { ROLES, esDeGestion, roleFromToken } from '@/utils/roles';
 
-const STORAGE_KEYS = ['token', 'role', 'userId', 'userEmail', 'userName', 'userFotoId', 'pendientes'];
+/** Todo lo que la sesión guarda en localStorage. */
+const STORAGE_KEYS = ['token', 'user', 'pendientes'];
 
-/** Devuelve null tambien para los "undefined"/"null" que dejaban versiones viejas. */
-const readStored = (key) => {
-    const value = localStorage.getItem(key);
-    return value && value !== 'undefined' && value !== 'null' ? value : null;
-};
+const SIN_PERFIL = { email: null, nombres: null, apellidos: null, fotoId: null };
 
 const isExpired = (decoded) =>
     typeof decoded?.exp === 'number' && decoded.exp < Date.now() / 1000;
 
-/** Pasos de primer ingreso guardados con la sesión; lista vacía si no hay o están corruptos. */
-const pendientesGuardados = () => {
+/** Lee un JSON guardado; si no hay o está corrupto, devuelve el valor por defecto. */
+const leerJson = (key, porDefecto, esValido) => {
     try {
-        const lista = JSON.parse(localStorage.getItem('pendientes') ?? '[]');
-        return Array.isArray(lista) ? lista : [];
+        const valor = JSON.parse(localStorage.getItem(key));
+        return esValido(valor) ? valor : porDefecto;
     } catch {
-        return [];
+        return porDefecto;
     }
 };
 
-const perfilGuardado = () => ({
-    id: readStored('userId'),
-    email: readStored('userEmail'),
-    name: readStored('userName'),
-    fotoId: readStored('userFotoId'),
-});
+const pendientesGuardados = () => leerJson('pendientes', [], Array.isArray);
+const perfilGuardado = () => ({ ...SIN_PERFIL, ...leerJson('user', {}, (v) => v !== null && typeof v === 'object') });
 
 export const AuthProvider = ({ children }) => {
-    const [token, setToken] = useState(() => readStored('token'));
-    const [rolGuardado, setRolGuardado] = useState(() => normalizeRole(readStored('role')));
+    const [token, setToken] = useState(() => localStorage.getItem('token'));
     const [perfil, setPerfil] = useState(perfilGuardado);
     const [pendientes, setPendientes] = useState(pendientesGuardados);
+
+    const guardarPerfil = useCallback((nuevo) => {
+        setPerfil(nuevo);
+        localStorage.setItem('user', JSON.stringify(nuevo));
+    }, []);
 
     const guardarPendientes = useCallback((lista) => {
         setPendientes(lista);
@@ -46,94 +43,75 @@ export const AuthProvider = ({ children }) => {
 
     const logout = useCallback(() => {
         setToken(null);
-        setRolGuardado(null);
-        setPerfil({ id: null, email: null, name: null, fotoId: null });
+        setPerfil(SIN_PERFIL);
         setPendientes([]);
         STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
     }, []);
 
-    // La sesion se deriva del token en vez de mantenerse en un estado aparte
-    // sincronizado por un effect. El rol del token manda sobre el de localStorage.
+    // La sesión se deriva del token, que trae el rol y el vencimiento, en vez de
+    // mantenerse en un estado aparte sincronizado por un effect.
     const sesion = useMemo(() => {
         if (!token) return null;
         try {
             const decoded = jwtDecode(token);
             if (isExpired(decoded)) return null;
-            return {
-                role: roleFromToken(decoded) ?? rolGuardado,
-                subject: decoded.sub ?? null,
-            };
+            return { role: roleFromToken(decoded), subject: decoded.sub ?? null };
         } catch {
             return null;
         }
-    }, [token, rolGuardado]);
+    }, [token]);
 
-    // Hay token pero no es utilizable (caducado o ilegible). No hace falta tocar
-    // el estado: `sesion` ya es null y la app se comporta como sin sesion. Aqui
-    // solo se limpia localStorage, que es el sistema externo.
+    // Hay token pero no sirve (caducado o ilegible). No hace falta tocar el estado:
+    // `sesion` ya es null y la app se comporta como sin sesión. Aquí solo se limpia
+    // localStorage, que es el sistema externo.
     useEffect(() => {
         if (token && !sesion) {
             STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
         }
     }, [token, sesion]);
 
-    // Un 401 en cualquier peticion cierra la sesion desde un solo sitio.
+    // Un 401 en cualquier petición cierra la sesión desde un solo sitio.
     useEffect(() => {
         window.addEventListener(UNAUTHORIZED_EVENT, logout);
         return () => window.removeEventListener(UNAUTHORIZED_EVENT, logout);
     }, [logout]);
 
     // Un 403 por primer ingreso pendiente (p. ej. le restablecieron la contraseña
-    // con la sesion abierta) actualiza los pasos y las rutas llevan a resolverlos.
+    // con la sesión abierta) actualiza los pasos y las rutas llevan a resolverlos.
     useEffect(() => {
         const alRecibir = (evento) => guardarPendientes(evento.detail);
         window.addEventListener(PRIMER_INGRESO_EVENT, alRecibir);
         return () => window.removeEventListener(PRIMER_INGRESO_EVENT, alRecibir);
     }, [guardarPendientes]);
 
-    /** @param {string[]} [nuevosPendientes] pasos de primer ingreso que devolvio el login */
-    const login = useCallback((newToken, userData = {}, newRole, nuevosPendientes = []) => {
-        const rolNormalizado = normalizeRole(newRole);
+    /**
+     * @param {string} nuevoToken JWT del login; de él salen el rol y el vencimiento
+     * @param {{ email?: string, nombres?: string, apellidos?: string, fotoId?: string }} datos
+     * @param {string[]} [nuevosPendientes] pasos de primer ingreso que devolvió el login
+     */
+    const login = useCallback((nuevoToken, datos = {}, nuevosPendientes = []) => {
+        localStorage.setItem('token', nuevoToken);
+        setToken(nuevoToken);
+        guardarPerfil({ ...SIN_PERFIL, ...datos });
         guardarPendientes(nuevosPendientes);
-
-        setToken(newToken);
-        setRolGuardado(rolNormalizado);
-        setPerfil({
-            id: userData.id ?? null,
-            email: userData.email ?? null,
-            name: userData.name ?? null,
-            fotoId: userData.fotoId ?? null,
-        });
-
-        if (newToken) localStorage.setItem('token', newToken);
-        if (rolNormalizado) localStorage.setItem('role', rolNormalizado);
-        if (userData.id) localStorage.setItem('userId', userData.id);
-        if (userData.email) localStorage.setItem('userEmail', userData.email);
-        if (userData.name) localStorage.setItem('userName', userData.name);
-        if (userData.fotoId) localStorage.setItem('userFotoId', userData.fotoId);
-        else localStorage.removeItem('userFotoId');
-    }, [guardarPendientes]);
+    }, [guardarPerfil, guardarPendientes]);
 
     const completarPendiente = useCallback(
         (paso) => guardarPendientes(pendientes.filter((pendiente) => pendiente !== paso)),
         [pendientes, guardarPendientes],
     );
 
-    const updateUser = useCallback((data) => {
-        setPerfil((prev) => ({ ...prev, ...data }));
-        if (data.email) localStorage.setItem('userEmail', data.email);
-        if (data.name) localStorage.setItem('userName', data.name);
-        // La foto se puede quitar: null borra la guardada.
-        if ('fotoId' in data) {
-            if (data.fotoId) localStorage.setItem('userFotoId', data.fotoId);
-            else localStorage.removeItem('userFotoId');
-        }
-    }, []);
+    /** Actualiza nombres, apellidos o foto (fotoId null la quita). */
+    const updateUser = useCallback((datos) => guardarPerfil({ ...perfil, ...datos }), [perfil, guardarPerfil]);
 
-    const user = useMemo(
-        () => (sesion ? { ...perfil, email: perfil.email ?? sesion.subject } : null),
-        [sesion, perfil],
-    );
+    const user = useMemo(() => {
+        if (!sesion) return null;
+        return {
+            ...perfil,
+            email: perfil.email ?? sesion.subject,
+            nombreCompleto: [perfil.nombres, perfil.apellidos].filter(Boolean).join(' '),
+        };
+    }, [sesion, perfil]);
 
     const role = sesion?.role ?? null;
 

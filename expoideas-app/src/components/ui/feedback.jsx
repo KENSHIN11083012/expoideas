@@ -7,11 +7,11 @@ export function Skeleton({ className, ...props }) {
 }
 
 /** Indicador de carga de una sección o página completa. */
-export function Spinner({ className, label = 'Cargando…' }) {
+export function Spinner({ className }) {
     return (
         <div role="status" className={cn('flex flex-col items-center justify-center gap-3 py-16 text-on-surface-variant', className)}>
             <Loader2 className="size-7 animate-spin text-primary" aria-hidden="true" />
-            <span className="font-mono text-xs uppercase tracking-wider">{label}</span>
+            <span className="font-mono text-xs uppercase tracking-wider">Cargando…</span>
         </div>
     );
 }

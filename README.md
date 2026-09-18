@@ -46,10 +46,10 @@ edita una que ya se aplicó.
 
 ```bash
 cd expoideas-api
-cp src/main/resources/application-local.properties.example src/main/resources/application-local.properties
+cp config/application-local.properties.example config/application-local.properties
 ```
 
-Rellena `application-local.properties` con tus credenciales y un JWT secret nuevo
+Rellena `config/application-local.properties` con tus credenciales y un JWT secret nuevo
 (`openssl rand -base64 32`), y arranca:
 
 ```bash
@@ -58,7 +58,7 @@ Rellena `application-local.properties` con tus credenciales y un JWT secret nuev
 
 API en `http://localhost:8080` · Swagger en `http://localhost:8080/swagger-ui.html`
 
-**Si el puerto 8080 está ocupado**, descomenta `server.port` en `application-local.properties` (o
+**Si el puerto 8080 está ocupado**, descomenta `server.port` en `config/application-local.properties` (o
 usa la variable `PORT`) y apunta el frontend al mismo puerto con `VITE_API_URL` en su `.env`.
 
 Sin el perfil `local`, la configuración se toma de variables de entorno: `DB_URL`, `DB_USERNAME`,

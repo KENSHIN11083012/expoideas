@@ -11,7 +11,6 @@ import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -24,23 +23,24 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Stream;
 
 @Configuration
-@EnableWebSecurity
 public class SecurityConfig {
 
         /** Estructura de la universidad: la escribe solo el administrador. */
-        static final String[] CATALOGOS_INSTITUCIONALES = {
+        private static final String[] CATALOGOS_INSTITUCIONALES = {
                         "/api/v1/sedes/**",
                         "/api/v1/facultades/**",
                         "/api/v1/programas-academicos/**"
         };
 
-        /** Clasificacion de proyectos: la escribe MacondoLab (y el administrador). */
-        static final String ARCHIVOS = "/api/v1/archivos/**";
+        /** Descarga de archivos: los públicos no piden sesión; los privados los autoriza ArchivoService. */
+        private static final String ARCHIVOS = "/api/v1/archivos/**";
 
-        static final String[] CATALOGOS_DE_CLASIFICACION = {
+        /** Clasificación de proyectos: la escribe MacondoLab (y el administrador). */
+        private static final String[] CATALOGOS_DE_CLASIFICACION = {
                         "/api/v1/categorias/**",
                         "/api/v1/keywords/**"
         };
@@ -175,12 +175,9 @@ public class SecurityConfig {
                                                 .map(String::trim)
                                                 .filter(o -> !o.isEmpty())
                                                 .toList());
-                configuration.setAllowedMethods(
-                                Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-                configuration.setAllowedHeaders(
-                                Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With"));
-                configuration.setExposedHeaders(Arrays.asList("Authorization"));
-                configuration.setAllowCredentials(true);
+                // El token viaja en la cabecera Authorization, no en cookies: sin credenciales.
+                configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
                 configuration.setMaxAge(3600L);
 
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

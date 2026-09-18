@@ -18,8 +18,8 @@ const Catalogos = lazy(() => import('@/pages/Catalogos'));
 const NoAutorizado = lazy(() => import('@/pages/NoAutorizado'));
 const NoEncontrado = lazy(() => import('@/pages/NoEncontrado'));
 
-// El basename sale de la config de Vite (base), asi no hay dos sitios que
-// mantener sincronizados como pasaba en Dattapro.
+// El basename sale de la config de Vite (base): la app lo toma de ahí en vez
+// de repetirlo.
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 /** Login y registro no tienen sentido con sesión iniciada. */
@@ -57,10 +57,6 @@ function App() {
                             path="admin/catalogos"
                             element={<ProtectedRoute allowedRoles={ROLES_DE_GESTION}><Catalogos /></ProtectedRoute>}
                         />
-                        {/* Rutas anteriores del panel */}
-                        <Route path="admin" element={<Navigate to="/admin/usuarios" replace />} />
-                        <Route path="admin/datos-maestros" element={<Navigate to="/admin/catalogos" replace />} />
-
                         <Route path="*" element={<NoEncontrado />} />
                     </Route>
                 </Routes>

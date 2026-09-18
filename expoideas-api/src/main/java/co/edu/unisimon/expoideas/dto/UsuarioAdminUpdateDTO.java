@@ -1,14 +1,12 @@
 package co.edu.unisimon.expoideas.dto;
 
 import co.edu.unisimon.expoideas.entity.RolUsuario;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 
 /**
- * Actualización de un usuario por parte de un administrador.
- * Todos los campos son opcionales: solo se aplica lo que llegue. La foto no está
- * aquí: la sube cada persona desde su perfil.
+ * Cambios que la gestión hace sobre una cuenta: rol y adscripción académica.
+ * Todos los campos son opcionales: solo se aplica lo que llegue. Los datos
+ * personales y la foto los cambia cada persona desde su perfil, y la contraseña
+ * se restablece por su propia ruta (queda como temporal).
  *
  * <p>Adscripción: si llega {@code facultadId}, se reemplaza completa (facultad y
  * programa; {@code programaAcademicoId} en null significa "sin programa"). Si
@@ -16,21 +14,8 @@ import jakarta.validation.constraints.Size;
  */
 public record UsuarioAdminUpdateDTO(
 
-                @Size(max = 100, message = "Los nombres no pueden exceder 100 caracteres") String nombres,
-
-                @Size(max = 100, message = "Los apellidos no pueden exceder 100 caracteres") String apellidos,
-
-                @Size(max = 50, message = "El número de identificación no puede exceder 50 caracteres") String numeroIdentificacion,
-
-                @Email(message = "El formato del correo no es válido") @Size(max = 150, message = "El correo no puede exceder 150 caracteres") String correoInstitucional,
-
-                @Pattern(regexp = Validaciones.PASSWORD_REGEX, message = Validaciones.PASSWORD_MENSAJE) String password,
-
-                RolUsuario rol,
-
-                Integer sedeId,
-
-                Integer facultadId,
-
-                Integer programaAcademicoId) {
+        RolUsuario rol,
+        Integer sedeId,
+        Integer facultadId,
+        Integer programaAcademicoId) {
 }

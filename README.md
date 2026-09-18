@@ -65,10 +65,17 @@ Sin el perfil `local`, la configuración se toma de variables de entorno: `DB_UR
 `DB_PASSWORD`, `JWT_SECRET` y, opcionalmente, `PORT`, `JWT_EXPIRATION`, `ALLOWED_ORIGINS` y `ARCHIVOS_DIR`.
 No hay valores por defecto para las credenciales: si falta una, la app no arranca.
 
-Los tests no necesitan base de datos:
+Las pruebas unitarias no necesitan base de datos:
 
 ```bash
 ./mvnw test
+```
+
+Las de integración (`*IT`) levantan la API completa contra un MySQL 8.4 real en Docker
+(Testcontainers). Necesitan Docker encendido y corren junto con las unitarias en:
+
+```bash
+./mvnw verify
 ```
 
 ### 3. Frontend

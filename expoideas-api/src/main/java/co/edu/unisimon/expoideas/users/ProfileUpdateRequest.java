@@ -19,5 +19,4 @@ public record ProfileUpdateRequest(
 
         Integer campusId,
         Integer facultyId,
-        Integer academicProgramId) {
-}
+        Integer academicProgramId) {}

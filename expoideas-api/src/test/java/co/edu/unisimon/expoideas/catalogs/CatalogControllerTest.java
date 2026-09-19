@@ -1,17 +1,5 @@
 package co.edu.unisimon.expoideas.catalogs;
 
-import co.edu.unisimon.expoideas.support.SecuredWebMvcTest;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.List;
-import java.util.NoSuchElementException;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -22,6 +10,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import co.edu.unisimon.expoideas.support.SecuredWebMvcTest;
+import java.util.List;
+import java.util.NoSuchElementException;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 /** Catálogos: lectura pública, escritura por rol y contrato HTTP. */
 @SecuredWebMvcTest(CatalogController.class)
@@ -46,13 +45,18 @@ class CatalogControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void adminCreatesAndEditsCampuses() throws Exception {
-        when(catalogService.createCampus(new CatalogItemRequest("Cúcuta"))).thenReturn(new CatalogItemResponse(2, "Cúcuta"));
+        when(catalogService.createCampus(new CatalogItemRequest("Cúcuta")))
+                .thenReturn(new CatalogItemResponse(2, "Cúcuta"));
         when(catalogService.updateCampus(eq(2), any())).thenReturn(new CatalogItemResponse(2, "Cúcuta Centro"));
 
-        mockMvc.perform(post("/api/v1/campuses").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Cúcuta\"}"))
+        mockMvc.perform(post("/api/v1/campuses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Cúcuta\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(2));
-        mockMvc.perform(put("/api/v1/campuses/2").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Cúcuta Centro\"}"))
+        mockMvc.perform(put("/api/v1/campuses/2")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Cúcuta Centro\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Cúcuta Centro"));
     }
@@ -60,7 +64,9 @@ class CatalogControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void blankNameIs400() throws Exception {
-        mockMvc.perform(post("/api/v1/categories").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"  \"}"))
+        mockMvc.perform(post("/api/v1/categories")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"  \"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields.name").value("El nombre es obligatorio"));
 
@@ -73,7 +79,9 @@ class CatalogControllerTest {
         when(catalogService.createKeyword(any()))
                 .thenThrow(new DataIntegrityViolationException("Duplicate entry 'fintech' for key 'uk_keywords_name'"));
 
-        mockMvc.perform(post("/api/v1/keywords").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"fintech\"}"))
+        mockMvc.perform(post("/api/v1/keywords")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"fintech\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value("Ya existe un registro con esos datos"));
     }
@@ -84,7 +92,9 @@ class CatalogControllerTest {
         when(catalogService.updateFaculty(eq(99), any()))
                 .thenThrow(new NoSuchElementException("No existe una facultad con ID: 99"));
 
-        mockMvc.perform(put("/api/v1/faculties/99").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Ingeniería\"}"))
+        mockMvc.perform(put("/api/v1/faculties/99")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Ingeniería\"}"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("No existe una facultad con ID: 99"));
     }
@@ -103,9 +113,13 @@ class CatalogControllerTest {
         when(catalogService.createCategory(new CatalogItemRequest("Gastronomía")))
                 .thenReturn(new CatalogItemResponse(4, "Gastronomía"));
 
-        mockMvc.perform(post("/api/v1/categories").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Gastronomía\"}"))
+        mockMvc.perform(post("/api/v1/categories")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Gastronomía\"}"))
                 .andExpect(status().isCreated());
-        mockMvc.perform(post("/api/v1/campuses").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Cúcuta\"}"))
+        mockMvc.perform(post("/api/v1/campuses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Cúcuta\"}"))
                 .andExpect(status().isForbidden());
         mockMvc.perform(put("/api/v1/academic-programs/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -116,9 +130,13 @@ class CatalogControllerTest {
     @Test
     @WithMockUser(roles = "STUDENT")
     void studentsDoNotWriteCatalogs() throws Exception {
-        mockMvc.perform(post("/api/v1/campuses").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Cúcuta\"}"))
+        mockMvc.perform(post("/api/v1/campuses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Cúcuta\"}"))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(put("/api/v1/categories/1").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Fintech\"}"))
+        mockMvc.perform(put("/api/v1/categories/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Fintech\"}"))
                 .andExpect(status().isForbidden());
 
         verifyNoInteractions(catalogService);
@@ -126,7 +144,9 @@ class CatalogControllerTest {
 
     @Test
     void writingWithoutSessionIs401() throws Exception {
-        mockMvc.perform(post("/api/v1/campuses").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Cúcuta\"}"))
+        mockMvc.perform(post("/api/v1/campuses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Cúcuta\"}"))
                 .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(catalogService);
@@ -161,7 +181,9 @@ class CatalogControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void programWithoutFacultyIs400() throws Exception {
-        mockMvc.perform(post("/api/v1/academic-programs").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Derecho\"}"))
+        mockMvc.perform(post("/api/v1/academic-programs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Derecho\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields.facultyId").exists());
 

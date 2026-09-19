@@ -1,10 +1,22 @@
 package co.edu.unisimon.expoideas.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import co.edu.unisimon.expoideas.support.TestData;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
 import co.edu.unisimon.expoideas.users.UserRepository;
 import com.jayway.jsonpath.JsonPath;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,19 +35,6 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.testcontainers.mysql.MySQLContainer;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Base de las pruebas de integración: la API completa (Tomcat, filtros de
@@ -87,7 +86,9 @@ abstract class IntegrationTest {
 
     @BeforeEach
     void createClient() {
-        client = RestTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+        client = RestTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .build();
     }
 
     // ── Cuentas ─────────────────────────────────────────────────────────────
@@ -159,7 +160,9 @@ abstract class IntegrationTest {
     }
 
     protected int createProgram(String adminToken, int facultyId) {
-        return post("/api/v1/academic-programs", adminToken,
+        return post(
+                        "/api/v1/academic-programs",
+                        adminToken,
                         Map.of("name", "Programa " + SEQUENCE.incrementAndGet(), "facultyId", facultyId))
                 .expect(201)
                 .json("$.id");
@@ -198,7 +201,8 @@ abstract class IntegrationTest {
         partHeaders.setContentDispositionFormData(part, filename);
         MultiValueMap<String, Object> multipart = new LinkedMultiValueMap<>();
         multipart.add(part, new HttpEntity<>(new InputStreamResource(new ByteArrayInputStream(content)), partHeaders));
-        RestTestClient.RequestHeadersSpec<?> request = client.put().uri(uri)
+        RestTestClient.RequestHeadersSpec<?> request = client.put()
+                .uri(uri)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(multipart);
@@ -213,8 +217,9 @@ abstract class IntegrationTest {
         if (headers != null) {
             request = request.headers(h -> h.addAll(headers));
         }
-        RestTestClient.RequestHeadersSpec<?> ready =
-                body == null ? request : request.contentType(MediaType.APPLICATION_JSON).body(body);
+        RestTestClient.RequestHeadersSpec<?> ready = body == null
+                ? request
+                : request.contentType(MediaType.APPLICATION_JSON).body(body);
         return Response.of(ready.exchange().returnResult(byte[].class));
     }
 

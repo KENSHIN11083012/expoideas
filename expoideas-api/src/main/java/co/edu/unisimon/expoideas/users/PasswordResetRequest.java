@@ -11,5 +11,4 @@ public record PasswordResetRequest(
         String newPassword,
 
         @NotBlank(message = "La confirmación de contraseña no puede estar vacía")
-        String confirmPassword) {
-}
+        String confirmPassword) {}

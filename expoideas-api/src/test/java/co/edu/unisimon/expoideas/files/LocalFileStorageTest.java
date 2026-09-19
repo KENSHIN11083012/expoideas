@@ -1,18 +1,17 @@
 package co.edu.unisimon.expoideas.files;
 
-import co.edu.unisimon.expoideas.support.TestData;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import co.edu.unisimon.expoideas.support.TestData;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.NoSuchElementException;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNoException;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class LocalFileStorageTest {
 
@@ -59,7 +58,8 @@ class LocalFileStorageTest {
         LocalFileStorage storage = storage(root);
 
         assertThatThrownBy(() -> storage.open("../secreto.txt")).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> storage.save("../../fuera.png", new byte[] {1})).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> storage.save("../../fuera.png", new byte[] {1}))
+                .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> storage.delete("../secreto.txt")).isInstanceOf(IllegalArgumentException.class);
     }
 

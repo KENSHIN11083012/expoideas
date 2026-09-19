@@ -1,6 +1,8 @@
 package co.edu.unisimon.expoideas.security;
 
 import co.edu.unisimon.expoideas.common.ExpoideasProperties;
+import java.util.List;
+import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,9 +23,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.HandlerExceptionResolver;
-
-import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * Quién puede llamar a qué. La API es stateless: cada petición trae su token y
@@ -69,30 +68,38 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Gestión de cuentas: MacondoLab y administradores; eliminar, solo el administrador.
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/admin/users/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/admin/**").hasRole("MACONDOLAB")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/admin/users/**")
+                        .hasRole("ADMIN")
+                        .requestMatchers("/api/v1/admin/**")
+                        .hasRole("MACONDOLAB")
 
                         // Escritura de catálogos.
-                        .requestMatchers(HttpMethod.POST, INSTITUTIONAL_CATALOGS).hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, INSTITUTIONAL_CATALOGS).hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, CLASSIFICATION_CATALOGS).hasRole("MACONDOLAB")
-                        .requestMatchers(HttpMethod.PUT, CLASSIFICATION_CATALOGS).hasRole("MACONDOLAB")
+                        .requestMatchers(HttpMethod.POST, INSTITUTIONAL_CATALOGS)
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, INSTITUTIONAL_CATALOGS)
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, CLASSIFICATION_CATALOGS)
+                        .hasRole("MACONDOLAB")
+                        .requestMatchers(HttpMethod.PUT, CLASSIFICATION_CATALOGS)
+                        .hasRole("MACONDOLAB")
 
                         // Público: login, registro, documentación, salud y lecturas sin sesión.
                         .requestMatchers("/api/v1/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
                         .permitAll()
                         // Salud para el orquestador: solo dice UP/DOWN, sin detalles.
-                        .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, publicReads()).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, publicReads())
+                        .permitAll()
 
                         // Todo lo demás, incluida la propia cuenta (/api/v1/users/me), pide sesión.
-                        .anyRequest().authenticated())
+                        .anyRequest()
+                        .authenticated())
                 // Los rechazos ocurren en los filtros, antes de llegar a un controlador. Se
                 // delegan al HandlerExceptionResolver para que GlobalExceptionHandler responda
                 // con el mismo Problem Details que el resto de la API: 401 sin sesión válida,
                 // 403 sin permiso.
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, e) ->
+                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, e) ->
                                 exceptionResolver.resolveException(request, response, null, e))
                         .accessDeniedHandler((request, response, e) ->
                                 exceptionResolver.resolveException(request, response, null, e)))
@@ -118,7 +125,10 @@ public class SecurityConfig {
      */
     @Bean
     static RoleHierarchy roleHierarchy() {
-        return RoleHierarchyImpl.withDefaultRolePrefix().role("ADMIN").implies("MACONDOLAB").build();
+        return RoleHierarchyImpl.withDefaultRolePrefix()
+                .role("ADMIN")
+                .implies("MACONDOLAB")
+                .build();
     }
 
     @Bean

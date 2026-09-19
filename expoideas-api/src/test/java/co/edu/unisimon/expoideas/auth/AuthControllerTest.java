@@ -1,19 +1,5 @@
 package co.edu.unisimon.expoideas.auth;
 
-import co.edu.unisimon.expoideas.common.ConflictException;
-import co.edu.unisimon.expoideas.support.SecuredWebMvcTest;
-import co.edu.unisimon.expoideas.users.Role;
-import co.edu.unisimon.expoideas.users.UserAccountService;
-import co.edu.unisimon.expoideas.users.UserResponse;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.List;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -21,6 +7,19 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import co.edu.unisimon.expoideas.common.ConflictException;
+import co.edu.unisimon.expoideas.support.SecuredWebMvcTest;
+import co.edu.unisimon.expoideas.users.Role;
+import co.edu.unisimon.expoideas.users.UserAccountService;
+import co.edu.unisimon.expoideas.users.UserResponse;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 /** Login y registro: públicos, con la validación del cuerpo. */
 @SecuredWebMvcTest(AuthController.class)
@@ -52,7 +51,9 @@ class AuthControllerTest {
 
     @Test
     void loginRequiresBothFields() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields.email").exists())
                 .andExpect(jsonPath("$.fields.password").exists());
@@ -64,10 +65,26 @@ class AuthControllerTest {
 
     @Test
     void validRegistrationIs201() throws Exception {
-        when(accountService.register(any())).thenReturn(new UserResponse(1, "Ana", "Pérez", EMAIL, Role.STUDENT,
-                null, null, 1, "Barranquilla", 2, "Ingeniería", null, null, List.of()));
+        when(accountService.register(any()))
+                .thenReturn(new UserResponse(
+                        1,
+                        "Ana",
+                        "Pérez",
+                        EMAIL,
+                        Role.STUDENT,
+                        null,
+                        null,
+                        1,
+                        "Barranquilla",
+                        2,
+                        "Ingeniería",
+                        null,
+                        null,
+                        List.of()));
 
-        mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content(registration(EMAIL, "Segura#2026", true)))
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registration(EMAIL, "Segura#2026", true)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.role").value("STUDENT"));
@@ -75,7 +92,9 @@ class AuthControllerTest {
 
     @Test
     void registrationRequiresDataConsent() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content(registration(EMAIL, "Segura#2026", false)))
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registration(EMAIL, "Segura#2026", false)))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.detail").value("Datos inválidos"))
@@ -86,14 +105,18 @@ class AuthControllerTest {
 
     @Test
     void registrationRequiresAnInstitutionalEmail() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content(registration("ana@gmail.com", "Segura#2026", true)))
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registration("ana@gmail.com", "Segura#2026", true)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields.email").value("El correo debe terminar en @unisimon.edu.co"));
     }
 
     @Test
     void registrationRequiresAStrongPassword() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content(registration(EMAIL, "123456", true)))
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registration(EMAIL, "123456", true)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields.password").exists());
     }
@@ -115,16 +138,21 @@ class AuthControllerTest {
 
     @Test
     void malformedJsonIs400() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content("{\"firstName\":"))
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"firstName\":"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("El cuerpo de la petición no es un JSON válido"));
     }
 
     @Test
     void takenEmailIs409() throws Exception {
-        when(accountService.register(any())).thenThrow(new ConflictException("El correo institucional ya está registrado."));
+        when(accountService.register(any()))
+                .thenThrow(new ConflictException("El correo institucional ya está registrado."));
 
-        mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content(registration(EMAIL, "Segura#2026", true)))
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registration(EMAIL, "Segura#2026", true)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value("El correo institucional ya está registrado."));
     }

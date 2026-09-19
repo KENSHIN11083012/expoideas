@@ -5,15 +5,14 @@ import co.edu.unisimon.expoideas.common.ForbiddenActionException;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
 import co.edu.unisimon.expoideas.common.ValidationPatterns;
 import co.edu.unisimon.expoideas.files.FileService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Gestión de cuentas por MacondoLab y administradores: listar, crear, cambiar
@@ -33,7 +32,9 @@ public class UserManagementService {
 
     @Transactional(readOnly = true)
     public List<UserResponse> list() {
-        return userRepository.findAllWithProfileBy().stream().map(UserResponse::from).toList();
+        return userRepository.findAllWithProfileBy().stream()
+                .map(UserResponse::from)
+                .toList();
     }
 
     /**
@@ -141,7 +142,8 @@ public class UserManagementService {
         User user = findById(id);
         if (actor.getId().equals(user.getId())) {
             // Por aquí no se pide la contraseña actual: la propia se cambia en /users/me/password.
-            throw new ForbiddenActionException("Para cambiar tu propia contraseña usa la opción Seguridad de tu cuenta.");
+            throw new ForbiddenActionException(
+                    "Para cambiar tu propia contraseña usa la opción Seguridad de tu cuenta.");
         }
         requireCanManage(actor, user);
         passwords.replace(user, request.newPassword(), request.confirmPassword(), true);
@@ -176,12 +178,14 @@ public class UserManagementService {
     }
 
     private User findById(Integer id) {
-        return userRepository.findWithProfileById(id)
+        return userRepository
+                .findWithProfileById(id)
                 .orElseThrow(() -> new NoSuchElementException("No existe un usuario con ID: " + id));
     }
 
     private User findByEmail(String email) {
-        return userRepository.findWithProfileByEmail(email)
+        return userRepository
+                .findWithProfileByEmail(email)
                 .orElseThrow(() -> new NoSuchElementException("No existe un usuario con correo: " + email));
     }
 }

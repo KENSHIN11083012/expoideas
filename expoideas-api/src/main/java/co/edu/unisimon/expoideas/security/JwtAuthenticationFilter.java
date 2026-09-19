@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpHeaders;
@@ -13,8 +14,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
 
 /**
  * Autentica la petición con el token de la cabecera Authorization. No es un
@@ -42,11 +41,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (header != null && header.startsWith(BEARER_PREFIX)
+        if (header != null
+                && header.startsWith(BEARER_PREFIX)
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 // Nunca registrar la cabecera ni el token: identifican una sesión activa.
-                String email = jwtService.extractEmail(header.substring(BEARER_PREFIX.length()).strip());
+                String email = jwtService.extractEmail(
+                        header.substring(BEARER_PREFIX.length()).strip());
                 // Las autoridades salen de la BD, no del claim "role" del token: si alguien
                 // pierde un rol, lo pierde en la siguiente petición y no cuando venza el token.
                 UserDetails user = userDetailsService.loadUserByUsername(email);

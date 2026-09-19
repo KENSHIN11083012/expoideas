@@ -6,7 +6,6 @@ import co.edu.unisimon.expoideas.common.ExpoideasProperties.FilesSettings;
 import co.edu.unisimon.expoideas.common.ExpoideasProperties.JwtSettings;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
-
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -27,8 +26,7 @@ public final class TestData {
     public static final byte[] WEBP = concat(ascii("RIFF"), new byte[] {36, 0, 0, 0}, ascii("WEBPVP8 "));
     public static final byte[] PDF = ascii("%PDF-1.7\n");
 
-    private TestData() {
-    }
+    private TestData() {}
 
     /** Cuenta al día (sin pasos de primer ingreso) con ese rol. */
     public static User user(int id, String email, Role role) {

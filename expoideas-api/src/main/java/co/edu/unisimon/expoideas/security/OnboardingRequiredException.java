@@ -1,7 +1,6 @@
 package co.edu.unisimon.expoideas.security;
 
 import co.edu.unisimon.expoideas.users.OnboardingStep;
-
 import java.util.List;
 
 /**

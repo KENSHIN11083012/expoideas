@@ -1,10 +1,23 @@
 package co.edu.unisimon.expoideas.files;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
 import co.edu.unisimon.expoideas.security.UserPrincipal;
 import co.edu.unisimon.expoideas.support.TestData;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
+import java.util.EnumSet;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,20 +34,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import java.util.EnumSet;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class FileServiceTest {
@@ -76,8 +75,8 @@ class FileServiceTest {
 
     @Test
     void storesAnImageWithItsMetadata() {
-        StoredFile file = service.store(upload("C:\\fotos\\mi foto.PNG", TestData.PNG),
-                FileFormat.IMAGES, FileVisibility.PUBLIC, ana);
+        StoredFile file = service.store(
+                upload("C:\\fotos\\mi foto.PNG", TestData.PNG), FileFormat.IMAGES, FileVisibility.PUBLIC, ana);
 
         assertThat(UUID.fromString(file.getUuid())).isNotNull();
         assertThat(file.getContentType()).isEqualTo("image/png");
@@ -94,8 +93,10 @@ class FileServiceTest {
         MockMultipartFile disguised = upload("foto.png", "<script>alert(1)</script>".getBytes());
 
         assertThatThrownBy(() -> service.store(disguised, FileFormat.IMAGES, FileVisibility.PUBLIC, ana))
-                .isInstanceOfSatisfying(InvalidFieldsException.class, ex -> assertThat(ex.getFields())
-                        .containsEntry("file", "Formato no permitido. Usa un archivo JPG, PNG o WEBP."));
+                .isInstanceOfSatisfying(
+                        InvalidFieldsException.class,
+                        ex -> assertThat(ex.getFields())
+                                .containsEntry("file", "Formato no permitido. Usa un archivo JPG, PNG o WEBP."));
         verify(storage, never()).save(anyString(), any());
     }
 
@@ -105,21 +106,27 @@ class FileServiceTest {
 
         assertThatThrownBy(() -> service.store(pdf, FileFormat.IMAGES, FileVisibility.PUBLIC, ana))
                 .isInstanceOf(InvalidFieldsException.class);
-        assertThat(service.store(pdf, EnumSet.of(FileFormat.PDF), FileVisibility.PRIVATE, ana).getContentType())
+        assertThat(service.store(pdf, EnumSet.of(FileFormat.PDF), FileVisibility.PRIVATE, ana)
+                        .getContentType())
                 .isEqualTo("application/pdf");
     }
 
     @Test
     void rejectsEmptyFilesAndFilesOverFiveMegabytes() {
-        assertThatThrownBy(() -> service.store(upload("vacio.png", new byte[0]), FileFormat.IMAGES, FileVisibility.PUBLIC, ana))
-                .isInstanceOfSatisfying(InvalidFieldsException.class,
+        assertThatThrownBy(() ->
+                        service.store(upload("vacio.png", new byte[0]), FileFormat.IMAGES, FileVisibility.PUBLIC, ana))
+                .isInstanceOfSatisfying(
+                        InvalidFieldsException.class,
                         ex -> assertThat(ex.getFields()).containsEntry("file", "El archivo está vacío."));
 
         byte[] big = new byte[FileService.MAX_SIZE_BYTES + 1];
         System.arraycopy(TestData.PNG, 0, big, 0, TestData.PNG.length);
-        assertThatThrownBy(() -> service.store(upload("grande.png", big), FileFormat.IMAGES, FileVisibility.PUBLIC, ana))
-                .isInstanceOfSatisfying(InvalidFieldsException.class, ex -> assertThat(ex.getFields())
-                        .containsEntry("file", "El archivo supera el tamaño máximo permitido de 5 MB."));
+        assertThatThrownBy(
+                        () -> service.store(upload("grande.png", big), FileFormat.IMAGES, FileVisibility.PUBLIC, ana))
+                .isInstanceOfSatisfying(
+                        InvalidFieldsException.class,
+                        ex -> assertThat(ex.getFields())
+                                .containsEntry("file", "El archivo supera el tamaño máximo permitido de 5 MB."));
     }
 
     @Test
@@ -170,9 +177,16 @@ class FileServiceTest {
     // ── Descargar ───────────────────────────────────────────────────────────
 
     private StoredFile registered(FileVisibility visibility) {
-        StoredFile file = StoredFile.builder().uuid(UUID.randomUUID().toString()).originalName("poster.pdf")
-                .contentType("application/pdf").sizeBytes(9).sha256("abc").storagePath("2026/09/p.pdf")
-                .visibility(visibility).owner(ana).build();
+        StoredFile file = StoredFile.builder()
+                .uuid(UUID.randomUUID().toString())
+                .originalName("poster.pdf")
+                .contentType("application/pdf")
+                .sizeBytes(9)
+                .sha256("abc")
+                .storagePath("2026/09/p.pdf")
+                .visibility(visibility)
+                .owner(ana)
+                .build();
         when(fileRepository.findByUuid(file.getUuid())).thenReturn(Optional.of(file));
         lenient().when(storage.open("2026/09/p.pdf")).thenReturn(new ByteArrayResource(TestData.PDF));
         return file;
@@ -197,16 +211,22 @@ class FileServiceTest {
     void onlyTheOwnerAndManagementSeeAPrivateFile() {
         UUID id = UUID.fromString(registered(FileVisibility.PRIVATE).getUuid());
 
-        assertThat(service.open(id, session("ANA@unisimon.edu.co", Role.STUDENT)).isPublic()).isFalse();
-        assertThat(service.open(id, session("carla@unisimon.edu.co", Role.MACONDOLAB))).isNotNull();
-        assertThat(service.open(id, session("luis@unisimon.edu.co", Role.ADMIN))).isNotNull();
+        assertThat(service.open(id, session("ANA@unisimon.edu.co", Role.STUDENT))
+                        .isPublic())
+                .isFalse();
+        assertThat(service.open(id, session("carla@unisimon.edu.co", Role.MACONDOLAB)))
+                .isNotNull();
+        assertThat(service.open(id, session("luis@unisimon.edu.co", Role.ADMIN)))
+                .isNotNull();
         assertThatThrownBy(() -> service.open(id, session("eva@unisimon.edu.co", Role.STUDENT)))
                 .isInstanceOf(NoSuchElementException.class);
         assertThatThrownBy(() -> service.open(id, session("marta@empresa.com", Role.JUDGE)))
                 .isInstanceOf(NoSuchElementException.class);
         assertThatThrownBy(() -> service.open(id, null)).isInstanceOf(NoSuchElementException.class);
-        assertThatThrownBy(() -> service.open(id, new AnonymousAuthenticationToken(
-                        "clave", "anonymousUser", AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS"))))
+        assertThatThrownBy(() -> service.open(
+                        id,
+                        new AnonymousAuthenticationToken(
+                                "clave", "anonymousUser", AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS"))))
                 .isInstanceOf(NoSuchElementException.class);
     }
 
@@ -224,6 +244,7 @@ class FileServiceTest {
         assertThat(FileService.safeName(".htaccess", FileFormat.PNG)).isEqualTo("archivo.png");
         assertThat(FileService.safeName(null, FileFormat.PDF)).isEqualTo("archivo.pdf");
         assertThat(FileService.safeName("mal\"nombre\r\n.pdf", FileFormat.PDF)).isEqualTo("malnombre.pdf");
-        assertThat(FileService.safeName("x".repeat(300) + ".pdf", FileFormat.PDF)).hasSize(204);
+        assertThat(FileService.safeName("x".repeat(300) + ".pdf", FileFormat.PDF))
+                .hasSize(204);
     }
 }

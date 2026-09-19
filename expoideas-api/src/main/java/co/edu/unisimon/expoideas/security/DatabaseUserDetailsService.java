@@ -19,7 +19,8 @@ public class DatabaseUserDetailsService implements UserDetailsService {
 
     @Override
     public UserPrincipal loadUserByUsername(String email) {
-        return userRepository.findByEmail(email)
+        return userRepository
+                .findByEmail(email)
                 .map(UserPrincipal::new)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
     }

@@ -3,7 +3,6 @@ package co.edu.unisimon.expoideas.users;
 import co.edu.unisimon.expoideas.catalogs.AcademicProgram;
 import co.edu.unisimon.expoideas.catalogs.Campus;
 import co.edu.unisimon.expoideas.catalogs.Faculty;
-
 import java.time.LocalDateTime;
 import java.util.List;
 

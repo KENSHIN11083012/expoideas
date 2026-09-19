@@ -1,18 +1,5 @@
 package co.edu.unisimon.expoideas.users;
 
-import co.edu.unisimon.expoideas.common.ForbiddenActionException;
-import co.edu.unisimon.expoideas.support.SecuredWebMvcTest;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.List;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -27,6 +14,18 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import co.edu.unisimon.expoideas.common.ForbiddenActionException;
+import co.edu.unisimon.expoideas.support.SecuredWebMvcTest;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 /** Gestión de cuentas (/admin/users): quién entra y el contrato HTTP. */
 @SecuredWebMvcTest(UserAdminController.class)
@@ -54,7 +53,9 @@ class UserAdminControllerTest {
                         .content("{\"role\":\"JUDGE\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.role").value("JUDGE"));
-        mockMvc.perform(post("/api/v1/admin/users/5/password-reset").contentType(MediaType.APPLICATION_JSON).content(RESET))
+        mockMvc.perform(post("/api/v1/admin/users/5/password-reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(RESET))
                 .andExpect(status().isNoContent());
         mockMvc.perform(delete("/api/v1/admin/users/5")).andExpect(status().isNoContent());
 
@@ -76,7 +77,9 @@ class UserAdminControllerTest {
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(8));
-        mockMvc.perform(post("/api/v1/admin/users/5/password-reset").contentType(MediaType.APPLICATION_JSON).content(RESET))
+        mockMvc.perform(post("/api/v1/admin/users/5/password-reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(RESET))
                 .andExpect(status().isNoContent());
         mockMvc.perform(delete("/api/v1/admin/users/5"))
                 .andExpect(status().isForbidden())
@@ -91,11 +94,13 @@ class UserAdminControllerTest {
         mockMvc.perform(get("/api/v1/admin/users").with(user(EMAIL).roles(role)))
                 .andExpect(status().isForbidden())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
-        mockMvc.perform(post("/api/v1/admin/users").with(user(EMAIL).roles(role))
+        mockMvc.perform(post("/api/v1/admin/users")
+                        .with(user(EMAIL).roles(role))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/v1/admin/users/1/password-reset").with(user(EMAIL).roles(role))
+        mockMvc.perform(post("/api/v1/admin/users/1/password-reset")
+                        .with(user(EMAIL).roles(role))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(RESET))
                 .andExpect(status().isForbidden());
@@ -113,8 +118,9 @@ class UserAdminControllerTest {
     @Test
     @WithMockUser(username = EMAIL, roles = "MACONDOLAB")
     void roleRulesAre403WithTheReason() throws Exception {
-        when(managementService.update(eq(EMAIL), eq(1), any())).thenThrow(new ForbiddenActionException(
-                "Solo un administrador puede modificar cuentas de administración o de MacondoLab."));
+        when(managementService.update(eq(EMAIL), eq(1), any()))
+                .thenThrow(new ForbiddenActionException(
+                        "Solo un administrador puede modificar cuentas de administración o de MacondoLab."));
 
         mockMvc.perform(put("/api/v1/admin/users/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -128,9 +134,11 @@ class UserAdminControllerTest {
     @Test
     @WithMockUser(username = EMAIL, roles = "MACONDOLAB")
     void createValidatesTheBody() throws Exception {
-        mockMvc.perform(post("/api/v1/admin/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"firstName\":\"Marta\",\"lastName\":\"Ríos\",\"email\":\"marta@empresa.com\",\"password\":\"123\"}"))
+        mockMvc.perform(
+                        post("/api/v1/admin/users")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"firstName\":\"Marta\",\"lastName\":\"Ríos\",\"email\":\"marta@empresa.com\",\"password\":\"123\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields.role").value("El rol es obligatorio"))
                 .andExpect(jsonPath("$.fields.password").exists());
@@ -160,7 +168,20 @@ class UserAdminControllerTest {
     }
 
     private static UserResponse response(int id, Role role) {
-        return new UserResponse(id, "Marta", "Ríos", "marta@empresa.com", role, null, null,
-                null, null, null, null, null, null, List.of());
+        return new UserResponse(
+                id,
+                "Marta",
+                "Ríos",
+                "marta@empresa.com",
+                role,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                List.of());
     }
 }

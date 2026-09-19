@@ -4,12 +4,11 @@ import co.edu.unisimon.expoideas.catalogs.AcademicProgram;
 import co.edu.unisimon.expoideas.catalogs.CatalogLookup;
 import co.edu.unisimon.expoideas.catalogs.Faculty;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 /**
  * Adscripción académica de una cuenta: sede y facultad obligatorias y programa

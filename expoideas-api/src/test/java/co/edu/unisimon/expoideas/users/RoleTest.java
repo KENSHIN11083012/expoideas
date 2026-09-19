@@ -1,15 +1,14 @@
 package co.edu.unisimon.expoideas.users;
 
-import org.junit.jupiter.api.Test;
-
-import java.util.EnumSet;
-
 import static co.edu.unisimon.expoideas.users.Role.ADMIN;
 import static co.edu.unisimon.expoideas.users.Role.JUDGE;
 import static co.edu.unisimon.expoideas.users.Role.MACONDOLAB;
 import static co.edu.unisimon.expoideas.users.Role.STUDENT;
 import static co.edu.unisimon.expoideas.users.Role.TEACHER;
 import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.EnumSet;
+import org.junit.jupiter.api.Test;
 
 class RoleTest {
 

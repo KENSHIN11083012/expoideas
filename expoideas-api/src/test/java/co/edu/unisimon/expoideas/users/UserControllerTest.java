@@ -1,20 +1,5 @@
 package co.edu.unisimon.expoideas.users;
 
-import co.edu.unisimon.expoideas.common.InvalidFieldsException;
-import co.edu.unisimon.expoideas.support.SecuredWebMvcTest;
-import co.edu.unisimon.expoideas.support.TestData;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.test.context.support.WithAnonymousUser;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.List;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -28,6 +13,20 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import co.edu.unisimon.expoideas.common.InvalidFieldsException;
+import co.edu.unisimon.expoideas.support.SecuredWebMvcTest;
+import co.edu.unisimon.expoideas.support.TestData;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithAnonymousUser;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 /** La propia cuenta (/users/me): sesión obligatoria y siempre el correo de la sesión. */
 @SecuredWebMvcTest(UserController.class)
@@ -122,31 +121,39 @@ class UserControllerTest {
 
     @Test
     void changePasswordIs204() throws Exception {
-        mockMvc.perform(put("/api/v1/users/me/password")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"currentPassword\":\"Vieja#2026\",\"newPassword\":\"Nueva#2026\",\"confirmPassword\":\"Nueva#2026\"}"))
+        mockMvc.perform(
+                        put("/api/v1/users/me/password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"currentPassword\":\"Vieja#2026\",\"newPassword\":\"Nueva#2026\",\"confirmPassword\":\"Nueva#2026\"}"))
                 .andExpect(status().isNoContent());
 
-        verify(accountService).changePassword(EMAIL, new PasswordChangeRequest("Vieja#2026", "Nueva#2026", "Nueva#2026"));
+        verify(accountService)
+                .changePassword(EMAIL, new PasswordChangeRequest("Vieja#2026", "Nueva#2026", "Nueva#2026"));
     }
 
     @Test
     void wrongCurrentPasswordIsAFieldError() throws Exception {
         doThrow(new InvalidFieldsException("currentPassword", "La contraseña actual es incorrecta."))
-                .when(accountService).changePassword(eq(EMAIL), any());
+                .when(accountService)
+                .changePassword(eq(EMAIL), any());
 
-        mockMvc.perform(put("/api/v1/users/me/password")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"currentPassword\":\"Mala#2026\",\"newPassword\":\"Nueva#2026\",\"confirmPassword\":\"Nueva#2026\"}"))
+        mockMvc.perform(
+                        put("/api/v1/users/me/password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"currentPassword\":\"Mala#2026\",\"newPassword\":\"Nueva#2026\",\"confirmPassword\":\"Nueva#2026\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields.currentPassword").value("La contraseña actual es incorrecta."));
     }
 
     @Test
     void weakNewPasswordIs400() throws Exception {
-        mockMvc.perform(put("/api/v1/users/me/password")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"currentPassword\":\"Vieja#2026\",\"newPassword\":\"123\",\"confirmPassword\":\"123\"}"))
+        mockMvc.perform(
+                        put("/api/v1/users/me/password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"currentPassword\":\"Vieja#2026\",\"newPassword\":\"123\",\"confirmPassword\":\"123\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields.newPassword").exists());
 
@@ -173,7 +180,8 @@ class UserControllerTest {
 
     @Test
     void uploadPhotoAsMultipart() throws Exception {
-        when(accountService.updatePhoto(eq(EMAIL), any())).thenReturn(response(7, "0b0f3f7e-8c1a-4c55-9d3e-2f1a6b7c8d9e"));
+        when(accountService.updatePhoto(eq(EMAIL), any()))
+                .thenReturn(response(7, "0b0f3f7e-8c1a-4c55-9d3e-2f1a6b7c8d9e"));
 
         mockMvc.perform(multipart(HttpMethod.PUT, "/api/v1/users/me/photo").file(PHOTO))
                 .andExpect(status().isOk())
@@ -217,7 +225,7 @@ class UserControllerTest {
     }
 
     private static UserResponse response(int id, String photoId) {
-        return new UserResponse(id, "Ana", "Pérez", EMAIL, Role.STUDENT, photoId, null,
-                null, null, null, null, null, null, List.of());
+        return new UserResponse(
+                id, "Ana", "Pérez", EMAIL, Role.STUDENT, photoId, null, null, null, null, null, null, null, List.of());
     }
 }

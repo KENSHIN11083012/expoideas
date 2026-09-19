@@ -1,5 +1,16 @@
 package co.edu.unisimon.expoideas.users;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
 import co.edu.unisimon.expoideas.catalogs.AcademicProgram;
 import co.edu.unisimon.expoideas.catalogs.AcademicProgramRepository;
 import co.edu.unisimon.expoideas.catalogs.Campus;
@@ -14,6 +25,9 @@ import co.edu.unisimon.expoideas.files.FileService;
 import co.edu.unisimon.expoideas.files.FileVisibility;
 import co.edu.unisimon.expoideas.files.StoredFile;
 import co.edu.unisimon.expoideas.support.TestData;
+import java.time.LocalDateTime;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,21 +37,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.time.LocalDateTime;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UserAccountServiceTest {
@@ -115,8 +114,12 @@ class UserAccountServiceTest {
         @Test
         void programFromAnotherFacultyIsAFieldError() {
             assertThatThrownBy(() -> service.register(registration(EMAIL, 1, 20, 100)))
-                    .isInstanceOfSatisfying(InvalidFieldsException.class, ex -> assertThat(ex.getFields())
-                            .containsEntry("academicProgramId", "El programa académico no pertenece a la facultad seleccionada."));
+                    .isInstanceOfSatisfying(
+                            InvalidFieldsException.class,
+                            ex -> assertThat(ex.getFields())
+                                    .containsEntry(
+                                            "academicProgramId",
+                                            "El programa académico no pertenece a la facultad seleccionada."));
             verify(userRepository, never()).save(any());
         }
 
@@ -136,7 +139,8 @@ class UserAccountServiceTest {
                     .isInstanceOf(ConflictException.class);
         }
 
-        private static RegistrationRequest registration(String email, Integer campus, Integer faculty, Integer program) {
+        private static RegistrationRequest registration(
+                String email, Integer campus, Integer faculty, Integer program) {
             return new RegistrationRequest(" Ana ", "Pérez", email, TestData.PASSWORD, campus, faculty, program, true);
         }
     }
@@ -149,7 +153,8 @@ class UserAccountServiceTest {
             ana.setFaculty(engineering);
             ana.setAcademicProgram(systems);
 
-            UserResponse updated = service.updateProfile(EMAIL, new ProfileUpdateRequest(" Ana ", "Pérez", 1, 20, null));
+            UserResponse updated =
+                    service.updateProfile(EMAIL, new ProfileUpdateRequest(" Ana ", "Pérez", 1, 20, null));
 
             assertThat(updated.firstName()).isEqualTo("Ana");
             assertThat(updated.faculty()).isEqualTo("Derecho");
@@ -158,8 +163,10 @@ class UserAccountServiceTest {
 
         @Test
         void studentMustKeepCampusAndFaculty() {
-            assertThatThrownBy(() -> service.updateProfile(EMAIL, new ProfileUpdateRequest("Ana", "Pérez", null, null, null)))
-                    .isInstanceOfSatisfying(InvalidFieldsException.class,
+            assertThatThrownBy(() ->
+                            service.updateProfile(EMAIL, new ProfileUpdateRequest("Ana", "Pérez", null, null, null)))
+                    .isInstanceOfSatisfying(
+                            InvalidFieldsException.class,
                             ex -> assertThat(ex.getFields()).containsOnlyKeys("campusId", "facultyId"));
         }
 
@@ -183,7 +190,8 @@ class UserAccountServiceTest {
 
         @Test
         void firstPhotoIsStoredAsAPublicImage() {
-            when(fileService.store(image, FileFormat.IMAGES, FileVisibility.PUBLIC, ana)).thenReturn(file("nueva"));
+            when(fileService.store(image, FileFormat.IMAGES, FileVisibility.PUBLIC, ana))
+                    .thenReturn(file("nueva"));
 
             assertThat(service.updatePhoto(EMAIL, image).photoId()).isEqualTo("nueva");
             verify(fileService, never()).delete(any());
@@ -241,9 +249,12 @@ class UserAccountServiceTest {
 
         @Test
         void wrongCurrentPasswordIsAFieldError() {
-            assertThatThrownBy(() -> service.changePassword(EMAIL, new PasswordChangeRequest("Mala#2026", "Nueva#2026", "Nueva#2026")))
-                    .isInstanceOfSatisfying(InvalidFieldsException.class, ex -> assertThat(ex.getFields())
-                            .containsEntry("currentPassword", "La contraseña actual es incorrecta."));
+            assertThatThrownBy(() -> service.changePassword(
+                            EMAIL, new PasswordChangeRequest("Mala#2026", "Nueva#2026", "Nueva#2026")))
+                    .isInstanceOfSatisfying(
+                            InvalidFieldsException.class,
+                            ex -> assertThat(ex.getFields())
+                                    .containsEntry("currentPassword", "La contraseña actual es incorrecta."));
             assertThat(ana.getPasswordHash()).isEqualTo("hash-actual");
         }
 
@@ -251,8 +262,10 @@ class UserAccountServiceTest {
         void confirmationMustMatch() {
             when(passwordEncoder.matches("Vieja#2026", "hash-actual")).thenReturn(true);
 
-            assertThatThrownBy(() -> service.changePassword(EMAIL, new PasswordChangeRequest("Vieja#2026", "Nueva#2026", "Otra#2026")))
-                    .isInstanceOfSatisfying(InvalidFieldsException.class,
+            assertThatThrownBy(() -> service.changePassword(
+                            EMAIL, new PasswordChangeRequest("Vieja#2026", "Nueva#2026", "Otra#2026")))
+                    .isInstanceOfSatisfying(
+                            InvalidFieldsException.class,
                             ex -> assertThat(ex.getFields()).containsOnlyKeys("confirmPassword"));
         }
 
@@ -260,8 +273,10 @@ class UserAccountServiceTest {
         void newPasswordMustDifferFromTheCurrentOne() {
             when(passwordEncoder.matches("Igual#2026", "hash-actual")).thenReturn(true);
 
-            assertThatThrownBy(() -> service.changePassword(EMAIL, new PasswordChangeRequest("Igual#2026", "Igual#2026", "Igual#2026")))
-                    .isInstanceOfSatisfying(InvalidFieldsException.class,
+            assertThatThrownBy(() -> service.changePassword(
+                            EMAIL, new PasswordChangeRequest("Igual#2026", "Igual#2026", "Igual#2026")))
+                    .isInstanceOfSatisfying(
+                            InvalidFieldsException.class,
                             ex -> assertThat(ex.getFields()).containsOnlyKeys("newPassword"));
         }
     }

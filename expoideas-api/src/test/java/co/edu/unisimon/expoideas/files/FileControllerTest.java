@@ -1,18 +1,5 @@
 package co.edu.unisimon.expoideas.files;
 
-import co.edu.unisimon.expoideas.support.SecuredWebMvcTest;
-import co.edu.unisimon.expoideas.support.TestData;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.NoSuchElementException;
-import java.util.UUID;
-
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -23,6 +10,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import co.edu.unisimon.expoideas.support.SecuredWebMvcTest;
+import co.edu.unisimon.expoideas.support.TestData;
+import java.util.NoSuchElementException;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 @SecuredWebMvcTest(FileController.class)
 class FileControllerTest {
@@ -37,8 +36,14 @@ class FileControllerTest {
     private FileService fileService;
 
     private void exists(boolean isPublic) {
-        when(fileService.open(eq(ID), any())).thenReturn(new FileContent(
-                "mi foto.png", "image/png", TestData.PNG.length, SHA, isPublic, new ByteArrayResource(TestData.PNG)));
+        when(fileService.open(eq(ID), any()))
+                .thenReturn(new FileContent(
+                        "mi foto.png",
+                        "image/png",
+                        TestData.PNG.length,
+                        SHA,
+                        isPublic,
+                        new ByteArrayResource(TestData.PNG)));
     }
 
     @Test
@@ -53,7 +58,8 @@ class FileControllerTest {
                 .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("immutable")))
                 .andExpect(header().string(HttpHeaders.ETAG, "\"" + SHA + "\""))
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("inline")))
-                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("filename*=UTF-8''mi%20foto.png")))
+                .andExpect(header().string(
+                                HttpHeaders.CONTENT_DISPOSITION, containsString("filename*=UTF-8''mi%20foto.png")))
                 .andExpect(header().string("Content-Security-Policy", "default-src 'none'; sandbox"))
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"));
     }

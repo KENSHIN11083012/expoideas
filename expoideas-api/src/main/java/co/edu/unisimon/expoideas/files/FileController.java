@@ -1,6 +1,9 @@
 package co.edu.unisimon.expoideas.files;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
@@ -13,10 +16,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
-
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.UUID;
 
 /** Descarga de archivos por su identificador público. */
 @RestController
@@ -42,11 +41,18 @@ public class FileController {
                 .contentType(MediaType.parseMediaType(file.contentType()))
                 .contentLength(file.sizeBytes())
                 .eTag(file.sha256())
-                .cacheControl(file.isPublic()
-                        ? CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable()
-                        : CacheControl.noStore())
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.inline().filename(file.name(), StandardCharsets.UTF_8).build().toString())
+                .cacheControl(
+                        file.isPublic()
+                                ? CacheControl.maxAge(Duration.ofDays(365))
+                                        .cachePublic()
+                                        .immutable()
+                                : CacheControl.noStore())
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.inline()
+                                .filename(file.name(), StandardCharsets.UTF_8)
+                                .build()
+                                .toString())
                 // Si alguien lograra colar HTML o scripts, el navegador no los ejecuta en nuestro origen.
                 .header("Content-Security-Policy", "default-src 'none'; sandbox")
                 .body(file.resource());

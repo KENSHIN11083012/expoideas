@@ -1,13 +1,12 @@
 package co.edu.unisimon.expoideas.integration;
 
-import co.edu.unisimon.expoideas.users.Role;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import co.edu.unisimon.expoideas.users.Role;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 /** Registro, inicio de sesión, perfil propio y cambio de contraseña. */
 class AccountIT extends IntegrationTest {
@@ -24,7 +23,8 @@ class AccountIT extends IntegrationTest {
         assertThat(created.<String>json("$.role")).isEqualTo("STUDENT");
         assertThat(created.<List<String>>json("$.pendingSteps")).isEmpty();
 
-        Response login = post("/api/v1/auth/login", null, Map.of("email", email, "password", PASSWORD)).expect(200);
+        Response login = post("/api/v1/auth/login", null, Map.of("email", email, "password", PASSWORD))
+                .expect(200);
         assertThat(login.<String>json("$.role")).isEqualTo("STUDENT");
         assertThat(login.<String>json("$.firstName")).isEqualTo("Estudiante");
         assertThat(login.<List<String>>json("$.pendingSteps")).isEmpty();
@@ -77,8 +77,10 @@ class AccountIT extends IntegrationTest {
     @Test
     void wrongPasswordIs401() {
         String email = createAccount(Role.STUDENT);
-        post("/api/v1/auth/login", null, Map.of("email", email, "password", "Otra#2026")).expect(401);
-        post("/api/v1/auth/login", null, Map.of("email", uniqueEmail("nadie"), "password", PASSWORD)).expect(401);
+        post("/api/v1/auth/login", null, Map.of("email", email, "password", "Otra#2026"))
+                .expect(401);
+        post("/api/v1/auth/login", null, Map.of("email", uniqueEmail("nadie"), "password", PASSWORD))
+                .expect(401);
     }
 
     @Test
@@ -110,17 +112,24 @@ class AccountIT extends IntegrationTest {
         String token = login(email, PASSWORD);
         String nueva = "Nueva#2026";
 
-        put("/api/v1/users/me/password", token, Map.of(
-                "currentPassword", "Incorrecta#1", "newPassword", nueva, "confirmPassword", nueva))
+        put(
+                        "/api/v1/users/me/password",
+                        token,
+                        Map.of("currentPassword", "Incorrecta#1", "newPassword", nueva, "confirmPassword", nueva))
                 .expect(400);
-        put("/api/v1/users/me/password", token, Map.of(
-                "currentPassword", PASSWORD, "newPassword", nueva, "confirmPassword", "Distinta#2026"))
+        put(
+                        "/api/v1/users/me/password",
+                        token,
+                        Map.of("currentPassword", PASSWORD, "newPassword", nueva, "confirmPassword", "Distinta#2026"))
                 .expect(400);
-        put("/api/v1/users/me/password", token, Map.of(
-                "currentPassword", PASSWORD, "newPassword", nueva, "confirmPassword", nueva))
+        put(
+                        "/api/v1/users/me/password",
+                        token,
+                        Map.of("currentPassword", PASSWORD, "newPassword", nueva, "confirmPassword", nueva))
                 .expect(204);
 
-        post("/api/v1/auth/login", null, Map.of("email", email, "password", PASSWORD)).expect(401);
+        post("/api/v1/auth/login", null, Map.of("email", email, "password", PASSWORD))
+                .expect(401);
         login(email, nueva);
     }
 

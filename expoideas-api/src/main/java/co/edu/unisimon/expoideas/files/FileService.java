@@ -3,16 +3,6 @@ package co.edu.unisimon.expoideas.files;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
 import co.edu.unisimon.expoideas.security.UserPrincipal;
 import co.edu.unisimon.expoideas.users.User;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.security.MessageDigest;
@@ -23,6 +13,15 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.IntConsumer;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Guarda, sirve y borra archivos. Los módulos (foto de perfil, entregables,
@@ -63,7 +62,8 @@ public class FileService {
         }
         FileFormat format = FileFormat.detect(content)
                 .filter(allowed::contains)
-                .orElseThrow(() -> invalid("Formato no permitido. Usa un archivo " + FileFormat.describe(allowed) + "."));
+                .orElseThrow(
+                        () -> invalid("Formato no permitido. Usa un archivo " + FileFormat.describe(allowed) + "."));
 
         String uuid = UUID.randomUUID().toString();
         LocalDate today = LocalDate.now();
@@ -86,8 +86,12 @@ public class FileService {
                 .visibility(visibility)
                 .owner(owner)
                 .build());
-        log.info("Archivo {} ({}, {} bytes) subido por el usuario ID {}",
-                uuid, format.contentType(), content.length, owner.getId());
+        log.info(
+                "Archivo {} ({}, {} bytes) subido por el usuario ID {}",
+                uuid,
+                format.contentType(),
+                content.length,
+                owner.getId());
         return file;
     }
 
@@ -124,8 +128,13 @@ public class FileService {
         if (!isPublic && !canSeePrivate(file, authentication)) {
             throw notFound();
         }
-        return new FileContent(file.getOriginalName(), file.getContentType(), file.getSizeBytes(),
-                file.getSha256(), isPublic, storage.open(file.getStoragePath()));
+        return new FileContent(
+                file.getOriginalName(),
+                file.getContentType(),
+                file.getSizeBytes(),
+                file.getSha256(),
+                isPublic,
+                storage.open(file.getStoragePath()));
     }
 
     private static boolean canSeePrivate(StoredFile file, Authentication authentication) {

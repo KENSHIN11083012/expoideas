@@ -9,6 +9,5 @@ public record AcademicProgramRequest(
         @NotBlank(message = "El nombre es obligatorio")
         @Size(max = 150, message = "El nombre no puede exceder 150 caracteres")
         String name,
-        @NotNull(message = "La facultad es obligatoria")
-        Integer facultyId) {
-}
+
+        @NotNull(message = "La facultad es obligatoria") Integer facultyId) {}

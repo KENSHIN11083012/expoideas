@@ -18,6 +18,5 @@ public final class ValidationPatterns {
 
     public static final String INSTITUTIONAL_EMAIL_MESSAGE = "El correo debe terminar en @unisimon.edu.co";
 
-    private ValidationPatterns() {
-    }
+    private ValidationPatterns() {}
 }

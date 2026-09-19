@@ -26,7 +26,8 @@ public class AuthService {
                 .authenticate(UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()))
                 .getPrincipal();
         // La cuenta existe: se acaba de autenticar contra ella. Se carga con la foto.
-        User user = userRepository.findWithProfileByEmail(principal.getUsername()).orElseThrow();
+        User user =
+                userRepository.findWithProfileByEmail(principal.getUsername()).orElseThrow();
         return new LoginResponse(
                 jwtService.generateToken(principal),
                 user.getId(),

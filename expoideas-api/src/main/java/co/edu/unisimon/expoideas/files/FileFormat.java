@@ -61,8 +61,8 @@ public enum FileFormat {
     public static String describe(Set<FileFormat> formats) {
         String[] labels = formats.stream().sorted().map(format -> format.label).toArray(String[]::new);
         if (labels.length == 1) return labels[0];
-        return Arrays.stream(labels, 0, labels.length - 1).collect(Collectors.joining(", "))
-                + " o " + labels[labels.length - 1];
+        return Arrays.stream(labels, 0, labels.length - 1).collect(Collectors.joining(", ")) + " o "
+                + labels[labels.length - 1];
     }
 
     private static boolean startsWith(byte[] content, int offset, byte[] signature) {

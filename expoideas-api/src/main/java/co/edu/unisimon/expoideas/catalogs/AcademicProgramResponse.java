@@ -6,6 +6,9 @@ public record AcademicProgramResponse(Integer id, String name, Integer facultyId
     /** Requiere la facultad cargada (fetch join o dentro de la transacción). */
     public static AcademicProgramResponse from(AcademicProgram program) {
         return new AcademicProgramResponse(
-                program.getId(), program.getName(), program.getFaculty().getId(), program.getFaculty().getName());
+                program.getId(),
+                program.getName(),
+                program.getFaculty().getId(),
+                program.getFaculty().getName());
     }
 }

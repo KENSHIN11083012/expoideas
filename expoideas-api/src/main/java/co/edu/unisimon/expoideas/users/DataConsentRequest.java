@@ -7,5 +7,4 @@ import jakarta.validation.constraints.NotNull;
 public record DataConsentRequest(
         @NotNull(message = "Debes indicar si autorizas el tratamiento de tus datos")
         @AssertTrue(message = "Debes autorizar el tratamiento de tus datos para usar la plataforma")
-        Boolean dataConsent) {
-}
+        Boolean dataConsent) {}

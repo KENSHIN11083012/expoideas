@@ -1,13 +1,12 @@
 package co.edu.unisimon.expoideas.catalogs;
 
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.function.Supplier;
 
 /**
  * Alta, edición y listado de los catálogos: estructura académica (sedes,
@@ -143,7 +142,8 @@ public class CatalogService {
 
     private static <T extends CatalogItem> CatalogItemResponse update(
             JpaRepository<T, Integer> repository, Integer id, CatalogItemRequest request, String description) {
-        T item = repository.findById(id)
+        T item = repository
+                .findById(id)
                 .orElseThrow(() -> new NoSuchElementException("No existe " + description + " con ID: " + id));
         return save(repository, item, request);
     }

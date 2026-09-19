@@ -1,12 +1,11 @@
 package co.edu.unisimon.expoideas.integration;
 
-import co.edu.unisimon.expoideas.users.Role;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import co.edu.unisimon.expoideas.users.Role;
 import java.util.List;
 import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 /**
  * Catálogos: lectura pública; los institucionales (sedes, facultades, programas)
@@ -31,7 +30,8 @@ class CatalogIT extends IntegrationTest {
     void programRequiresAnExistingFaculty() {
         String admin = loginAs(Role.ADMIN);
         post("/api/v1/academic-programs", admin, Map.of("name", "Huérfano")).expect(400);
-        post("/api/v1/academic-programs", admin, Map.of("name", "Huérfano", "facultyId", 999_999)).expect(404);
+        post("/api/v1/academic-programs", admin, Map.of("name", "Huérfano", "facultyId", 999_999))
+                .expect(404);
     }
 
     @Test
@@ -47,12 +47,17 @@ class CatalogIT extends IntegrationTest {
         String macondolab = loginAs(Role.MACONDOLAB);
         String name = "Categoría " + System.nanoTime();
 
-        int id = post("/api/v1/categories", macondolab, Map.of("name", name)).expect(201).json("$.id");
+        int id = post("/api/v1/categories", macondolab, Map.of("name", name))
+                .expect(201)
+                .json("$.id");
         post("/api/v1/categories", macondolab, Map.of("name", name)).expect(409);
-        put("/api/v1/categories/" + id, macondolab, Map.of("name", name + " (editada)")).expect(200);
-        post("/api/v1/keywords", macondolab, Map.of("name", "keyword-" + System.nanoTime())).expect(201);
+        put("/api/v1/categories/" + id, macondolab, Map.of("name", name + " (editada)"))
+                .expect(200);
+        post("/api/v1/keywords", macondolab, Map.of("name", "keyword-" + System.nanoTime()))
+                .expect(201);
 
-        post("/api/v1/categories", loginAs(Role.STUDENT), Map.of("name", "Otra")).expect(403);
+        post("/api/v1/categories", loginAs(Role.STUDENT), Map.of("name", "Otra"))
+                .expect(403);
 
         List<String> names = get("/api/v1/categories", null).expect(200).json("$[*].name");
         assertThat(names).contains(name + " (editada)");
@@ -62,14 +67,19 @@ class CatalogIT extends IntegrationTest {
     void namesAreUniqueAndProgramNamesAreUniquePerFaculty() {
         String admin = loginAs(Role.ADMIN);
         String faculty = "Facultad única " + System.nanoTime();
-        int first = post("/api/v1/faculties", admin, Map.of("name", faculty)).expect(201).json("$.id");
+        int first = post("/api/v1/faculties", admin, Map.of("name", faculty))
+                .expect(201)
+                .json("$.id");
         post("/api/v1/faculties", admin, Map.of("name", faculty)).expect(409);
         post("/api/v1/campuses", admin, Map.of("name", "Barranquilla")).expect(409);
 
         int second = createFaculty(admin);
-        post("/api/v1/academic-programs", admin, Map.of("name", "Derecho", "facultyId", first)).expect(201);
-        post("/api/v1/academic-programs", admin, Map.of("name", "Derecho", "facultyId", second)).expect(201);
-        post("/api/v1/academic-programs", admin, Map.of("name", "Derecho", "facultyId", first)).expect(409);
+        post("/api/v1/academic-programs", admin, Map.of("name", "Derecho", "facultyId", first))
+                .expect(201);
+        post("/api/v1/academic-programs", admin, Map.of("name", "Derecho", "facultyId", second))
+                .expect(201);
+        post("/api/v1/academic-programs", admin, Map.of("name", "Derecho", "facultyId", first))
+                .expect(409);
     }
 
     @Test

@@ -1,13 +1,12 @@
 package co.edu.unisimon.expoideas.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Arranque completo: si el contexto sube, Flyway aplicó todas las migraciones y
@@ -69,9 +68,11 @@ class PlatformIT extends IntegrationTest {
     void openApiDocumentDescribesTheApi() {
         Response docs = get("/v3/api-docs", null).expect(200);
         assertThat(docs.<Object>json("$.paths['/api/v1/users/me']")).isNotNull();
-        assertThat(docs.<Object>json("$.paths['/api/v1/admin/users/{id}/password-reset']")).isNotNull();
+        assertThat(docs.<Object>json("$.paths['/api/v1/admin/users/{id}/password-reset']"))
+                .isNotNull();
         // Las lecturas públicas no piden el token en la documentación.
-        assertThat(docs.<List<Object>>json("$.paths['/api/v1/campuses'].get.security")).isEmpty();
+        assertThat(docs.<List<Object>>json("$.paths['/api/v1/campuses'].get.security"))
+                .isEmpty();
     }
 
     @Test

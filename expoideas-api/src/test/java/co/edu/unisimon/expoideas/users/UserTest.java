@@ -1,12 +1,11 @@
 package co.edu.unisimon.expoideas.users;
 
-import org.junit.jupiter.api.Test;
-
-import java.time.LocalDateTime;
-
 import static co.edu.unisimon.expoideas.users.OnboardingStep.CHANGE_PASSWORD;
 import static co.edu.unisimon.expoideas.users.OnboardingStep.DATA_CONSENT;
 import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.LocalDateTime;
+import org.junit.jupiter.api.Test;
 
 class UserTest {
 

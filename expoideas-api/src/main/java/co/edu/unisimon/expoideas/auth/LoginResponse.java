@@ -2,7 +2,6 @@ package co.edu.unisimon.expoideas.auth;
 
 import co.edu.unisimon.expoideas.users.OnboardingStep;
 import co.edu.unisimon.expoideas.users.Role;
-
 import java.util.List;
 
 /**
@@ -19,5 +18,4 @@ public record LoginResponse(
         String lastName,
         Role role,
         String photoId,
-        List<OnboardingStep> pendingSteps) {
-}
+        List<OnboardingStep> pendingSteps) {}

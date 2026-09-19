@@ -1,12 +1,11 @@
 package co.edu.unisimon.expoideas.integration;
 
-import co.edu.unisimon.expoideas.users.Role;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import co.edu.unisimon.expoideas.users.Role;
 import java.util.List;
 import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 /**
  * Gestión de cuentas: MacondoLab gestiona estudiantes, docentes y jurados; las
@@ -40,9 +39,12 @@ class UserManagementIT extends IntegrationTest {
         String macondolab = loginAs(Role.MACONDOLAB);
         String admin = loginAs(Role.ADMIN);
 
-        post("/api/v1/admin/users", macondolab, newAccount(uniqueEmail("gestion"), "ADMIN")).expect(403);
-        post("/api/v1/admin/users", macondolab, newAccount(uniqueEmail("gestion"), "MACONDOLAB")).expect(403);
-        post("/api/v1/admin/users", admin, newAccount(uniqueEmail("gestion"), "MACONDOLAB")).expect(201);
+        post("/api/v1/admin/users", macondolab, newAccount(uniqueEmail("gestion"), "ADMIN"))
+                .expect(403);
+        post("/api/v1/admin/users", macondolab, newAccount(uniqueEmail("gestion"), "MACONDOLAB"))
+                .expect(403);
+        post("/api/v1/admin/users", admin, newAccount(uniqueEmail("gestion"), "MACONDOLAB"))
+                .expect(201);
     }
 
     @Test
@@ -51,7 +53,9 @@ class UserManagementIT extends IntegrationTest {
 
         post("/api/v1/admin/users", macondolab, newAccount("externo" + System.nanoTime() + "@empresa.com", "JUDGE"))
                 .expect(201);
-        Response rejected = post("/api/v1/admin/users", macondolab,
+        Response rejected = post(
+                        "/api/v1/admin/users",
+                        macondolab,
                         newAccount("externo" + System.nanoTime() + "@empresa.com", "STUDENT"))
                 .expect(400);
         assertThat(rejected.<String>json("$.fields.email")).isNotBlank();
@@ -70,17 +74,21 @@ class UserManagementIT extends IntegrationTest {
         int student = idOf(createAccount(Role.STUDENT));
         int admin = idOf(createAccount(Role.ADMIN));
 
-        Response changed = put("/api/v1/admin/users/" + student, macondolab, Map.of("role", "JUDGE")).expect(200);
+        Response changed = put("/api/v1/admin/users/" + student, macondolab, Map.of("role", "JUDGE"))
+                .expect(200);
         assertThat(changed.<String>json("$.role")).isEqualTo("JUDGE");
 
-        put("/api/v1/admin/users/" + student, macondolab, Map.of("role", "ADMIN")).expect(403);
-        put("/api/v1/admin/users/" + admin, macondolab, Map.of("role", "STUDENT")).expect(403);
+        put("/api/v1/admin/users/" + student, macondolab, Map.of("role", "ADMIN"))
+                .expect(403);
+        put("/api/v1/admin/users/" + admin, macondolab, Map.of("role", "STUDENT"))
+                .expect(403);
     }
 
     @Test
     void nobodyChangesOwnRole() {
         String email = createAccount(Role.ADMIN);
-        put("/api/v1/admin/users/" + idOf(email), login(email, PASSWORD), Map.of("role", "STUDENT")).expect(403);
+        put("/api/v1/admin/users/" + idOf(email), login(email, PASSWORD), Map.of("role", "STUDENT"))
+                .expect(403);
     }
 
     @Test
@@ -98,7 +106,7 @@ class UserManagementIT extends IntegrationTest {
     }
 
     private static Map<String, Object> newAccount(String email, String role) {
-        return Map.of("firstName", "Cuenta", "lastName", "Nueva", "email", email,
-                "password", "Temporal#2026", "role", role);
+        return Map.of(
+                "firstName", "Cuenta", "lastName", "Nueva", "email", email, "password", "Temporal#2026", "role", role);
     }
 }

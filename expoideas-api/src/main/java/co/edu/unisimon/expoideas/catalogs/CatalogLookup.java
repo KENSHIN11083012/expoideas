@@ -1,9 +1,8 @@
 package co.edu.unisimon.expoideas.catalogs;
 
+import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-
-import java.util.NoSuchElementException;
 
 /**
  * Busca registros de catálogo por id para otros módulos (p. ej. la adscripción de
@@ -21,19 +20,22 @@ public class CatalogLookup {
 
     /** @throws NoSuchElementException si no existe */
     public Campus campus(Integer id) {
-        return campusRepository.findById(id)
+        return campusRepository
+                .findById(id)
                 .orElseThrow(() -> new NoSuchElementException("No existe una sede con ID: " + id));
     }
 
     /** @throws NoSuchElementException si no existe */
     public Faculty faculty(Integer id) {
-        return facultyRepository.findById(id)
+        return facultyRepository
+                .findById(id)
                 .orElseThrow(() -> new NoSuchElementException("No existe una facultad con ID: " + id));
     }
 
     /** @throws NoSuchElementException si no existe */
     public AcademicProgram academicProgram(Integer id) {
-        return academicProgramRepository.findById(id)
+        return academicProgramRepository
+                .findById(id)
                 .orElseThrow(() -> new NoSuchElementException("No existe un programa académico con ID: " + id));
     }
 }

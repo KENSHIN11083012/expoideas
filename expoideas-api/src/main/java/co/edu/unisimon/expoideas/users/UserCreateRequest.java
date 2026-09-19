@@ -30,10 +30,8 @@ public record UserCreateRequest(
         @Pattern(regexp = ValidationPatterns.PASSWORD, message = ValidationPatterns.PASSWORD_MESSAGE)
         String password,
 
-        @NotNull(message = "El rol es obligatorio")
-        Role role,
+        @NotNull(message = "El rol es obligatorio") Role role,
 
         Integer campusId,
         Integer facultyId,
-        Integer academicProgramId) {
-}
+        Integer academicProgramId) {}

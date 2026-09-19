@@ -1,24 +1,5 @@
 package co.edu.unisimon.expoideas.security;
 
-import co.edu.unisimon.expoideas.catalogs.CatalogController;
-import co.edu.unisimon.expoideas.catalogs.CatalogService;
-import co.edu.unisimon.expoideas.support.SecuredWebMvcTest;
-import co.edu.unisimon.expoideas.support.TestData;
-import co.edu.unisimon.expoideas.users.Role;
-import co.edu.unisimon.expoideas.users.User;
-import co.edu.unisimon.expoideas.users.UserAccountService;
-import co.edu.unisimon.expoideas.users.UserAdminController;
-import co.edu.unisimon.expoideas.users.UserController;
-import co.edu.unisimon.expoideas.users.UserManagementService;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
-
-import java.util.List;
-
 import static org.hamcrest.Matchers.contains;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -32,6 +13,24 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import co.edu.unisimon.expoideas.catalogs.CatalogController;
+import co.edu.unisimon.expoideas.catalogs.CatalogService;
+import co.edu.unisimon.expoideas.support.SecuredWebMvcTest;
+import co.edu.unisimon.expoideas.support.TestData;
+import co.edu.unisimon.expoideas.users.Role;
+import co.edu.unisimon.expoideas.users.User;
+import co.edu.unisimon.expoideas.users.UserAccountService;
+import co.edu.unisimon.expoideas.users.UserAdminController;
+import co.edu.unisimon.expoideas.users.UserController;
+import co.edu.unisimon.expoideas.users.UserManagementService;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 /** Con el primer ingreso pendiente, la cuenta solo puede resolverlo. */
 @SecuredWebMvcTest({UserController.class, UserAdminController.class, CatalogController.class})
@@ -70,11 +69,13 @@ class OnboardingFilterTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.detail").value("Antes de continuar, completa tu primer ingreso."))
                 .andExpect(jsonPath("$.pendingSteps", contains("CHANGE_PASSWORD", "DATA_CONSENT")));
-        mockMvc.perform(put("/api/v1/users/me").with(newAccount())
+        mockMvc.perform(put("/api/v1/users/me")
+                        .with(newAccount())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"firstName\":\"Carla\",\"lastName\":\"Díaz\"}"))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/v1/categories").with(newAccount())
+        mockMvc.perform(post("/api/v1/categories")
+                        .with(newAccount())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Textil\"}"))
                 .andExpect(status().isForbidden());
@@ -85,11 +86,15 @@ class OnboardingFilterTest {
     @Test
     void theStepsThemselvesAreAllowed() throws Exception {
         mockMvc.perform(get("/api/v1/users/me").with(newAccount())).andExpect(status().isOk());
-        mockMvc.perform(put("/api/v1/users/me/password").with(newAccount())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"currentPassword\":\"Temporal#2026\",\"newPassword\":\"Propia#2026\",\"confirmPassword\":\"Propia#2026\"}"))
+        mockMvc.perform(
+                        put("/api/v1/users/me/password")
+                                .with(newAccount())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"currentPassword\":\"Temporal#2026\",\"newPassword\":\"Propia#2026\",\"confirmPassword\":\"Propia#2026\"}"))
                 .andExpect(status().isNoContent());
-        mockMvc.perform(put("/api/v1/users/me/data-consent").with(newAccount())
+        mockMvc.perform(put("/api/v1/users/me/data-consent")
+                        .with(newAccount())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"dataConsent\":true}"))
                 .andExpect(status().isNoContent());
@@ -119,11 +124,13 @@ class OnboardingFilterTest {
         judge.setMustChangePassword(true);
         RequestPostProcessor newJudge = user(new UserPrincipal(judge));
 
-        mockMvc.perform(put("/api/v1/users/me/data-consent").with(newJudge)
+        mockMvc.perform(put("/api/v1/users/me/data-consent")
+                        .with(newJudge)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"dataConsent\":true}"))
                 .andExpect(status().isNoContent());
-        mockMvc.perform(post("/api/v1/campuses").with(newJudge)
+        mockMvc.perform(post("/api/v1/campuses")
+                        .with(newJudge)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Cúcuta\"}"))
                 .andExpect(status().isForbidden())

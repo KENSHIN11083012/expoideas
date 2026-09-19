@@ -3,9 +3,8 @@ package co.edu.unisimon.expoideas.security;
 import co.edu.unisimon.expoideas.users.OnboardingStep;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-
 import java.util.List;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 /**
  * Cuenta autenticada: el User de Spring Security (correo, hash y ROLE_...) más
@@ -19,7 +18,10 @@ public class UserPrincipal extends org.springframework.security.core.userdetails
     private final List<OnboardingStep> pendingSteps;
 
     public UserPrincipal(User user) {
-        super(user.getEmail(), user.getPasswordHash(), List.of(new SimpleGrantedAuthority(user.getRole().authority())));
+        super(
+                user.getEmail(),
+                user.getPasswordHash(),
+                List.of(new SimpleGrantedAuthority(user.getRole().authority())));
         this.role = user.getRole();
         this.pendingSteps = List.copyOf(user.pendingSteps());
     }

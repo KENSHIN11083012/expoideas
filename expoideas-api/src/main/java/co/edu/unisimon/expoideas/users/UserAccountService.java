@@ -6,13 +6,12 @@ import co.edu.unisimon.expoideas.files.FileFormat;
 import co.edu.unisimon.expoideas.files.FileService;
 import co.edu.unisimon.expoideas.files.FileVisibility;
 import co.edu.unisimon.expoideas.files.StoredFile;
+import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.NoSuchElementException;
 
 /**
  * Lo que cada persona hace con su propia cuenta: registrarse, ver y editar su
@@ -139,7 +138,8 @@ public class UserAccountService {
     }
 
     private User findByEmail(String email) {
-        return userRepository.findWithProfileByEmail(email)
+        return userRepository
+                .findWithProfileByEmail(email)
                 .orElseThrow(() -> new NoSuchElementException("No existe un usuario con correo: " + email));
     }
 }

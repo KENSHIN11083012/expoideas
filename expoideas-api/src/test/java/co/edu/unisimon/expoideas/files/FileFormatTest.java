@@ -1,13 +1,12 @@
 package co.edu.unisimon.expoideas.files;
 
-import co.edu.unisimon.expoideas.support.TestData;
-import org.junit.jupiter.api.Test;
-
-import java.util.EnumSet;
-
 import static co.edu.unisimon.expoideas.support.TestData.ascii;
 import static co.edu.unisimon.expoideas.support.TestData.concat;
 import static org.assertj.core.api.Assertions.assertThat;
+
+import co.edu.unisimon.expoideas.support.TestData;
+import java.util.EnumSet;
+import org.junit.jupiter.api.Test;
 
 class FileFormatTest {
 
@@ -21,13 +20,19 @@ class FileFormatTest {
 
     @Test
     void doesNotTrustExtensionsNorAcceptDangerousFormats() {
-        assertThat(FileFormat.detect(ascii("<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>"))).isEmpty();
-        assertThat(FileFormat.detect(ascii("<!doctype html><script>alert(1)</script>"))).isEmpty();
-        assertThat(FileFormat.detect(concat(ascii("MZ"), new byte[] {(byte) 0x90, 0}, ascii("ejecutable de Windows")))).isEmpty();
+        assertThat(FileFormat.detect(
+                        ascii("<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>")))
+                .isEmpty();
+        assertThat(FileFormat.detect(ascii("<!doctype html><script>alert(1)</script>")))
+                .isEmpty();
+        assertThat(FileFormat.detect(concat(ascii("MZ"), new byte[] {(byte) 0x90, 0}, ascii("ejecutable de Windows"))))
+                .isEmpty();
         assertThat(FileFormat.detect(ascii("GIF89a"))).isEmpty();
-        assertThat(FileFormat.detect(ascii("texto plano renombrado a foto.png"))).isEmpty();
+        assertThat(FileFormat.detect(ascii("texto plano renombrado a foto.png")))
+                .isEmpty();
         // Un WAV también es RIFF: no basta la primera firma.
-        assertThat(FileFormat.detect(concat(ascii("RIFF"), new byte[] {36, 0, 0, 0}, ascii("WAVEfmt ")))).isEmpty();
+        assertThat(FileFormat.detect(concat(ascii("RIFF"), new byte[] {36, 0, 0, 0}, ascii("WAVEfmt "))))
+                .isEmpty();
     }
 
     @Test
@@ -41,6 +46,7 @@ class FileFormatTest {
     void describesFormatsForErrorMessages() {
         assertThat(FileFormat.describe(FileFormat.IMAGES)).isEqualTo("JPG, PNG o WEBP");
         assertThat(FileFormat.describe(EnumSet.of(FileFormat.PDF))).isEqualTo("PDF");
-        assertThat(FileFormat.describe(EnumSet.of(FileFormat.PDF, FileFormat.PNG))).isEqualTo("PNG o PDF");
+        assertThat(FileFormat.describe(EnumSet.of(FileFormat.PDF, FileFormat.PNG)))
+                .isEqualTo("PNG o PDF");
     }
 }

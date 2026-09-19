@@ -5,12 +5,11 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.stereotype.Service;
-
-import javax.crypto.SecretKey;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import javax.crypto.SecretKey;
+import org.springframework.stereotype.Service;
 
 /**
  * Tokens de sesión (JWT firmados con HS256). El subject es el correo y el claim
@@ -46,6 +45,11 @@ public class JwtService {
      * @throws JwtException si la firma no es válida, el token está mal formado o ya venció
      */
     public String extractEmail(String token) {
-        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload().getSubject();
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
     }
 }

@@ -10,5 +10,4 @@ package co.edu.unisimon.expoideas.users;
  * programa; {@code academicProgramId} en null significa "sin programa"). Si
  * solo llega {@code academicProgramId}, la facultad se toma de ese programa.
  */
-public record UserUpdateRequest(Role role, Integer campusId, Integer facultyId, Integer academicProgramId) {
-}
+public record UserUpdateRequest(Role role, Integer campusId, Integer facultyId, Integer academicProgramId) {}

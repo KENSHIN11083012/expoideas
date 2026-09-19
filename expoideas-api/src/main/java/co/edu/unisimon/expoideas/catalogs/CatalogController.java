@@ -2,6 +2,7 @@ package co.edu.unisimon.expoideas.catalogs;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,8 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 /**
  * Catálogos. La lectura es pública: la usa el registro antes de que haya sesión.
@@ -101,7 +100,8 @@ public class CatalogController {
     }
 
     @PutMapping("/categories/{id}")
-    public CatalogItemResponse updateCategory(@PathVariable Integer id, @Valid @RequestBody CatalogItemRequest request) {
+    public CatalogItemResponse updateCategory(
+            @PathVariable Integer id, @Valid @RequestBody CatalogItemRequest request) {
         return catalogService.updateCategory(id, request);
     }
 

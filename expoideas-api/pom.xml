@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.8</version>
+		<version>4.1.1</version>
 		<relativePath/>
 	</parent>
 	<groupId>co.edu.unisimon</groupId>
@@ -15,7 +15,7 @@
 	<description>API de Expoideas: inscripción, evaluación y ranking de proyectos de INNPRENDE I y II (Universidad Simón Bolívar)</description>
 	<properties>
 		<java.version>25</java.version>
-		<jjwt.version>0.12.7</jjwt.version>
+		<jjwt.version>0.13.0</jjwt.version>
 		<spotless.version>3.10.2</spotless.version>
 		<palantir-java-format.version>2.98.0</palantir-java-format.version>
 	</properties>
@@ -86,7 +86,7 @@
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<!-- La línea 3.0.x es la que soporta Spring Boot 4.0; la 2.x es para Boot 3 -->
-			<version>3.0.3</version>
+			<version>3.1.1</version>
 		</dependency>
 		<!-- En Boot 4 @WebMvcTest y la integración de Spring Security con MockMvc
 		     viven en módulos propios; los dos ya traen spring-boot-starter-test.

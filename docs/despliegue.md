@@ -70,13 +70,15 @@ comprobación de origen correctas).
    GRANT ALL PRIVILEGES ON expoideas.* TO 'expoideas'@'%';
    ```
 2. **API** (Java 25): compilar con `./mvnw -B package` y ejecutar
-   `java -jar expoideas-api-0.0.1-SNAPSHOT.jar` como servicio (p. ej. systemd), con las variables
-   de la tabla de abajo y `SPRING_PROFILES_ACTIVE=prod`.
+   `java -jar target/expoideas-api-0.1.0-SNAPSHOT.jar` como servicio (p. ej. systemd), con las
+   variables de la tabla de abajo y `SPRING_PROFILES_ACTIVE=prod`.
 3. **App** (Node 24 solo para compilar): en `expoideas-app`,
    `npm ci && VITE_API_URL=/expoideas/api/v1 npm run build`, y copiar `dist/` a la carpeta
    `expoideas/` del servidor web.
 4. **Servidor web**: tomar `expoideas-app/nginx.conf` como referencia (rutas, SPA, caché,
-   cabeceras de seguridad y proxy a la API).
+   cabeceras de seguridad y proxy a la API). Asume que Nginx corre en el contenedor de Docker
+   (escucha en 8080, usuario sin privilegios); fuera de Docker hay que adaptar el puerto y,
+   si el servidor web no es Nginx, reproducir el mismo comportamiento en el que se use.
 
 ## Variables de entorno de la API
 
@@ -90,6 +92,7 @@ comprobación de origen correctas).
 | `PORT` | No | Puerto de la API (por defecto 8080) |
 | `JWT_EXPIRATION` | No | Duración de la sesión: `4h`, `30m`… (por defecto 4 h; un número sin unidad son milisegundos) |
 | `ALLOWED_ORIGINS` | No | Orígenes externos permitidos por CORS, separados por comas. Por defecto vacío: solo el mismo origen, como detrás de Nginx |
+| `JAVA_TOOL_OPTIONS` | No | Opciones de la JVM. La imagen Docker ya trae `-XX:MaxRAMPercentage=75`; fuera de Docker no hay valor por defecto |
 
 ## Primer administrador
 

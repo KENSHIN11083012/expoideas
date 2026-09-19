@@ -8,13 +8,23 @@
 
 name: expoideas
 
+# Los tres servicios comparten el mismo límite de logs: json-file con rotación,
+# para que lo que dice el perfil prod (server.compression, etc.) no se vuelva
+# mentira por un disco lleno de logs sin rotar.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   mysql:
     image: mysql:8.4
     restart: unless-stopped
+    logging: *logging
     environment:
       MYSQL_DATABASE: expoideas
-      MYSQL_USER: expoideas
+      MYSQL_USER: ${DB_USERNAME:-expoideas}
       MYSQL_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Define MYSQL_ROOT_PASSWORD en .env}
     command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
@@ -29,23 +39,26 @@ services:
   api:
     build: ./expoideas-api
     restart: unless-stopped
+    logging: *logging
     depends_on:
       mysql:
         condition: service_healthy
     environment:
       DB_URL: jdbc:mysql://mysql:3306/expoideas
-      DB_USERNAME: expoideas
+      DB_USERNAME: ${DB_USERNAME:-expoideas}
       DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
       JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env (openssl rand -base64 32)}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-4h}
       # La app llama a la API por el mismo origen: no hace falta abrir CORS.
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
     volumes:
+      # FILES_DIR=/data/files ya viene fijado en el Dockerfile de la API.
       - files:/data/files
 
   app:
     build: ./expoideas-app
     restart: unless-stopped
+    logging: *logging
     depends_on:
       api:
         condition: service_healthy

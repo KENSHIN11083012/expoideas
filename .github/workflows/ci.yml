@@ -7,6 +7,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,8 +18,9 @@ concurrency:
 
 jobs:
   api:
-    name: API · pruebas
+    name: API · formato y pruebas
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: expoideas-api
@@ -29,12 +31,14 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
-      - name: Compilar y probar
+      # spotless:check corre en la fase verify (ver pom.xml): sin formato aparte.
+      - name: Compilar, formato y probar
         run: ./mvnw -B verify
 
   app:
-    name: App · lint, pruebas y build
+    name: App · lint, formato, pruebas y build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: expoideas-app
@@ -47,16 +51,44 @@ jobs:
           cache-dependency-path: expoideas-app/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npm run format:check
       - run: npm test
       - run: npm run build
+
+  compose:
+    name: docker compose config
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      # Solo valida sintaxis y que las variables resuelvan: no levanta nada,
+      # así que estos valores de relleno no representan ningún secreto real.
+      - name: Validar docker-compose.yml
+        run: docker compose config --quiet
+        env:
+          DB_PASSWORD: placeholder
+          MYSQL_ROOT_PASSWORD: placeholder
+          JWT_SECRET: placeholder
 
   docker:
     name: Imágenes Docker
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: [api, app]
     steps:
       - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v3
       - name: Construir la imagen de la API
-        run: docker build -t expoideas-api ./expoideas-api
+        uses: docker/build-push-action@v6
+        with:
+          context: ./expoideas-api
+          push: false
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
       - name: Construir la imagen de la app
-        run: docker build -t expoideas-app ./expoideas-app
+        uses: docker/build-push-action@v6
+        with:
+          context: ./expoideas-app
+          push: false
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,mode=max,scope=app

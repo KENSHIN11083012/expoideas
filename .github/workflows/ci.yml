@@ -77,16 +77,16 @@ jobs:
     needs: [api, app]
     steps:
       - uses: actions/checkout@v7
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: Construir la imagen de la API
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./expoideas-api
           push: false
           cache-from: type=gha,scope=api
           cache-to: type=gha,mode=max,scope=api
       - name: Construir la imagen de la app
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./expoideas-app
           push: false

@@ -10,12 +10,14 @@
 	</parent>
 	<groupId>co.edu.unisimon</groupId>
 	<artifactId>expoideas-api</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.1.0-SNAPSHOT</version>
 	<name>expoideas-api</name>
 	<description>API de Expoideas: inscripción, evaluación y ranking de proyectos de INNPRENDE I y II (Universidad Simón Bolívar)</description>
 	<properties>
 		<java.version>25</java.version>
 		<jjwt.version>0.12.7</jjwt.version>
+		<spotless.version>3.10.2</spotless.version>
+		<palantir-java-format.version>2.98.0</palantir-java-format.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -144,6 +146,29 @@
 						</exclude>
 					</excludes>
 				</configuration>
+			</plugin>
+			<!-- Formato automático. spotless:check corre en la fase verify (mvnw verify);
+			     el formateo en sí se aplica con mvnw spotless:apply. -->
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>${spotless.version}</version>
+				<configuration>
+					<java>
+						<palantirJavaFormat>
+							<version>${palantir-java-format.version}</version>
+						</palantirJavaFormat>
+						<removeUnusedImports/>
+						<importOrder/>
+					</java>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

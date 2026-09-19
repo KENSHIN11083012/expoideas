@@ -3,7 +3,7 @@
 # Nginx también reenvía /expoideas/api/ a la API, así que la app y la API
 # comparten origen y no hace falta CORS.
 
-FROM node:24-slim AS build
+FROM node:25-slim AS build
 WORKDIR /src
 
 COPY package.json package-lock.json ./

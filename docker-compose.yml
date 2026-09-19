@@ -19,7 +19,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Define MYSQL_ROOT_PASSWORD en .env}
     command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
     volumes:
-      - datos-mysql:/var/lib/mysql
+      - mysql-data:/var/lib/mysql
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
       interval: 10s
@@ -37,11 +37,11 @@ services:
       DB_USERNAME: expoideas
       DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
       JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env (openssl rand -base64 32)}
-      JWT_EXPIRATION: ${JWT_EXPIRATION:-14400000}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-4h}
       # La app llama a la API por el mismo origen: no hace falta abrir CORS.
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
     volumes:
-      - archivos:/data/archivos
+      - files:/data/files
 
   app:
     build: ./expoideas-app
@@ -53,5 +53,5 @@ services:
       - "${HTTP_PORT:-8080}:8080"
 
 volumes:
-  datos-mysql:
-  archivos:
+  mysql-data:
+  files:

@@ -39,7 +39,7 @@ docker run -d --name expoideas-mysql -e MYSQL_ROOT_PASSWORD=<elige-una> -e MYSQL
 Las siguientes veces basta con `docker start expoideas-mysql`.
 
 Flyway aplica las migraciones de `expoideas-api/src/main/resources/db/migration/` al arrancar la API.
-Los cambios de esquema van siempre en una migración nueva (`V4__...sql`, `V5__...sql`); nunca se
+Los cambios de esquema van siempre en una migración nueva (`V2__...sql`, `V3__...sql`); nunca se
 edita una que ya se aplicó.
 
 ### 2. Backend
@@ -62,7 +62,7 @@ API en `http://localhost:8080` · Swagger en `http://localhost:8080/swagger-ui.h
 usa la variable `PORT`) y apunta el frontend al mismo puerto con `VITE_API_URL` en su `.env`.
 
 Sin el perfil `local`, la configuración se toma de variables de entorno: `DB_URL`, `DB_USERNAME`,
-`DB_PASSWORD`, `JWT_SECRET` y, opcionalmente, `PORT`, `JWT_EXPIRATION`, `ALLOWED_ORIGINS` y `ARCHIVOS_DIR`.
+`DB_PASSWORD`, `JWT_SECRET` y, opcionalmente, `PORT`, `JWT_EXPIRATION`, `ALLOWED_ORIGINS` y `FILES_DIR`.
 No hay valores por defecto para las credenciales: si falta una, la app no arranca.
 
 Las pruebas unitarias no necesitan base de datos:
@@ -115,14 +115,12 @@ pruebas de la API, lint, pruebas y build de la app, e imágenes Docker.
 ## Notas
 
 - Los errores de la API siguen el estándar Problem Details (RFC 9457, `application/problem+json`): el
-  mensaje para el usuario va en `detail` y los errores de validación añaden `campos` con el mensaje
+  mensaje para el usuario va en `detail` y los errores de validación añaden `fields` con el mensaje
   de cada campo. Sin sesión válida la API responde 401 y el frontend cierra la sesión.
 - En producción se usa el perfil `prod` (`SPRING_PROFILES_ACTIVE=prod`, ya incluido en la imagen
   Docker): apaga Swagger, oculta detalles de error y respeta las cabeceras del proxy.
-- Los archivos subidos (fotos, entregables) se guardan en disco, en `ARCHIVOS_DIR` (por defecto
+- Los archivos subidos (fotos, entregables) se guardan en disco, en `FILES_DIR` (por defecto
   `uploads/` junto a la API, ignorada por git); la BD solo guarda sus metadatos. Esa carpeta debe
   quedar fuera de lo que publica el servidor web y entrar en las copias de seguridad junto con la BD.
   Se aceptan JPG, PNG, WEBP y PDF de hasta 5 MB, validados por su contenido.
-
-- `docs/legacy-schema/` guarda el DDL original de Dattapro como referencia. Está fuera de git.
 - Nunca commitees dumps de base de datos ni logs de ejecución: el `.gitignore` de la raíz los cubre.

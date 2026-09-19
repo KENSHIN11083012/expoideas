@@ -1,6 +1,6 @@
 package co.edu.unisimon.expoideas.integration;
 
-import co.edu.unisimon.expoideas.entity.RolUsuario;
+import co.edu.unisimon.expoideas.users.Role;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -20,77 +20,84 @@ class OnboardingIT extends IntegrationTest {
 
     @Test
     void accountCreatedByManagementCompletesOnboarding() {
-        String macondolab = loginAs(RolUsuario.macondolab);
-        String email = uniqueEmail("jurado");
+        String macondolab = loginAs(Role.MACONDOLAB);
+        String email = uniqueEmail("JUDGE");
 
         Response created = post("/api/v1/admin/users", macondolab, Map.of(
-                "nombres", "Jurado", "apellidos", "Externo", "correoInstitucional", email,
-                "password", TEMPORAL, "rol", "jurado")).expect(201);
-        assertThat(created.<List<String>>json("$.pendientes")).containsExactly("cambiarPassword", "autorizarDatos");
+                "firstName", "Jurado", "lastName", "Externo", "email", email,
+                "password", TEMPORAL, "role", "JUDGE")).expect(201);
+        assertThat(created.<List<String>>json("$.pendingSteps")).containsExactly("CHANGE_PASSWORD", "DATA_CONSENT");
 
         Response login = post("/api/v1/auth/login", null, Map.of("email", email, "password", TEMPORAL)).expect(200);
-        assertThat(login.<List<String>>json("$.pendientes")).containsExactly("cambiarPassword", "autorizarDatos");
+        assertThat(login.<List<String>>json("$.pendingSteps")).containsExactly("CHANGE_PASSWORD", "DATA_CONSENT");
         String token = login.json("$.token");
 
         // Permitido mientras tanto: ver su perfil y leer catálogos públicos.
-        get("/api/v1/usuarios/me", token).expect(200);
-        get("/api/v1/sedes", token).expect(200);
+        get("/api/v1/users/me", token).expect(200);
+        get("/api/v1/campuses", token).expect(200);
 
         // Cualquier otra cosa: 403 con los pasos que faltan.
-        Response blocked = put("/api/v1/usuarios/me", token, Map.of("nombres", "X", "apellidos", "Y")).expect(403);
-        assertThat(blocked.<List<String>>json("$.pendientes")).containsExactly("cambiarPassword", "autorizarDatos");
+        Response blocked = put("/api/v1/users/me", token, Map.of("firstName", "X", "lastName", "Y")).expect(403);
+        assertThat(blocked.<List<String>>json("$.pendingSteps")).containsExactly("CHANGE_PASSWORD", "DATA_CONSENT");
 
-        put("/api/v1/usuarios/me/password", token, Map.of(
-                "passwordActual", TEMPORAL, "passwordNueva", DEFINITIVA, "confirmacionPassword", DEFINITIVA))
+        put("/api/v1/users/me/password", token, Map.of(
+                "currentPassword", TEMPORAL, "newPassword", DEFINITIVA, "confirmPassword", DEFINITIVA))
                 .expect(204);
-        Response stillBlocked = put("/api/v1/usuarios/me", token, Map.of("nombres", "X", "apellidos", "Y")).expect(403);
-        assertThat(stillBlocked.<List<String>>json("$.pendientes")).containsExactly("autorizarDatos");
+        Response stillBlocked = put("/api/v1/users/me", token, Map.of("firstName", "X", "lastName", "Y")).expect(403);
+        assertThat(stillBlocked.<List<String>>json("$.pendingSteps")).containsExactly("DATA_CONSENT");
 
-        put("/api/v1/usuarios/me/autorizacion-datos", token, Map.of("autorizaDatos", false)).expect(400);
-        put("/api/v1/usuarios/me/autorizacion-datos", token, Map.of("autorizaDatos", true)).expect(204);
+        put("/api/v1/users/me/data-consent", token, Map.of("dataConsent", false)).expect(400);
+        put("/api/v1/users/me/data-consent", token, Map.of("dataConsent", true)).expect(204);
 
-        put("/api/v1/usuarios/me", token, Map.of("nombres", "Jurado", "apellidos", "Validado")).expect(200);
+        put("/api/v1/users/me", token, Map.of("firstName", "Jurado", "lastName", "Validado")).expect(200);
         Response again = post("/api/v1/auth/login", null, Map.of("email", email, "password", DEFINITIVA)).expect(200);
-        assertThat(again.<List<String>>json("$.pendientes")).isEmpty();
+        assertThat(again.<List<String>>json("$.pendingSteps")).isEmpty();
     }
 
     @Test
     void passwordResetByManagementIsTemporary() {
-        String admin = loginAs(RolUsuario.admin);
-        String email = createAccount(RolUsuario.estudiante);
+        String admin = loginAs(Role.ADMIN);
+        String email = createAccount(Role.STUDENT);
 
-        post("/api/v1/usuarios/admin/reset-password?email=" + email, admin,
-                Map.of("passwordNueva", TEMPORAL, "confirmacionPassword", TEMPORAL))
+        post("/api/v1/admin/users/" + idOf(email) + "/password-reset", admin,
+                Map.of("newPassword", TEMPORAL, "confirmPassword", TEMPORAL))
                 .expect(204);
 
         post("/api/v1/auth/login", null, Map.of("email", email, "password", PASSWORD)).expect(401);
         Response login = post("/api/v1/auth/login", null, Map.of("email", email, "password", TEMPORAL)).expect(200);
-        assertThat(login.<List<String>>json("$.pendientes")).containsExactly("cambiarPassword");
+        assertThat(login.<List<String>>json("$.pendingSteps")).containsExactly("CHANGE_PASSWORD");
     }
 
     @Test
     void managementCannotResetOwnPasswordThroughAdminRoute() {
-        String email = createAccount(RolUsuario.admin);
+        String email = createAccount(Role.ADMIN);
         String admin = login(email, PASSWORD);
 
-        post("/api/v1/usuarios/admin/reset-password?email=" + email, admin,
-                Map.of("passwordNueva", TEMPORAL, "confirmacionPassword", TEMPORAL))
+        post("/api/v1/admin/users/" + idOf(email) + "/password-reset", admin,
+                Map.of("newPassword", TEMPORAL, "confirmPassword", TEMPORAL))
                 .expect(403);
     }
 
     @Test
+    void resettingAMissingAccountIs404() {
+        post("/api/v1/admin/users/999999/password-reset", loginAs(Role.ADMIN),
+                Map.of("newPassword", TEMPORAL, "confirmPassword", TEMPORAL))
+                .expect(404);
+    }
+
+    @Test
     void teacherCreatedByManagementNeedsAffiliation() {
-        String admin = loginAs(RolUsuario.admin);
+        String admin = loginAs(Role.ADMIN);
         Map<String, Object> body = new HashMap<>(Map.of(
-                "nombres", "Docente", "apellidos", "Nuevo", "correoInstitucional", uniqueEmail("docente"),
-                "password", TEMPORAL, "rol", "docente"));
+                "firstName", "Docente", "lastName", "Nuevo", "email", uniqueEmail("TEACHER"),
+                "password", TEMPORAL, "role", "TEACHER"));
 
         Response missing = post("/api/v1/admin/users", admin, body).expect(400);
-        assertThat(missing.<String>json("$.campos.sedeId")).isNotBlank();
-        assertThat(missing.<String>json("$.campos.facultadId")).isNotBlank();
+        assertThat(missing.<String>json("$.fields.campusId")).isNotBlank();
+        assertThat(missing.<String>json("$.fields.facultyId")).isNotBlank();
 
-        body.put("sedeId", campusId());
-        body.put("facultadId", createFaculty(admin));
+        body.put("campusId", campusId());
+        body.put("facultyId", createFaculty(admin));
         post("/api/v1/admin/users", admin, body).expect(201);
     }
 }

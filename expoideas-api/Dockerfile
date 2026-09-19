@@ -2,8 +2,8 @@
 # API de Expoideas. Compila con el JDK y corre solo con el JRE, como usuario sin
 # privilegios. Las pruebas corren en la integración continua, no aquí.
 
-FROM eclipse-temurin:25-jdk AS construccion
-WORKDIR /fuente
+FROM eclipse-temurin:25-jdk AS build
+WORKDIR /src
 
 # Dependencias primero: esta capa se reutiliza mientras el pom no cambie.
 COPY mvnw pom.xml ./
@@ -19,18 +19,18 @@ FROM eclipse-temurin:25-jre
 
 RUN groupadd --system expoideas \
     && useradd --system --gid expoideas --home-dir /app --no-create-home expoideas \
-    && mkdir -p /app /data/archivos \
-    && chown expoideas:expoideas /data/archivos
+    && mkdir -p /app /data/files \
+    && chown expoideas:expoideas /data/files
 
 WORKDIR /app
-COPY --from=construccion /app.jar app.jar
+COPY --from=build /app.jar app.jar
 
 ENV SPRING_PROFILES_ACTIVE=prod \
-    ARCHIVOS_DIR=/data/archivos \
+    FILES_DIR=/data/files \
     JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75"
 
 # Los archivos subidos deben sobrevivir a una actualización de la imagen.
-VOLUME /data/archivos
+VOLUME /data/files
 
 USER expoideas
 EXPOSE 8080

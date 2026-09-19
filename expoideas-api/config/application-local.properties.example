@@ -8,13 +8,16 @@ spring.datasource.username=root
 spring.datasource.password=CAMBIAME
 
 # openssl rand -base64 32
-application.security.jwt.secret-key=CAMBIAME
+expoideas.jwt.secret=CAMBIAME
+
+# El frontend de desarrollo (Vite) corre en otro origen.
+expoideas.cors.allowed-origins=http://localhost:5173,http://127.0.0.1:5173
 
 # Si el 8080 está ocupado en tu equipo. Ajusta también VITE_API_URL en expoideas-app/.env.
 # server.port=8081
 
 # Carpeta de los archivos subidos (por defecto uploads/ junto a la API).
-# app.archivos.directorio=uploads
+# expoideas.files.directory=uploads
 
 # SQL que ejecuta Hibernate, formateado. Solo las sentencias: los valores de los
 # parámetros (correos, etc.) no se imprimen.

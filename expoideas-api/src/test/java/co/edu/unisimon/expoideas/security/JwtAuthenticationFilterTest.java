@@ -1,5 +1,11 @@
 package co.edu.unisimon.expoideas.security;
 
+import co.edu.unisimon.expoideas.common.ExpoideasProperties;
+import co.edu.unisimon.expoideas.support.TestData;
+import co.edu.unisimon.expoideas.users.Role;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,23 +15,19 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.test.util.ReflectionTestUtils;
+
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * El filtro debe tomar los permisos de la base de datos y no del claim "role"
- * del token: un token emitido cuando el usuario era admin no puede seguir
- * dándole acceso de admin después de que se le quite el rol.
- */
 class JwtAuthenticationFilterTest {
 
-    private static final String CORREO = "ana@unisimon.edu.co";
+    private static final String EMAIL = "ana@unisimon.edu.co";
 
     private JwtService jwtService;
     private UserDetailsService userDetailsService;
@@ -33,64 +35,78 @@ class JwtAuthenticationFilterTest {
 
     @BeforeEach
     void setUp() {
-        jwtService = new JwtService();
-        // Clave solo para el test (32 bytes en base64).
-        ReflectionTestUtils.setField(jwtService, "secretKey", "dGVzdC1zZWNyZXQtZXhwb2lkZWFzLTMyLWJ5dGVzISE=");
-        ReflectionTestUtils.setField(jwtService, "jwtExpiration", 60_000L);
-
+        ExpoideasProperties properties = TestData.properties(Path.of("uploads"));
+        jwtService = new JwtService(properties);
         userDetailsService = mock(UserDetailsService.class);
         filter = new JwtAuthenticationFilter(jwtService, userDetailsService);
     }
 
     @AfterEach
-    void limpiarContexto() {
+    void clearContext() {
         SecurityContextHolder.clearContext();
     }
 
     @Test
-    void usaLosRolesDeLaBaseDeDatosYNoLosDelToken() throws Exception {
-        String tokenDeCuandoEraAdmin = jwtService.generateToken(usuario("ADMIN"));
-        when(userDetailsService.loadUserByUsername(CORREO)).thenReturn(usuario("ESTUDIANTE"));
+    void rolesComeFromTheDatabaseNotFromTheToken() throws Exception {
+        String tokenFromWhenItWasAdmin = jwtService.generateToken(principal(Role.ADMIN));
+        when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal(Role.STUDENT));
 
-        Authentication auth = filtrar(tokenDeCuandoEraAdmin);
+        Authentication authentication = filter(tokenFromWhenItWasAdmin);
 
-        assertThat(auth).isNotNull();
-        assertThat(auth.getAuthorities())
+        assertThat(authentication.getAuthorities())
                 .extracting(GrantedAuthority::getAuthority)
-                .containsExactly("ROLE_ESTUDIANTE");
+                .containsExactly("ROLE_STUDENT");
     }
 
     @Test
-    void tokenValidoDejaLaSesionAutenticada() throws Exception {
-        String token = jwtService.generateToken(usuario("ADMIN"));
-        when(userDetailsService.loadUserByUsername(CORREO)).thenReturn(usuario("ADMIN"));
+    void validTokenAuthenticatesTheRequest() throws Exception {
+        when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal(Role.ADMIN));
 
-        Authentication auth = filtrar(token);
+        Authentication authentication = filter(" " + jwtService.generateToken(principal(Role.ADMIN)) + " ");
 
-        assertThat(auth).isNotNull();
-        assertThat(auth.getName()).isEqualTo(CORREO);
-        assertThat(auth.getAuthorities())
-                .extracting(GrantedAuthority::getAuthority)
-                .containsExactly("ROLE_ADMIN");
+        assertThat(authentication.getName()).isEqualTo(EMAIL);
+        assertThat(authentication.getPrincipal()).isInstanceOf(UserPrincipal.class);
     }
 
     @Test
-    void tokenManipuladoNoAutentica() throws Exception {
-        String token = jwtService.generateToken(usuario("ESTUDIANTE"));
+    void tamperedTokenDoesNotAuthenticate() throws Exception {
+        String token = jwtService.generateToken(principal(Role.STUDENT));
 
-        Authentication auth = filtrar(token.substring(0, token.length() - 2) + "xx");
-
-        assertThat(auth).isNull();
+        assertThat(filter(token.substring(0, token.length() - 2) + "xx")).isNull();
     }
 
-    private Authentication filtrar(String token) throws Exception {
+    @Test
+    void expiredTokenDoesNotAuthenticate() throws Exception {
+        String expired = Jwts.builder()
+                .subject(EMAIL)
+                .expiration(Date.from(Instant.now().minusSeconds(60)))
+                .signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(TestData.JWT_SECRET)))
+                .compact();
+
+        assertThat(filter(expired)).isNull();
+    }
+
+    @Test
+    void theTokenCarriesTheRoleForTheFrontend() {
+        String token = jwtService.generateToken(principal(Role.MACONDOLAB));
+
+        String role = Jwts.parser()
+                .verifyWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(TestData.JWT_SECRET)))
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("role", String.class);
+        assertThat(role).isEqualTo("MACONDOLAB");
+    }
+
+    private Authentication filter(String token) throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/admin/users");
         request.addHeader("Authorization", "Bearer " + token);
         filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
         return SecurityContextHolder.getContext().getAuthentication();
     }
 
-    private static UserDetails usuario(String rol) {
-        return User.builder().username(CORREO).password("hash").roles(rol).build();
+    private static UserPrincipal principal(Role role) {
+        return new UserPrincipal(TestData.user(1, EMAIL, role));
     }
 }

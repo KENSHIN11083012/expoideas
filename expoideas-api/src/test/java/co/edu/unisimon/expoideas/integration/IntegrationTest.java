@@ -1,8 +1,9 @@
 package co.edu.unisimon.expoideas.integration;
 
-import co.edu.unisimon.expoideas.entity.RolUsuario;
-import co.edu.unisimon.expoideas.entity.Usuario;
-import co.edu.unisimon.expoideas.repository.UsuarioRepository;
+import co.edu.unisimon.expoideas.support.TestData;
+import co.edu.unisimon.expoideas.users.Role;
+import co.edu.unisimon.expoideas.users.User;
+import co.edu.unisimon.expoideas.users.UserRepository;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 abstract class IntegrationTest {
 
     /** Contraseña válida para las cuentas de prueba (8+ caracteres, número y símbolo). */
-    protected static final String PASSWORD = "Segura#2026";
+    protected static final String PASSWORD = TestData.PASSWORD;
 
     // Se arranca una vez para toda la corrida; Testcontainers lo elimina al terminar.
     private static final MySQLContainer MYSQL = new MySQLContainer("mysql:8.4")
@@ -68,15 +69,16 @@ abstract class IntegrationTest {
         registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
         registry.add("spring.datasource.username", MYSQL::getUsername);
         registry.add("spring.datasource.password", MYSQL::getPassword);
-        registry.add("application.security.jwt.secret-key", () -> "ZXhwb2lkZWFzLWludGVncmF0aW9uLXRlc3RzLWtleSE=");
-        registry.add("app.archivos.directorio", FILES_DIR::toString);
+        registry.add("expoideas.jwt.secret", () -> TestData.JWT_SECRET);
+        registry.add("expoideas.files.directory", FILES_DIR::toString);
+        registry.add("expoideas.cors.allowed-origins", () -> "http://localhost:5173");
     }
 
     @LocalServerPort
     private int port;
 
     @Autowired
-    protected UsuarioRepository usuarioRepository;
+    protected UserRepository userRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -99,23 +101,28 @@ abstract class IntegrationTest {
      * Crea una cuenta al día (sin pasos de primer ingreso) directamente en la BD,
      * como haría el procedimiento del primer administrador. Devuelve el correo.
      */
-    protected String createAccount(RolUsuario rol) {
-        String email = uniqueEmail(rol.name());
-        usuarioRepository.save(Usuario.builder()
-                .nombres("Prueba")
-                .apellidos(rol.name())
-                .correoInstitucional(email)
-                .password(passwordEncoder.encode(PASSWORD))
-                .rol(rol)
-                .autorizaDatos(true)
-                .fechaAutorizacionDatos(LocalDateTime.now())
+    protected String createAccount(Role role) {
+        String email = uniqueEmail(role.name().toLowerCase());
+        userRepository.save(User.builder()
+                .firstName("Prueba")
+                .lastName(role.name())
+                .email(email)
+                .passwordHash(passwordEncoder.encode(PASSWORD))
+                .role(role)
+                .dataConsent(true)
+                .dataConsentAt(LocalDateTime.now())
                 .build());
         return email;
     }
 
+    /** Id de la cuenta con ese correo. */
+    protected int idOf(String email) {
+        return userRepository.findByEmail(email).orElseThrow().getId();
+    }
+
     /** Crea una cuenta al día con ese rol e inicia sesión. Devuelve el token. */
-    protected String loginAs(RolUsuario rol) {
-        return login(createAccount(rol), PASSWORD);
+    protected String loginAs(Role role) {
+        return login(createAccount(role), PASSWORD);
     }
 
     protected String login(String email, String password) {
@@ -127,33 +134,33 @@ abstract class IntegrationTest {
     /** Registro público de un estudiante con la adscripción indicada. Devuelve la respuesta. */
     protected Response register(String email, int campusId, int facultyId, Integer programId) {
         Map<String, Object> body = new HashMap<>();
-        body.put("nombres", "Estudiante");
-        body.put("apellidos", "De Prueba");
-        body.put("correoInstitucional", email);
+        body.put("firstName", "Estudiante");
+        body.put("lastName", "De Prueba");
+        body.put("email", email);
         body.put("password", PASSWORD);
-        body.put("sedeId", campusId);
-        body.put("facultadId", facultyId);
-        body.put("programaAcademicoId", programId);
-        body.put("autorizaDatos", true);
-        return post("/api/v1/usuarios/registro", null, body);
+        body.put("campusId", campusId);
+        body.put("facultyId", facultyId);
+        body.put("academicProgramId", programId);
+        body.put("dataConsent", true);
+        return post("/api/v1/auth/register", null, body);
     }
 
     // ── Catálogos ───────────────────────────────────────────────────────────
 
     /** Id de una de las sedes que siembran las migraciones. */
     protected int campusId() {
-        return get("/api/v1/sedes", null).expect(200).json("$[0].id");
+        return get("/api/v1/campuses", null).expect(200).json("$[0].id");
     }
 
     protected int createFaculty(String adminToken) {
-        return post("/api/v1/facultades", adminToken, Map.of("nombre", "Facultad " + SEQUENCE.incrementAndGet()))
+        return post("/api/v1/faculties", adminToken, Map.of("name", "Facultad " + SEQUENCE.incrementAndGet()))
                 .expect(201)
                 .json("$.id");
     }
 
     protected int createProgram(String adminToken, int facultyId) {
-        return post("/api/v1/programas-academicos", adminToken,
-                        Map.of("nombre", "Programa " + SEQUENCE.incrementAndGet(), "facultadId", facultyId))
+        return post("/api/v1/academic-programs", adminToken,
+                        Map.of("name", "Programa " + SEQUENCE.incrementAndGet(), "facultyId", facultyId))
                 .expect(201)
                 .json("$.id");
     }

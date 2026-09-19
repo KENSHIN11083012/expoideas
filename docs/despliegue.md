@@ -18,7 +18,7 @@ Navegador ──HTTPS──▶ Proxy de TI (opcional) ──▶ app: Nginx :8080
 | `app` | React 19 compilada, servida por Nginx (usuario sin privilegios) | Ninguno |
 | `api` | Spring Boot 4 · Java 25 (JRE, usuario sin privilegios) | Ninguno en memoria |
 | `mysql` | MySQL 8.4 · utf8mb4 | Datos de la plataforma |
-| Archivos | Carpeta en disco (`ARCHIVOS_DIR`) | Fotos y entregables (≤ 5 MB c/u) |
+| Archivos | Carpeta en disco (`FILES_DIR`) | Fotos y entregables (≤ 5 MB c/u) |
 
 La app y la API comparten origen: Nginx reenvía `/expoideas/api/` a la API. Por eso no hace
 falta abrir CORS ni publicar la API. **La API y MySQL no deben quedar expuestas a Internet.**
@@ -47,8 +47,8 @@ Datos persistentes (volúmenes de Docker):
 
 | Volumen | Contenido |
 |---|---|
-| `expoideas_datos-mysql` | Base de datos |
-| `expoideas_archivos` | Archivos subidos |
+| `expoideas_mysql-data` | Base de datos |
+| `expoideas_files` | Archivos subidos |
 
 ### HTTPS
 
@@ -86,14 +86,14 @@ comprobación de origen correctas).
 | `DB_USERNAME` / `DB_PASSWORD` | Sí | Usuario de MySQL de la aplicación |
 | `JWT_SECRET` | Sí | Clave de firma de sesiones, Base64 de 32 bytes o más (`openssl rand -base64 32`). Cambiarla cierra todas las sesiones |
 | `SPRING_PROFILES_ACTIVE` | Sí en producción | `prod`: apaga Swagger, oculta detalles de error y respeta el proxy |
-| `ARCHIVOS_DIR` | No | Carpeta de archivos (en Docker: `/data/archivos`) |
+| `FILES_DIR` | No | Carpeta de archivos (por defecto `uploads`; en Docker: `/data/files`) |
 | `PORT` | No | Puerto de la API (por defecto 8080) |
-| `JWT_EXPIRATION` | No | Duración de la sesión en ms (por defecto 4 h) |
-| `ALLOWED_ORIGINS` | No | Orígenes externos permitidos por CORS, separados por comas. Vacío si la app y la API comparten origen |
+| `JWT_EXPIRATION` | No | Duración de la sesión: `4h`, `30m`… (por defecto 4 h; un número sin unidad son milisegundos) |
+| `ALLOWED_ORIGINS` | No | Orígenes externos permitidos por CORS, separados por comas. Por defecto vacío: solo el mismo origen, como detrás de Nginx |
 
 ## Primer administrador
 
-Las cuentas nuevas nacen como estudiante y el registro exige elegir una facultad. En una base
+Las cuentas nuevas nacen como estudiante y el registro exige elegir sede y facultad. En una base
 recién creada solo existen las sedes (Barranquilla y Cúcuta), así que el primer administrador se
 prepara así:
 
@@ -101,13 +101,13 @@ prepara así:
    administrador desde **Catálogos**):
    ```bash
    docker compose exec mysql mysql --default-character-set=utf8mb4 -uexpoideas -p expoideas \
-     -e "INSERT INTO facultades (nombre) VALUES ('Ingenierías');"
+     -e "INSERT INTO faculties (name) VALUES ('Ingenierías');"
    ```
 2. Registrarse en la plataforma con el correo institucional de quien administrará.
 3. Asignarle el rol en MySQL:
    ```bash
    docker compose exec mysql mysql --default-character-set=utf8mb4 -uexpoideas -p expoideas \
-     -e "UPDATE usuarios SET rol = 'admin' WHERE correo_institucional = 'persona@unisimon.edu.co';"
+     -e "UPDATE users SET role = 'ADMIN' WHERE email = 'persona@unisimon.edu.co';"
    ```
 4. Cerrar sesión y volver a entrar. Desde **Usuarios**, ese administrador asigna los demás roles
    (MacondoLab, docentes, jurados) sin volver a tocar la base de datos.
@@ -130,7 +130,7 @@ metadatos y la carpeta, el contenido.
 # Base de datos
 docker compose exec -T mysql sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction --routines expoideas' > expoideas-$(date +%F).sql
 # Archivos
-docker run --rm -v expoideas_archivos:/datos -v "$PWD":/respaldo alpine tar czf /respaldo/archivos-$(date +%F).tar.gz -C /datos .
+docker run --rm -v expoideas_files:/datos -v "$PWD":/respaldo alpine tar czf /respaldo/archivos-$(date +%F).tar.gz -C /datos .
 ```
 
 ### Actualizar a una versión nueva

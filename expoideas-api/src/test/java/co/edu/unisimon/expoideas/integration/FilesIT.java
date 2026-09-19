@@ -1,6 +1,6 @@
 package co.edu.unisimon.expoideas.integration;
 
-import co.edu.unisimon.expoideas.entity.RolUsuario;
+import co.edu.unisimon.expoideas.users.Role;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,19 +17,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Foto de perfil: subida, descarga pública con caché, reemplazo, borrado y límites. */
 class FilesIT extends IntegrationTest {
 
-    private static final String PHOTO = "/api/v1/usuarios/me/foto";
-    private static final String PART = "archivo";
+    private static final String PHOTO = "/api/v1/users/me/photo";
+    private static final String PART = "file";
 
     @Test
     void photoIsUploadedServedAndCached() {
-        String token = loginAs(RolUsuario.estudiante);
+        String token = loginAs(Role.STUDENT);
         byte[] png = png(1_000);
 
-        String id = putFile(PHOTO, token, PART, "yo.png", MediaType.IMAGE_PNG, png).expect(200).json("$.fotoId");
-        assertThat(get("/api/v1/usuarios/me", token).<String>json("$.fotoId")).isEqualTo(id);
+        String id = putFile(PHOTO, token, PART, "yo.png", MediaType.IMAGE_PNG, png).expect(200).json("$.photoId");
+        assertThat(get("/api/v1/users/me", token).<String>json("$.photoId")).isEqualTo(id);
 
         // Pública: se descarga sin sesión, idéntica, con caché larga y ETag.
-        Response download = get("/api/v1/archivos/" + id, null).expect(200);
+        Response download = get("/api/v1/files/" + id, null).expect(200);
         assertThat(download.bytes()).isEqualTo(png);
         assertThat(download.headers().getContentType()).isEqualTo(MediaType.IMAGE_PNG);
         assertThat(download.headers().getCacheControl()).contains("immutable");
@@ -39,51 +39,51 @@ class FilesIT extends IntegrationTest {
 
         HttpHeaders conditional = new HttpHeaders();
         conditional.setIfNoneMatch(etag);
-        get("/api/v1/archivos/" + id, null, conditional).expect(304);
+        get("/api/v1/files/" + id, null, conditional).expect(304);
 
         assertThat(storedFileCount(id)).isEqualTo(1);
     }
 
     @Test
     void replacingPhotoDeletesThePreviousOne() {
-        String token = loginAs(RolUsuario.estudiante);
-        String first = putFile(PHOTO, token, PART, "a.png", MediaType.IMAGE_PNG, png(100)).expect(200).json("$.fotoId");
-        String second = putFile(PHOTO, token, PART, "b.png", MediaType.IMAGE_PNG, png(200)).expect(200).json("$.fotoId");
+        String token = loginAs(Role.STUDENT);
+        String first = putFile(PHOTO, token, PART, "a.png", MediaType.IMAGE_PNG, png(100)).expect(200).json("$.photoId");
+        String second = putFile(PHOTO, token, PART, "b.png", MediaType.IMAGE_PNG, png(200)).expect(200).json("$.photoId");
 
         assertThat(second).isNotEqualTo(first);
-        get("/api/v1/archivos/" + first, null).expect(404);
-        get("/api/v1/archivos/" + second, null).expect(200);
+        get("/api/v1/files/" + first, null).expect(404);
+        get("/api/v1/files/" + second, null).expect(200);
         assertThat(storedFileCount(first)).isZero();
     }
 
     @Test
     void deletingPhotoRemovesIt() {
-        String token = loginAs(RolUsuario.estudiante);
-        String id = putFile(PHOTO, token, PART, "a.png", MediaType.IMAGE_PNG, png(100)).expect(200).json("$.fotoId");
+        String token = loginAs(Role.STUDENT);
+        String id = putFile(PHOTO, token, PART, "a.png", MediaType.IMAGE_PNG, png(100)).expect(200).json("$.photoId");
 
         delete(PHOTO, token).expect(204);
 
-        get("/api/v1/archivos/" + id, null).expect(404);
-        assertThat(get("/api/v1/usuarios/me", token).<String>json("$.fotoId")).isNull();
+        get("/api/v1/files/" + id, null).expect(404);
+        assertThat(get("/api/v1/users/me", token).<String>json("$.photoId")).isNull();
         assertThat(storedFileCount(id)).isZero();
     }
 
     @Test
     void deletingAccountRemovesItsFiles() {
-        String email = createAccount(RolUsuario.estudiante);
+        String email = createAccount(Role.STUDENT);
         String token = login(email, PASSWORD);
-        String id = putFile(PHOTO, token, PART, "a.png", MediaType.IMAGE_PNG, png(100)).expect(200).json("$.fotoId");
-        int userId = usuarioRepository.findByCorreoInstitucional(email).orElseThrow().getId();
+        String id = putFile(PHOTO, token, PART, "a.png", MediaType.IMAGE_PNG, png(100)).expect(200).json("$.photoId");
+        int userId = userRepository.findByEmail(email).orElseThrow().getId();
 
-        delete("/api/v1/admin/users/" + userId, loginAs(RolUsuario.admin)).expect(204);
+        delete("/api/v1/admin/users/" + userId, loginAs(Role.ADMIN)).expect(204);
 
-        get("/api/v1/archivos/" + id, null).expect(404);
+        get("/api/v1/files/" + id, null).expect(404);
         assertThat(storedFileCount(id)).isZero();
     }
 
     @Test
     void contentIsValidatedBySignatureNotByDeclaredType() {
-        String token = loginAs(RolUsuario.estudiante);
+        String token = loginAs(Role.STUDENT);
         byte[] text = "no soy una imagen".getBytes(StandardCharsets.UTF_8);
 
         Response rejected = putFile(PHOTO, token, PART, "falsa.png", MediaType.IMAGE_PNG, text).expect(400);
@@ -93,13 +93,13 @@ class FilesIT extends IntegrationTest {
 
     @Test
     void filesOverFiveMegabytesAre413() {
-        String token = loginAs(RolUsuario.estudiante);
+        String token = loginAs(Role.STUDENT);
         putFile(PHOTO, token, PART, "grande.png", MediaType.IMAGE_PNG, png(5_500_000)).expect(413);
     }
 
     @Test
     void photoUploadRequiresSession() {
-        get("/api/v1/archivos/00000000-0000-0000-0000-000000000000", null).expect(404);
+        get("/api/v1/files/00000000-0000-0000-0000-000000000000", null).expect(404);
         delete(PHOTO, null).expect(401);
     }
 

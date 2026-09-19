@@ -1,12 +1,11 @@
 package co.edu.unisimon.expoideas.auth;
 
-import co.edu.unisimon.expoideas.entity.PendienteDeIngreso;
-import co.edu.unisimon.expoideas.entity.RolUsuario;
-import co.edu.unisimon.expoideas.entity.Usuario;
-import co.edu.unisimon.expoideas.repository.UsuarioRepository;
-import co.edu.unisimon.expoideas.security.CuentaAutenticada;
 import co.edu.unisimon.expoideas.security.JwtService;
-import co.edu.unisimon.expoideas.security.UsuarioDetailsService;
+import co.edu.unisimon.expoideas.security.UserPrincipal;
+import co.edu.unisimon.expoideas.support.TestData;
+import co.edu.unisimon.expoideas.users.Role;
+import co.edu.unisimon.expoideas.users.User;
+import co.edu.unisimon.expoideas.users.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -14,57 +13,49 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Optional;
 
+import static co.edu.unisimon.expoideas.users.OnboardingStep.CHANGE_PASSWORD;
+import static co.edu.unisimon.expoideas.users.OnboardingStep.DATA_CONSENT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
-    private static final String CORREO = "marta@empresa.com";
+    private static final String EMAIL = "marta@empresa.com";
 
-    @Mock private UsuarioRepository repository;
-    @Mock private JwtService jwtService;
-    @Mock private AuthenticationManager authenticationManager;
+    @Mock
+    private AuthenticationManager authenticationManager;
 
-    @InjectMocks private AuthService service;
+    @Mock
+    private UserRepository userRepository;
 
-    private final Usuario juradoNuevo = Usuario.builder().id(7).nombres("Marta").apellidos("Ríos")
-            .correoInstitucional(CORREO).password("hash").rol(RolUsuario.jurado)
-            .debeCambiarPassword(true).autorizaDatos(false).build();
+    @Mock
+    private JwtService jwtService;
+
+    @InjectMocks
+    private AuthService service;
 
     @Test
-    void elLoginInformaLosPasosDePrimerIngreso() {
-        CuentaAutenticada cuenta = new CuentaAutenticada(juradoNuevo);
+    void loginReportsTheOnboardingSteps() {
+        User newJudge = TestData.user(7, EMAIL, Role.JUDGE);
+        newJudge.setMustChangePassword(true);
+        newJudge.setDataConsent(false);
+        UserPrincipal principal = new UserPrincipal(newJudge);
         when(authenticationManager.authenticate(any()))
-                .thenReturn(UsernamePasswordAuthenticationToken.authenticated(cuenta, null, cuenta.getAuthorities()));
-        when(repository.findByCorreoInstitucional(CORREO)).thenReturn(Optional.of(juradoNuevo));
-        when(jwtService.generateToken(cuenta)).thenReturn("jwt");
+                .thenReturn(UsernamePasswordAuthenticationToken.authenticated(principal, null, principal.getAuthorities()));
+        when(userRepository.findWithProfileByEmail(EMAIL)).thenReturn(Optional.of(newJudge));
+        when(jwtService.generateToken(principal)).thenReturn("jwt");
 
-        LoginResponse respuesta = service.authenticate(new LoginRequest(CORREO, "Temporal#2026"));
+        LoginResponse response = service.login(new LoginRequest(EMAIL, "Temporal#2026"));
 
-        assertThat(respuesta.getToken()).isEqualTo("jwt");
-        assertThat(respuesta.getRol()).isEqualTo("jurado");
-        assertThat(respuesta.getPendientes())
-                .containsExactly(PendienteDeIngreso.cambiarPassword, PendienteDeIngreso.autorizarDatos);
-    }
-
-    @Test
-    void elPrincipalLlevaRolYPendientesDesdeLaBaseDeDatos() {
-        UsuarioRepository repositorio = mock(UsuarioRepository.class);
-        when(repositorio.findByCorreoInstitucional(CORREO)).thenReturn(Optional.of(juradoNuevo));
-
-        UserDetails cargado = new UsuarioDetailsService(repositorio).loadUserByUsername(CORREO);
-
-        assertThat(cargado).isInstanceOf(CuentaAutenticada.class);
-        assertThat(cargado.getAuthorities()).extracting(GrantedAuthority::getAuthority).containsExactly("ROLE_JURADO");
-        assertThat(((CuentaAutenticada) cargado).getPendientesDeIngreso())
-                .containsExactly(PendienteDeIngreso.cambiarPassword, PendienteDeIngreso.autorizarDatos);
+        assertThat(response.token()).isEqualTo("jwt");
+        assertThat(response.id()).isEqualTo(7);
+        assertThat(response.role()).isEqualTo(Role.JUDGE);
+        assertThat(response.photoId()).isNull();
+        assertThat(response.pendingSteps()).containsExactly(CHANGE_PASSWORD, DATA_CONSENT);
     }
 }

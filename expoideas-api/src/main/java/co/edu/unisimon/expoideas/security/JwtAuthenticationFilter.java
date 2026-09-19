@@ -4,22 +4,24 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Autentica la petición con el token de la cabecera Authorization. No es un
+ * bean: SecurityConfig lo crea dentro de la cadena de Spring Security, para que
+ * Spring Boot no lo registre también como filtro del contenedor.
+ */
 @Slf4j
-@Component
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
@@ -27,45 +29,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
+    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+        this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
+    }
+
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain) throws ServletException, IOException {
+            @NonNull FilterChain filterChain)
+            throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        try {
-            // Nunca loguear el header ni el token: identifican una sesión activa.
-            String jwt = authHeader.substring(BEARER_PREFIX.length()).strip();
-            String userEmail = jwtService.extractUsername(jwt);
-
-            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-
-                if (jwtService.isTokenValid(jwt, userDetails)) {
-                    // Las autoridades salen de la BD (userDetails), no del claim "role"
-                    // del token: si un admin pierde el rol, lo pierde en la siguiente
-                    // petición y no cuando caduque su token. El claim sigue viajando
-                    // porque el frontend lo usa para pintar la UI.
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities());
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
+        String header = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if (header != null && header.startsWith(BEARER_PREFIX)
+                && SecurityContextHolder.getContext().getAuthentication() == null) {
+            try {
+                // Nunca registrar la cabecera ni el token: identifican una sesión activa.
+                String email = jwtService.extractEmail(header.substring(BEARER_PREFIX.length()).strip());
+                // Las autoridades salen de la BD, no del claim "role" del token: si alguien
+                // pierde un rol, lo pierde en la siguiente petición y no cuando venza el token.
+                UserDetails user = userDetailsService.loadUserByUsername(email);
+                UsernamePasswordAuthenticationToken authentication =
+                        UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities());
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (Exception e) {
+                // Token inválido, vencido o cuenta inexistente: se sigue sin autenticar.
+                // Las rutas protegidas responden 401; las públicas siguen funcionando.
+                SecurityContextHolder.clearContext();
+                log.debug("No se pudo autenticar la petición a {}: {}", request.getRequestURI(), e.getMessage());
             }
-        } catch (Exception e) {
-            // Token inválido, expirado o usuario inexistente: se sigue sin autenticar.
-            // Las rutas protegidas responderán 401/403; las públicas siguen funcionando.
-            SecurityContextHolder.clearContext();
-            log.debug("No se pudo autenticar la petición a {}: {}",
-                    request.getRequestURI(), e.getMessage());
         }
 
         filterChain.doFilter(request, response);

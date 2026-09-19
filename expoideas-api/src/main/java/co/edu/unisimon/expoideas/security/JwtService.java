@@ -1,87 +1,51 @@
 package co.edu.unisimon.expoideas.security;
 
-import io.jsonwebtoken.Claims;
+import co.edu.unisimon.expoideas.common.ExpoideasProperties;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import org.springframework.security.core.GrantedAuthority;
-import java.util.stream.Collectors;
-import java.util.function.Function;
 
+/**
+ * Tokens de sesión (JWT firmados con HS256). El subject es el correo y el claim
+ * {@code role} lleva el rol, que el frontend usa solo para pintar la interfaz:
+ * los permisos se leen de la BD en cada petición.
+ */
 @Service
 public class JwtService {
 
-    @Value("${application.security.jwt.secret-key}")
-    private String secretKey;
+    private final SecretKey key;
+    private final Duration expiration;
 
-    @Value("${application.security.jwt.expiration}")
-    private long jwtExpiration;
-
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+    /** Una clave mal formada o de menos de 256 bits impide arrancar la API. */
+    public JwtService(ExpoideasProperties properties) {
+        this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(properties.jwt().secret()));
+        this.expiration = properties.jwt().expiration();
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
-
-    public String generateToken(UserDetails userDetails) {
-        Map<String, Object> extraClaims = new HashMap<>();
-        // Extraemos las autoridades para incluirlas como claim "role"
-        extraClaims.put("role", userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList()));
-        return generateToken(extraClaims, userDetails);
-    }
-
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        return buildToken(extraClaims, userDetails, jwtExpiration);
-    }
-
-    private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
-        return Jwts
-                .builder()
-                .claims(extraClaims)
-                .subject(userDetails.getUsername())
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignInKey(), Jwts.SIG.HS256)
+    public String generateToken(UserPrincipal principal) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .subject(principal.getUsername())
+                .claim("role", principal.getRole().name())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plus(expiration)))
+                .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
-    }
-
-    private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
-    private Claims extractAllClaims(String token) {
-        return Jwts
-                .parser()
-                .verifyWith(getSignInKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
-
-    private SecretKey getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
+    /**
+     * Correo del token.
+     *
+     * @throws JwtException si la firma no es válida, el token está mal formado o ya venció
+     */
+    public String extractEmail(String token) {
+        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload().getSubject();
     }
 }

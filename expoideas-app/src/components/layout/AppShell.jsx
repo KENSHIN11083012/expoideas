@@ -5,7 +5,7 @@ import { SiteHeader } from './SiteHeader';
 import { SiteFooter } from './SiteFooter';
 
 /** Al cambiar de página, vuelve arriba (el router no lo hace solo). */
-function ScrollArriba() {
+function ScrollToTop() {
     const { pathname } = useLocation();
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -21,14 +21,14 @@ export function AppShell() {
     return (
         <div className="flex min-h-dvh flex-col">
             <a
-                href="#contenido"
+                href="#main-content"
                 className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-on-primary"
             >
                 Saltar al contenido
             </a>
-            <ScrollArriba />
+            <ScrollToTop />
             <SiteHeader />
-            <main id="contenido" className="flex-1">
+            <main id="main-content" className="flex-1">
                 <Suspense fallback={<Spinner className="min-h-[50vh]" />}>
                     <Outlet />
                 </Suspense>

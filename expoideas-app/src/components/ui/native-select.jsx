@@ -1,6 +1,6 @@
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { campoBase } from './estilos';
+import { fieldBase } from './styles';
 
 /**
  * <select> nativo con el estilo de los campos. Nativo a propósito: en celular
@@ -12,7 +12,7 @@ export function NativeSelect({ className, children, ref, ...props }) {
             <select
                 ref={ref}
                 data-slot="select"
-                className={cn(campoBase, 'h-11 appearance-none pr-9', className)}
+                className={cn(fieldBase, 'h-11 appearance-none pr-9', className)}
                 {...props}
             >
                 {children}

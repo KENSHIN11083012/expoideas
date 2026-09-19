@@ -3,8 +3,8 @@
 # Nginx también reenvía /expoideas/api/ a la API, así que la app y la API
 # comparten origen y no hace falta CORS.
 
-FROM node:24-slim AS construccion
-WORKDIR /fuente
+FROM node:24-slim AS build
+WORKDIR /src
 
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -19,6 +19,6 @@ RUN npm run build
 FROM nginxinc/nginx-unprivileged:stable-alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=construccion /fuente/dist /usr/share/nginx/html/expoideas
+COPY --from=build /src/dist /usr/share/nginx/html/expoideas
 
 EXPOSE 8080

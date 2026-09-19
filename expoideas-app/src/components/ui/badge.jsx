@@ -4,9 +4,9 @@ import { cn } from '@/lib/utils';
  * Etiqueta corta. Las variantes "mono" usan JetBrains Mono en mayúsculas, como
  * los chips técnicos de Academic Nexus.
  */
-const VARIANTES = {
+const VARIANTS = {
     primary: 'bg-primary/10 text-primary border-primary/20',
-    lima: 'bg-secondary-container text-on-secondary-fixed border-secondary-fixed-dim',
+    lime: 'bg-secondary-container text-on-secondary-fixed border-secondary-fixed-dim',
     dark: 'bg-on-surface text-surface-container-lowest border-on-surface',
     outline: 'bg-surface-container-lowest text-on-surface-variant border-outline-variant',
 };
@@ -17,8 +17,8 @@ export function Badge({ className, variant = 'primary', mono = false, ...props }
             data-slot="badge"
             className={cn(
                 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-2.5 py-0.5 text-xs font-semibold',
-                mono && 'font-mono text-[11px] font-medium uppercase tracking-wider',
-                VARIANTES[variant],
+                mono && 'label-mono',
+                VARIANTS[variant],
                 className,
             )}
             {...props}

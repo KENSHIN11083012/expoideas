@@ -7,7 +7,7 @@ function Label({ className, ...props }) {
     return (
         <label
             data-slot="label"
-            className={cn('font-mono text-[11px] font-medium uppercase tracking-wider text-on-surface-variant', className)}
+            className={cn('label-mono text-on-surface-variant', className)}
             {...props}
         />
     );

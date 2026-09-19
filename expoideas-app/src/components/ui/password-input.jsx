@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { campoBase } from './estilos';
+import { fieldBase } from './styles';
 
 /**
  * Campo de contraseña con botón para mostrarla. Reenvía ref y props al <input>,
@@ -16,7 +16,7 @@ export function PasswordInput({ className, ref, ...props }) {
                 ref={ref}
                 data-slot="input"
                 type={visible ? 'text' : 'password'}
-                className={cn(campoBase, 'h-11 pr-11', className)}
+                className={cn(fieldBase, 'h-11 pr-11', className)}
                 {...props}
             />
             <button

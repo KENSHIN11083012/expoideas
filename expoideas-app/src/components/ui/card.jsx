@@ -2,20 +2,20 @@ import { cn } from '@/lib/utils';
 
 /**
  * Tarjeta de Academic Nexus: fondo blanco, borde de 1px y radio de 8px.
- * `acento` añade la franja superior de 4px que clasifica el contenido.
+ * `accent` añade la franja superior de 4px que clasifica el contenido.
  */
-const ACENTOS = {
+const ACCENTS = {
     primary: 'border-t-4 border-t-primary',
-    lima: 'border-t-4 border-t-secondary-container',
+    lime: 'border-t-4 border-t-secondary-container',
 };
 
-export function Card({ className, acento, ...props }) {
+export function Card({ className, accent, ...props }) {
     return (
         <div
             data-slot="card"
             className={cn(
                 'rounded-lg border border-outline-variant/70 bg-surface-container-lowest text-on-surface shadow-soft',
-                acento && ACENTOS[acento],
+                accent && ACCENTS[accent],
                 className,
             )}
             {...props}

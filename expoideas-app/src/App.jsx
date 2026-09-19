@@ -1,68 +1,61 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { MANAGEMENT_ROLES } from '@/lib/roles';
+import { ROUTES } from '@/lib/routes';
 import { AppShell } from '@/components/layout/AppShell';
 import { Spinner } from '@/components/ui/feedback';
-import { useAuth } from '@/hooks/useAuth';
-import { RUTA_PRIMER_INGRESO, ROLES_DE_GESTION, rutaDeInicio } from '@/utils/roles';
+import { GuestRoute } from '@/features/auth/GuestRoute';
+import { ProtectedRoute } from '@/features/auth/ProtectedRoute';
 
 // Cada página se descarga cuando se visita por primera vez.
-const Inicio = lazy(() => import('@/pages/Inicio'));
-const Login = lazy(() => import('@/pages/Login'));
-const Registro = lazy(() => import('@/pages/Registro'));
-const PrimerIngreso = lazy(() => import('@/pages/PrimerIngreso'));
-const Perfil = lazy(() => import('@/pages/Perfil'));
-const Seguridad = lazy(() => import('@/pages/Seguridad'));
-const AdminUsuarios = lazy(() => import('@/pages/AdminUsuarios'));
-const Catalogos = lazy(() => import('@/pages/Catalogos'));
-const NoAutorizado = lazy(() => import('@/pages/NoAutorizado'));
-const NoEncontrado = lazy(() => import('@/pages/NoEncontrado'));
+const HomePage = lazy(() => import('@/features/home/HomePage'));
+const LoginPage = lazy(() => import('@/features/auth/LoginPage'));
+const RegisterPage = lazy(() => import('@/features/auth/RegisterPage'));
+const OnboardingPage = lazy(() => import('@/features/auth/OnboardingPage'));
+const ProfilePage = lazy(() => import('@/features/profile/ProfilePage'));
+const SecurityPage = lazy(() => import('@/features/profile/SecurityPage'));
+const UserAdminPage = lazy(() => import('@/features/users/UserAdminPage'));
+const CatalogsPage = lazy(() => import('@/features/catalogs/CatalogsPage'));
+const UnauthorizedPage = lazy(() => import('@/features/errors/UnauthorizedPage'));
+const NotFoundPage = lazy(() => import('@/features/errors/NotFoundPage'));
 
-// El basename sale de la config de Vite (base): la app lo toma de ahí en vez
-// de repetirlo.
+// El subdirectorio donde se sirve la app sale de la config de Vite (base).
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-/** Login y registro no tienen sentido con sesión iniciada. */
-function SoloInvitados({ children }) {
-    const { token, role, pendientes } = useAuth();
-    return token ? <Navigate to={rutaDeInicio(role, pendientes)} replace /> : children;
-}
-
-function App() {
+export default function App() {
     return (
         <BrowserRouter basename={basename}>
             <Suspense fallback={<Spinner className="min-h-dvh" />}>
                 <Routes>
                     {/* Acceso: pantalla completa, sin navegación */}
-                    <Route path="/login" element={<SoloInvitados><Login /></SoloInvitados>} />
-                    <Route path="/register" element={<SoloInvitados><Registro /></SoloInvitados>} />
-                    {/* La página misma decide: sin sesión va al login y sin pendientes, al inicio. */}
-                    <Route path={RUTA_PRIMER_INGRESO} element={<PrimerIngreso />} />
+                    <Route path={ROUTES.LOGIN} element={<GuestRoute><LoginPage /></GuestRoute>} />
+                    <Route path={ROUTES.REGISTER} element={<GuestRoute><RegisterPage /></GuestRoute>} />
+                    {/* La página misma decide: sin sesión va al inicio de sesión y sin pendientes, al inicio. */}
+                    <Route path={ROUTES.ONBOARDING} element={<OnboardingPage />} />
 
                     <Route element={<AppShell />}>
                         {/* Públicas */}
-                        <Route index element={<Inicio />} />
-                        <Route path="unauthorized" element={<NoAutorizado />} />
+                        <Route index element={<HomePage />} />
+                        <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
 
                         {/* Con sesión */}
-                        <Route path="perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
-                        <Route path="seguridad" element={<ProtectedRoute><Seguridad /></ProtectedRoute>} />
+                        <Route path={ROUTES.PROFILE} element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                        <Route path={ROUTES.SECURITY} element={<ProtectedRoute><SecurityPage /></ProtectedRoute>} />
 
                         {/* Gestión: MacondoLab y administradores */}
                         <Route
-                            path="admin/usuarios"
-                            element={<ProtectedRoute allowedRoles={ROLES_DE_GESTION}><AdminUsuarios /></ProtectedRoute>}
+                            path={ROUTES.USERS}
+                            element={<ProtectedRoute allowedRoles={MANAGEMENT_ROLES}><UserAdminPage /></ProtectedRoute>}
                         />
                         <Route
-                            path="admin/catalogos"
-                            element={<ProtectedRoute allowedRoles={ROLES_DE_GESTION}><Catalogos /></ProtectedRoute>}
+                            path={ROUTES.CATALOGS}
+                            element={<ProtectedRoute allowedRoles={MANAGEMENT_ROLES}><CatalogsPage /></ProtectedRoute>}
                         />
-                        <Route path="*" element={<NoEncontrado />} />
+
+                        <Route path="*" element={<NotFoundPage />} />
                     </Route>
                 </Routes>
             </Suspense>
         </BrowserRouter>
     );
 }
-
-export default App;

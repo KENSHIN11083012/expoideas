@@ -19,7 +19,7 @@ export const buttonVariants = cva(
                 /** Acción principal: verde institucional. */
                 default: 'bg-primary text-on-primary hover:bg-primary-container active:translate-y-px',
                 /** Acción de innovación: lima con texto oscuro. */
-                lima: 'bg-secondary-container text-on-secondary-fixed hover:bg-secondary-fixed-dim active:translate-y-px',
+                lime: 'bg-secondary-container text-on-secondary-fixed hover:bg-secondary-fixed-dim active:translate-y-px',
                 outline:
                     'border border-outline-variant bg-surface-container-lowest text-on-surface hover:border-primary hover:text-primary',
                 ghost: 'text-on-surface hover:bg-surface-container-low hover:text-primary',

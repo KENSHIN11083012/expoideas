@@ -8,14 +8,3 @@ import { twMerge } from 'tailwind-merge';
 export function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
-
-/** Iniciales para avatares: "Ana María Pérez" -> "AP". */
-export function iniciales(nombres = '', apellidos = '') {
-    const letras = `${nombres.trim()[0] ?? ''}${apellidos.trim()[0] ?? ''}`;
-    return letras.toUpperCase() || '?';
-}
-
-/** Minúsculas y sin tildes, para búsquedas: "Ingeniería" -> "ingenieria". */
-export function normalizarTexto(texto = '') {
-    return texto.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
-}

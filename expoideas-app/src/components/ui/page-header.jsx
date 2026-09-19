@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Badge } from './badge';
+import { Eyebrow } from './eyebrow';
 
 /**
  * Encabezado de página: etiqueta técnica, título, descripción y acciones.
@@ -10,12 +10,7 @@ export function PageHeader({ eyebrow, title, description, actions, className }) 
         <header className={cn('flex flex-col gap-4 border-b border-outline-variant/60 pb-6 sm:flex-row sm:items-end sm:justify-between', className)}>
             <title>{`${title} · Expoideas`}</title>
             <div className="flex flex-col gap-2">
-                {eyebrow && (
-                    <Badge variant="primary" mono className="self-start whitespace-normal">
-                        <span className="size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
-                        {eyebrow}
-                    </Badge>
-                )}
+                {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
                 <h1 className="font-heading text-3xl font-bold tracking-tight text-on-surface sm:text-4xl">{title}</h1>
                 {description && <p className="max-w-2xl text-base text-on-surface-variant">{description}</p>}
             </div>

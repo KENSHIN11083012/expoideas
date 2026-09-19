@@ -11,9 +11,7 @@ export const AlertDialog = AlertDialogPrimitive.Root;
 export function AlertDialogContent({ className, children, ...props }) {
     return (
         <AlertDialogPrimitive.Portal>
-            <AlertDialogPrimitive.Overlay
-                className="fixed inset-0 z-50 bg-on-surface/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0"
-            />
+            <AlertDialogPrimitive.Overlay className="fixed inset-0 z-50 bg-on-surface/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
             <AlertDialogPrimitive.Content
                 className={cn(
                     'fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 gap-4',

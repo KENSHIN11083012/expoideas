@@ -20,7 +20,9 @@ export function Button({ className, variant, size, asChild = false, loading = fa
             aria-busy={loading || undefined}
             {...props}
         >
-            {asChild ? children : (
+            {asChild ? (
+                children
+            ) : (
                 <>
                     {loading && <Loader2 className="animate-spin" aria-hidden="true" />}
                     {children}

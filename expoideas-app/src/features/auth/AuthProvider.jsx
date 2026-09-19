@@ -74,16 +74,13 @@ export const AuthProvider = ({ children }) => {
      * @param {{ email?: string, firstName?: string, lastName?: string, photoId?: string }} user
      * @param {string[]} [steps] pasos de primer ingreso que devolvió el login
      */
-    const login = useCallback(
-        (newToken, user = {}, steps = []) => {
-            const newProfile = { ...NO_PROFILE, ...user };
-            session.save({ token: newToken, user: newProfile, pendingSteps: steps });
-            setToken(newToken);
-            setProfile(newProfile);
-            setPendingSteps(steps);
-        },
-        [],
-    );
+    const login = useCallback((newToken, user = {}, steps = []) => {
+        const newProfile = { ...NO_PROFILE, ...user };
+        session.save({ token: newToken, user: newProfile, pendingSteps: steps });
+        setToken(newToken);
+        setProfile(newProfile);
+        setPendingSteps(steps);
+    }, []);
 
     const completeStep = useCallback(
         (step) => savePendingSteps(pendingSteps.filter((pending) => pending !== step)),

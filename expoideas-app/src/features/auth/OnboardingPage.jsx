@@ -26,7 +26,8 @@ const ONBOARDING_STEPS = {
     },
     DATA_CONSENT: {
         title: 'Autoriza el tratamiento de tus datos',
-        description: 'Para usar Expoideas, la Universidad Simón Bolívar necesita tu autorización para tratar tus datos personales.',
+        description:
+            'Para usar Expoideas, la Universidad Simón Bolívar necesita tu autorización para tratar tus datos personales.',
     },
 };
 

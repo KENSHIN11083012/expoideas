@@ -32,7 +32,11 @@ export function AffiliationFields({ form }) {
     };
 
     if (error) {
-        return <Alert variant="error" title="No pudimos cargar las sedes y facultades">{error.message}</Alert>;
+        return (
+            <Alert variant="error" title="No pudimos cargar las sedes y facultades">
+                {error.message}
+            </Alert>
+        );
     }
 
     // Los <select> se montan cuando ya tienen opciones: si se montaran vacíos, el

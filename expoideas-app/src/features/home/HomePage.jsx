@@ -24,7 +24,11 @@ const PHASES = [
         icon: Lightbulb,
         title: 'Esboza tu idea de emprendimiento',
         text: 'Durante el semestre el equipo investiga hasta llegar a su idea de negocio y la presenta en un póster de investigación.',
-        points: ['Inscripción del proyecto con tu equipo', 'Entrega del póster de investigación', 'Evaluación por jurados y ranking'],
+        points: [
+            'Inscripción del proyecto con tu equipo',
+            'Entrega del póster de investigación',
+            'Evaluación por jurados y ranking',
+        ],
     },
     {
         phase: 'INNPRENDE II',
@@ -33,7 +37,11 @@ const PHASES = [
         icon: Rocket,
         title: 'Convierte la idea en un prototipo',
         text: 'La idea se vuelve una versión mínima del producto, se valida y se presenta en un pitch comercial ante jurados externos.',
-        points: ['Prototipo y evidencias de validación', 'Pitch comercial ante jurados externos', 'Evaluación, comentarios y ranking'],
+        points: [
+            'Prototipo y evidencias de validación',
+            'Pitch comercial ante jurados externos',
+            'Evaluación, comentarios y ranking',
+        ],
     },
 ];
 
@@ -140,8 +148,14 @@ export default function HomePage() {
 
             {/* Portada */}
             <section className="relative overflow-hidden border-b border-outline-variant/60 bg-surface-container-lowest">
-                <div className="tech-grid absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent)]" aria-hidden="true" />
-                <div className="absolute -right-40 -top-40 size-[32rem] rounded-full bg-secondary-container/30 blur-3xl" aria-hidden="true" />
+                <div
+                    className="tech-grid absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent)]"
+                    aria-hidden="true"
+                />
+                <div
+                    className="absolute -right-40 -top-40 size-[32rem] rounded-full bg-secondary-container/30 blur-3xl"
+                    aria-hidden="true"
+                />
 
                 <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:px-8 lg:py-24">
                     <div className="flex min-w-0 flex-col gap-6">
@@ -153,8 +167,8 @@ export default function HomePage() {
                             </span>
                         </h1>
                         <p className="max-w-xl text-lg leading-relaxed text-on-surface-variant">
-                            Expoideas reúne los proyectos de la Cátedra INNPRENDE: los equipos los inscriben con sus
-                            entregables, los jurados los evalúan y los resultados quedan a la vista de la comunidad.
+                            Expoideas reúne los proyectos de la Cátedra INNPRENDE: los equipos los inscriben con sus entregables,
+                            los jurados los evalúan y los resultados quedan a la vista de la comunidad.
                         </p>
                         <MainActions signedIn={signedIn} management={isManagement} />
                     </div>
@@ -184,8 +198,8 @@ export default function HomePage() {
                         De la investigación al prototipo, en dos fases
                     </h2>
                     <p className="text-on-surface-variant">
-                        Cada fase tiene su propia inscripción y su propia evaluación por jurados. Los proyectos, sus
-                        entregables y sus resultados quedan guardados como evidencia del proceso.
+                        Cada fase tiene su propia inscripción y su propia evaluación por jurados. Los proyectos, sus entregables y
+                        sus resultados quedan guardados como evidencia del proceso.
                     </p>
                 </div>
 

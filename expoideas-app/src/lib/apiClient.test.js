@@ -78,10 +78,17 @@ describe('apiClient', () => {
 
     it('un 403 por primer ingreso avisa con los pasos pendientes', async () => {
         const { listener, stop } = listen(ONBOARDING_REQUIRED_EVENT);
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(
-            { detail: 'Antes de continuar, completa tu primer ingreso.', pendingSteps: ['CHANGE_PASSWORD'] },
-            403,
-        )));
+        vi.stubGlobal(
+            'fetch',
+            vi
+                .fn()
+                .mockResolvedValue(
+                    jsonResponse(
+                        { detail: 'Antes de continuar, completa tu primer ingreso.', pendingSteps: ['CHANGE_PASSWORD'] },
+                        403,
+                    ),
+                ),
+        );
 
         await expect(request('/admin/users')).rejects.toMatchObject({ status: 403 });
 
@@ -91,7 +98,10 @@ describe('apiClient', () => {
 
     it('un 403 por falta de rol no toca el primer ingreso', async () => {
         const { listener, stop } = listen(ONBOARDING_REQUIRED_EVENT);
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ detail: 'No tienes permiso para realizar esta acción' }, 403)));
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockResolvedValue(jsonResponse({ detail: 'No tienes permiso para realizar esta acción' }, 403)),
+        );
 
         await expect(request('/admin/users')).rejects.toThrow('No tienes permiso para realizar esta acción');
 

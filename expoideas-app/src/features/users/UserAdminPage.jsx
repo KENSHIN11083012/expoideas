@@ -133,7 +133,9 @@ export default function UserAdminPage() {
                     icon={hasFilters ? UserX : Users}
                     title={hasFilters ? 'Sin resultados' : 'Aún no hay usuarios'}
                     description={
-                        hasFilters ? 'Prueba con otro nombre, correo o rol.' : 'Las cuentas aparecerán aquí cuando alguien se registre.'
+                        hasFilters
+                            ? 'Prueba con otro nombre, correo o rol.'
+                            : 'Las cuentas aparecerán aquí cuando alguien se registre.'
                     }
                     action={
                         hasFilters && (

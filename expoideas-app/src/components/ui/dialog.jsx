@@ -41,7 +41,12 @@ export function DialogContent({ className, children, ...props }) {
 }
 
 export function DialogHeader({ className, ...props }) {
-    return <div className={cn('flex flex-col gap-1.5 border-b border-outline-variant/50 px-6 pb-4 pt-6 pr-12', className)} {...props} />;
+    return (
+        <div
+            className={cn('flex flex-col gap-1.5 border-b border-outline-variant/50 px-6 pb-4 pt-6 pr-12', className)}
+            {...props}
+        />
+    );
 }
 
 export function DialogTitle({ className, ...props }) {
@@ -59,7 +64,10 @@ export function DialogBody({ className, ...props }) {
 export function DialogFooter({ className, ...props }) {
     return (
         <div
-            className={cn('flex flex-col-reverse gap-2 border-t border-outline-variant/50 px-6 py-4 sm:flex-row sm:justify-end', className)}
+            className={cn(
+                'flex flex-col-reverse gap-2 border-t border-outline-variant/50 px-6 py-4 sm:flex-row sm:justify-end',
+                className,
+            )}
             {...props}
         />
     );

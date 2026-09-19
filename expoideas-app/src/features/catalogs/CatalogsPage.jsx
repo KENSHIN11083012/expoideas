@@ -12,8 +12,26 @@ import { CatalogPanel } from './CatalogPanel';
  * deja escribir al administrador; MacondoLab gestiona la clasificación.
  */
 const CATALOGS = [
-    { key: 'campuses', path: CATALOG_PATHS.campuses, adminOnly: true, label: 'Sedes', singular: 'sede', newLabel: 'Nueva sede', article: 'una sede', icon: Landmark },
-    { key: 'faculties', path: CATALOG_PATHS.faculties, adminOnly: true, label: 'Facultades', singular: 'facultad', newLabel: 'Nueva facultad', article: 'una facultad', icon: Building2 },
+    {
+        key: 'campuses',
+        path: CATALOG_PATHS.campuses,
+        adminOnly: true,
+        label: 'Sedes',
+        singular: 'sede',
+        newLabel: 'Nueva sede',
+        article: 'una sede',
+        icon: Landmark,
+    },
+    {
+        key: 'faculties',
+        path: CATALOG_PATHS.faculties,
+        adminOnly: true,
+        label: 'Facultades',
+        singular: 'facultad',
+        newLabel: 'Nueva facultad',
+        article: 'una facultad',
+        icon: Building2,
+    },
     {
         key: 'academicPrograms',
         path: CATALOG_PATHS.academicPrograms,
@@ -25,8 +43,24 @@ const CATALOGS = [
         icon: GraduationCap,
         hasFaculty: true,
     },
-    { key: 'categories', path: CATALOG_PATHS.categories, label: 'Categorías', singular: 'categoría', newLabel: 'Nueva categoría', article: 'una categoría', icon: Shapes },
-    { key: 'keywords', path: CATALOG_PATHS.keywords, label: 'Palabras clave', singular: 'palabra clave', newLabel: 'Nueva palabra clave', article: 'una palabra clave', icon: Tags },
+    {
+        key: 'categories',
+        path: CATALOG_PATHS.categories,
+        label: 'Categorías',
+        singular: 'categoría',
+        newLabel: 'Nueva categoría',
+        article: 'una categoría',
+        icon: Shapes,
+    },
+    {
+        key: 'keywords',
+        path: CATALOG_PATHS.keywords,
+        label: 'Palabras clave',
+        singular: 'palabra clave',
+        newLabel: 'Nueva palabra clave',
+        article: 'una palabra clave',
+        icon: Tags,
+    },
 ];
 
 export default function CatalogsPage() {

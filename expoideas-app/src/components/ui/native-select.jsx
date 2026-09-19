@@ -9,12 +9,7 @@ import { fieldBase } from './styles';
 export function NativeSelect({ className, children, ref, ...props }) {
     return (
         <div className="relative">
-            <select
-                ref={ref}
-                data-slot="select"
-                className={cn(fieldBase, 'h-11 appearance-none pr-9', className)}
-                {...props}
-            >
+            <select ref={ref} data-slot="select" className={cn(fieldBase, 'h-11 appearance-none pr-9', className)} {...props}>
                 {children}
             </select>
             <ChevronDown

@@ -81,10 +81,16 @@ export function CatalogPanel({ catalog }) {
                     <table className="w-full text-left text-sm">
                         <thead className="border-b border-outline-variant/60 bg-surface-container-low">
                             <tr className="label-mono text-on-surface-variant">
-                                <th scope="col" className="w-20 px-5 py-3">ID</th>
-                                <th scope="col" className="px-5 py-3">Nombre</th>
+                                <th scope="col" className="w-20 px-5 py-3">
+                                    ID
+                                </th>
+                                <th scope="col" className="px-5 py-3">
+                                    Nombre
+                                </th>
                                 {catalog.hasFaculty && (
-                                    <th scope="col" className="hidden px-5 py-3 sm:table-cell">Facultad</th>
+                                    <th scope="col" className="hidden px-5 py-3 sm:table-cell">
+                                        Facultad
+                                    </th>
                                 )}
                                 <th scope="col" className="w-16 px-5 py-3">
                                     <span className="sr-only">Acciones</span>
@@ -95,7 +101,9 @@ export function CatalogPanel({ catalog }) {
                             {visible.map((item) => (
                                 <tr key={item.id} className="transition-colors hover:bg-surface-container-low/60">
                                     <td className="px-5 py-3">
-                                        <Badge variant="outline" mono>{item.id}</Badge>
+                                        <Badge variant="outline" mono>
+                                            {item.id}
+                                        </Badge>
                                     </td>
                                     <td className="px-5 py-3">
                                         <p className="font-medium text-on-surface">{item.name}</p>
@@ -120,7 +128,10 @@ export function CatalogPanel({ catalog }) {
                             ))}
                         </tbody>
                     </table>
-                    <p className="label-mono border-t border-outline-variant/50 px-5 py-3 text-on-surface-variant" aria-live="polite">
+                    <p
+                        className="label-mono border-t border-outline-variant/50 px-5 py-3 text-on-surface-variant"
+                        aria-live="polite"
+                    >
                         {visible.length === items.length
                             ? `${items.length} ${items.length === 1 ? 'registro' : 'registros'}`
                             : `${visible.length} de ${items.length} registros`}

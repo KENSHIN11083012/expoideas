@@ -4,13 +4,7 @@ import { cn } from '@/lib/utils';
 
 /** Etiqueta técnica de Academic Nexus: JetBrains Mono en mayúsculas. */
 function Label({ className, ...props }) {
-    return (
-        <label
-            data-slot="label"
-            className={cn('label-mono text-on-surface-variant', className)}
-            {...props}
-        />
-    );
+    return <label data-slot="label" className={cn('label-mono text-on-surface-variant', className)} {...props} />;
 }
 
 /**
@@ -33,18 +27,23 @@ export function Field({ label, error, hint, required, className, children }) {
 
     const control = isValidElement(children)
         ? cloneElement(children, {
-            id: children.props.id ?? id,
-            'aria-invalid': error ? true : undefined,
-            'aria-describedby': describedBy,
-            'aria-required': required || undefined,
-        })
+              id: children.props.id ?? id,
+              'aria-invalid': error ? true : undefined,
+              'aria-describedby': describedBy,
+              'aria-required': required || undefined,
+          })
         : children;
 
     return (
         <div data-slot="field" className={cn('flex flex-col gap-1.5', className)}>
             <Label htmlFor={children?.props?.id ?? id}>
                 {label}
-                {required && <span className="text-tertiary" aria-hidden="true"> *</span>}
+                {required && (
+                    <span className="text-tertiary" aria-hidden="true">
+                        {' '}
+                        *
+                    </span>
+                )}
             </Label>
             {control}
             {error ? (
@@ -53,7 +52,9 @@ export function Field({ label, error, hint, required, className, children }) {
                     {error}
                 </p>
             ) : hint ? (
-                <p id={hintId} className="text-xs text-on-surface-variant">{hint}</p>
+                <p id={hintId} className="text-xs text-on-surface-variant">
+                    {hint}
+                </p>
             ) : null}
         </div>
     );

@@ -29,8 +29,10 @@ export const rules = {
     firstName: (missing = 'Ingresa tus nombres') => name(missing),
     lastName: (missing = 'Ingresa tus apellidos') => name(missing),
     /** Correo @unisimon.edu.co, recortando espacios. */
-    institutionalEmail: (message = `Usa tu correo institucional (${INSTITUTIONAL_DOMAIN})`, missing = 'Ingresa tu correo institucional') =>
-        z.string().trim().min(1, missing).max(150, 'Máximo 150 caracteres').regex(INSTITUTIONAL_EMAIL_REGEX, message),
+    institutionalEmail: (
+        message = `Usa tu correo institucional (${INSTITUTIONAL_DOMAIN})`,
+        missing = 'Ingresa tu correo institucional',
+    ) => z.string().trim().min(1, missing).max(150, 'Máximo 150 caracteres').regex(INSTITUTIONAL_EMAIL_REGEX, message),
     /** Cualquier correo válido (jurados externos). */
     anyEmail: () =>
         z.string().trim().min(1, 'Ingresa el correo').max(150, 'Máximo 150 caracteres').pipe(z.email('Ingresa un correo válido')),

@@ -10,7 +10,11 @@ export function PasswordRequirements({ value = '', className }) {
                 const ok = met(value);
                 return (
                     <li key={text} className={cn('flex items-center gap-1.5', ok ? 'text-primary' : 'text-on-surface-variant')}>
-                        {ok ? <Check className="size-3.5" aria-hidden="true" /> : <Circle className="size-3" aria-hidden="true" />}
+                        {ok ? (
+                            <Check className="size-3.5" aria-hidden="true" />
+                        ) : (
+                            <Circle className="size-3" aria-hidden="true" />
+                        )}
                         <span>{text}</span>
                         <span className="sr-only">{ok ? '(cumplido)' : '(pendiente)'}</span>
                     </li>

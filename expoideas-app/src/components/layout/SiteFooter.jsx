@@ -19,8 +19,8 @@ export function SiteFooter() {
                 <div className="flex flex-col gap-4">
                     <ExpoideasLogo size="sm" />
                     <p className="max-w-sm text-sm leading-relaxed text-on-surface-variant">
-                        Los proyectos de la Cátedra UNISIMÓN INNPRENDE de la Universidad Simón Bolívar, con el
-                        acompañamiento de MacondoLab.
+                        Los proyectos de la Cátedra UNISIMÓN INNPRENDE de la Universidad Simón Bolívar, con el acompañamiento de
+                        MacondoLab.
                     </p>
                     <InstitutionalLogos />
                 </div>
@@ -28,16 +28,36 @@ export function SiteFooter() {
                 <nav className="flex flex-col gap-3" aria-label="Plataforma">
                     <h2 className="label-mono text-on-surface">Plataforma</h2>
                     <ul className="flex flex-col gap-2 text-sm text-on-surface-variant">
-                        <li><Link className="hover:text-primary" to={ROUTES.HOME}>Inicio</Link></li>
+                        <li>
+                            <Link className="hover:text-primary" to={ROUTES.HOME}>
+                                Inicio
+                            </Link>
+                        </li>
                         {token ? (
                             <>
-                                <li><Link className="hover:text-primary" to={ROUTES.PROFILE}>Mi perfil</Link></li>
-                                <li><Link className="hover:text-primary" to={ROUTES.SECURITY}>Seguridad</Link></li>
+                                <li>
+                                    <Link className="hover:text-primary" to={ROUTES.PROFILE}>
+                                        Mi perfil
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link className="hover:text-primary" to={ROUTES.SECURITY}>
+                                        Seguridad
+                                    </Link>
+                                </li>
                             </>
                         ) : (
                             <>
-                                <li><Link className="hover:text-primary" to={ROUTES.REGISTER}>Crear cuenta</Link></li>
-                                <li><Link className="hover:text-primary" to={ROUTES.LOGIN}>Iniciar sesión</Link></li>
+                                <li>
+                                    <Link className="hover:text-primary" to={ROUTES.REGISTER}>
+                                        Crear cuenta
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link className="hover:text-primary" to={ROUTES.LOGIN}>
+                                        Iniciar sesión
+                                    </Link>
+                                </li>
                             </>
                         )}
                     </ul>

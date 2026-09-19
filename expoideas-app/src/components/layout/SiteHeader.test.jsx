@@ -11,7 +11,14 @@ const sessionAs = (role, user = {}) =>
     useAuth.mockReturnValue({
         token: 'token',
         pendingSteps: [],
-        user: { firstName: 'Marta', lastName: 'Ríos', fullName: 'Marta Ríos', email: 'marta@empresa.com', photoId: null, ...user },
+        user: {
+            firstName: 'Marta',
+            lastName: 'Ríos',
+            fullName: 'Marta Ríos',
+            email: 'marta@empresa.com',
+            photoId: null,
+            ...user,
+        },
         role,
         isManagement: isManagement(role),
         logout: vi.fn(),

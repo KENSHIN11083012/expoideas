@@ -64,11 +64,18 @@ describe('Pasos de primer ingreso en la sesión', () => {
         act(() => session.current.login(fakeJwt('MACONDOLAB', 'carla@unisimon.edu.co'), { email: 'carla@unisimon.edu.co' }, []));
         expect(screen.getByText('sin pendientes')).toBeInTheDocument();
 
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(
-            { detail: 'Antes de continuar, completa tu primer ingreso.', pendingSteps: ['CHANGE_PASSWORD'] },
-            403,
-            'application/problem+json',
-        )));
+        vi.stubGlobal(
+            'fetch',
+            vi
+                .fn()
+                .mockResolvedValue(
+                    jsonResponse(
+                        { detail: 'Antes de continuar, completa tu primer ingreso.', pendingSteps: ['CHANGE_PASSWORD'] },
+                        403,
+                        'application/problem+json',
+                    ),
+                ),
+        );
 
         await act(async () => {
             await expect(request('/admin/users')).rejects.toMatchObject({ status: 403 });

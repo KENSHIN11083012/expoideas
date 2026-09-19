@@ -20,5 +20,4 @@ export const ROUTES = {
 export const homeRouteFor = (role) => (isManagement(role) ? ROUTES.USERS : ROUTES.HOME);
 
 /** Con pasos de primer ingreso pendientes, se resuelven antes de ir a cualquier otro sitio. */
-export const startRouteFor = (role, pendingSteps = []) =>
-    pendingSteps.length > 0 ? ROUTES.ONBOARDING : homeRouteFor(role);
+export const startRouteFor = (role, pendingSteps = []) => (pendingSteps.length > 0 ? ROUTES.ONBOARDING : homeRouteFor(role));

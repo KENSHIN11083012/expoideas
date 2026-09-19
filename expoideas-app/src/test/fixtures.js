@@ -13,7 +13,14 @@ export const ana = {
     pendingSteps: [],
 };
 
-export const luis = { id: 2, firstName: 'Luis', lastName: 'Gómez', email: 'luis@unisimon.edu.co', role: 'ADMIN', pendingSteps: [] };
+export const luis = {
+    id: 2,
+    firstName: 'Luis',
+    lastName: 'Gómez',
+    email: 'luis@unisimon.edu.co',
+    role: 'ADMIN',
+    pendingSteps: [],
+};
 
 export const carla = {
     id: 3,

@@ -27,8 +27,7 @@ export const useUpdateUser = () => {
     return useMutation({ mutationFn: ({ id, changes }) => usersApi.update(id, changes), onSuccess: upsert });
 };
 
-export const useResetPassword = () =>
-    useMutation({ mutationFn: ({ id, passwords }) => usersApi.resetPassword(id, passwords) });
+export const useResetPassword = () => useMutation({ mutationFn: ({ id, passwords }) => usersApi.resetPassword(id, passwords) });
 
 export const useDeleteUser = () => {
     const queryClient = useQueryClient();

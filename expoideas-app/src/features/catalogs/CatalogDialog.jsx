@@ -73,7 +73,11 @@ export function CatalogDialog({ catalog, item, onClose }) {
             onClose();
         } catch (error) {
             if (error.status === 409) {
-                setError('name', { type: 'server', message: `Ya existe ${catalog.article} con ese nombre` }, { shouldFocus: true });
+                setError(
+                    'name',
+                    { type: 'server', message: `Ya existe ${catalog.article} con ese nombre` },
+                    { shouldFocus: true },
+                );
             } else {
                 handleFormError(error, setError);
             }

@@ -109,7 +109,9 @@ describe('Primer ingreso', () => {
         expect(screen.getByText('Primer ingreso · Paso 1 de 1')).toBeInTheDocument();
         await user.click(screen.getByRole('button', { name: /Aceptar y continuar/ }));
 
-        expect(await screen.findByText('Debes autorizar el tratamiento de tus datos para usar la plataforma')).toBeInTheDocument();
+        expect(
+            await screen.findByText('Debes autorizar el tratamiento de tus datos para usar la plataforma'),
+        ).toBeInTheDocument();
         expect(accountApi.giveDataConsent).not.toHaveBeenCalled();
     });
 

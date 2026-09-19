@@ -111,7 +111,9 @@ describe('Gestión', () => {
 });
 
 describe('Primer ingreso pendiente', () => {
-    beforeEach(() => useAuth.mockReturnValue(sessionFor({ role: ROLES.TEACHER, pendingSteps: ['CHANGE_PASSWORD', 'DATA_CONSENT'] })));
+    beforeEach(() =>
+        useAuth.mockReturnValue(sessionFor({ role: ROLES.TEACHER, pendingSteps: ['CHANGE_PASSWORD', 'DATA_CONSENT'] })),
+    );
 
     it.each([ROUTES.PROFILE, ROUTES.SECURITY, ROUTES.USERS])('%s lleva al primer ingreso', async (route) => {
         visit(route);

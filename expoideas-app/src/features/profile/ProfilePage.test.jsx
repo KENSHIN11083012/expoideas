@@ -27,7 +27,8 @@ const cardTerms = () => screen.getAllByRole('term').map((term) => term.textConte
 
 /** Valor que muestra la tarjeta para una etiqueta. */
 const cardValue = (label) =>
-    within(screen.getAllByRole('term').find((term) => term.textContent === label).parentElement).getByRole('definition').textContent;
+    within(screen.getAllByRole('term').find((term) => term.textContent === label).parentElement).getByRole('definition')
+        .textContent;
 
 function renderProfile(profile) {
     useAuth.mockReturnValue(sessionFor({ role: profile.role }));

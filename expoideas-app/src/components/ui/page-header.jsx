@@ -7,7 +7,12 @@ import { Eyebrow } from './eyebrow';
  */
 export function PageHeader({ eyebrow, title, description, actions, className }) {
     return (
-        <header className={cn('flex flex-col gap-4 border-b border-outline-variant/60 pb-6 sm:flex-row sm:items-end sm:justify-between', className)}>
+        <header
+            className={cn(
+                'flex flex-col gap-4 border-b border-outline-variant/60 pb-6 sm:flex-row sm:items-end sm:justify-between',
+                className,
+            )}
+        >
             <title>{`${title} · Expoideas`}</title>
             <div className="flex flex-col gap-2">
                 {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}

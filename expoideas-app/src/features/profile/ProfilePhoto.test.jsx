@@ -67,7 +67,10 @@ describe('Foto de perfil', () => {
         const user = userEvent.setup();
         renderPhoto();
 
-        await user.upload(await screen.findByLabelText('Elegir foto de perfil'), image('grande.jpg', 'image/jpeg', MAX_FILE_BYTES + 1));
+        await user.upload(
+            await screen.findByLabelText('Elegir foto de perfil'),
+            image('grande.jpg', 'image/jpeg', MAX_FILE_BYTES + 1),
+        );
 
         expect(screen.getByRole('alert')).toHaveTextContent('El archivo supera el tamaño máximo permitido de 5 MB.');
         expect(profileApi.uploadPhoto).not.toHaveBeenCalled();

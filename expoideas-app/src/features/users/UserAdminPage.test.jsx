@@ -18,7 +18,13 @@ vi.mock('./queries', () => ({
     useDeleteUser: vi.fn(),
 }));
 
-const mutation = (overrides = {}) => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false, variables: undefined, ...overrides });
+const mutation = (overrides = {}) => ({
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(),
+    isPending: false,
+    variables: undefined,
+    ...overrides,
+});
 
 /** Renderiza la página con la sesión de `me` y devuelve la tabla de escritorio. */
 function renderAs(me, role, users = [ana, luis, carla]) {
@@ -38,7 +44,10 @@ function renderAs(me, role, users = [ana, luis, carla]) {
 
 const row = (table, name) => table.getByText(name, { exact: false }).closest('tr');
 
-const options = (select) => within(select).getAllByRole('option').map((option) => option.textContent);
+const options = (select) =>
+    within(select)
+        .getAllByRole('option')
+        .map((option) => option.textContent);
 
 let updateUser;
 let deleteUser;
@@ -126,7 +135,11 @@ describe('Usuarios como MacondoLab', () => {
     it('solo asigna estudiante, docente o jurado', () => {
         const table = renderAs(carla, 'MACONDOLAB');
 
-        expect(options(table.getByRole('combobox', { name: 'Rol de Ana María Pérez' }))).toEqual(['Estudiante', 'Docente', 'Jurado']);
+        expect(options(table.getByRole('combobox', { name: 'Rol de Ana María Pérez' }))).toEqual([
+            'Estudiante',
+            'Docente',
+            'Jurado',
+        ]);
     });
 
     it('no puede eliminar cuentas', async () => {

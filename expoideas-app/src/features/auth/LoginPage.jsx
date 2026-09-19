@@ -37,7 +37,11 @@ export default function LoginPage() {
         try {
             const data = await authApi.login({ email, password });
             const pendingSteps = data.pendingSteps ?? [];
-            login(data.token, { email, firstName: data.firstName, lastName: data.lastName, photoId: data.photoId ?? null }, pendingSteps);
+            login(
+                data.token,
+                { email, firstName: data.firstName, lastName: data.lastName, photoId: data.photoId ?? null },
+                pendingSteps,
+            );
 
             // Primero el primer ingreso; si no, vuelve a la página protegida de la que venía.
             const from = location.state?.from?.pathname;

@@ -14,7 +14,9 @@ function Detail({ icon: Icon, label, value, empty = 'Sin asignar' }) {
             <Icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
             <div className="min-w-0">
                 <dt className="label-mono text-[10px] font-normal text-on-surface-variant">{label}</dt>
-                <dd className={value ? 'break-words text-sm text-on-surface' : 'text-sm italic text-outline'}>{value ?? empty}</dd>
+                <dd className={value ? 'break-words text-sm text-on-surface' : 'text-sm italic text-outline'}>
+                    {value ?? empty}
+                </dd>
             </div>
         </div>
     );
@@ -27,7 +29,9 @@ export function IdentityCard({ profile }) {
             <CardContent className="flex flex-col items-center gap-3 pt-8 text-center">
                 <ProfilePhoto profile={profile} />
                 <div className="flex flex-col items-center gap-2">
-                    <p className="font-heading text-xl font-bold leading-tight">{fullName(profile.firstName, profile.lastName)}</p>
+                    <p className="font-heading text-xl font-bold leading-tight">
+                        {fullName(profile.firstName, profile.lastName)}
+                    </p>
                     <Badge variant="lime" mono>
                         {roleLabel(profile.role)}
                     </Badge>
@@ -39,7 +43,12 @@ export function IdentityCard({ profile }) {
                     <>
                         <Detail icon={Landmark} label="Sede" value={profile.campus} />
                         <Detail icon={Building2} label="Facultad" value={profile.faculty} />
-                        <Detail icon={GraduationCap} label="Programa académico" value={profile.academicProgram} empty="Sin programa" />
+                        <Detail
+                            icon={GraduationCap}
+                            label="Programa académico"
+                            value={profile.academicProgram}
+                            empty="Sin programa"
+                        />
                     </>
                 )}
                 <Detail icon={CalendarDays} label="Miembro desde" value={longDate(profile.createdAt)} />

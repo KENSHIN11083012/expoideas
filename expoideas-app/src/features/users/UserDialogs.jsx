@@ -165,7 +165,9 @@ export function NewUserDialog({ actor, onClose }) {
             <Field
                 label="Correo"
                 error={errors.email?.message}
-                hint={role === ROLES.JUDGE ? 'Puede ser personal o de su organización.' : `Debe terminar en ${INSTITUTIONAL_DOMAIN}`}
+                hint={
+                    role === ROLES.JUDGE ? 'Puede ser personal o de su organización.' : `Debe terminar en ${INSTITUTIONAL_DOMAIN}`
+                }
                 required
             >
                 <Input type="email" inputMode="email" autoComplete="off" {...register('email')} />

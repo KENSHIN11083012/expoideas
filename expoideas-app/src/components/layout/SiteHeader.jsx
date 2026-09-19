@@ -68,7 +68,9 @@ function AccountMenu({ user, role, onLogout }) {
                 >
                     <UserAvatar user={user} size="sm" />
                     <span className="hidden flex-col items-start text-left lg:flex">
-                        <span className="max-w-40 truncate text-sm font-semibold leading-tight text-on-surface">{displayName(user)}</span>
+                        <span className="max-w-40 truncate text-sm font-semibold leading-tight text-on-surface">
+                            {displayName(user)}
+                        </span>
                         <span className="label-mono text-[10px] font-normal text-on-surface-variant">{roleLabel(role)}</span>
                     </span>
                 </button>

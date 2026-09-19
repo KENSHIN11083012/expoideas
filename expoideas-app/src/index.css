@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 /*
  * Sistema de diseño "Academic Nexus" (diseños de Stitch).
@@ -12,9 +12,9 @@
  */
 @theme {
     /* Tipografía: títulos, texto y etiquetas técnicas */
-    --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-    --font-heading: "Hanken Grotesk Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-    --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, monospace;
+    --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-heading: 'Hanken Grotesk Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, monospace;
 
     /* Alias con los nombres de Stitch */
     --font-display-lg: var(--font-heading);
@@ -98,7 +98,10 @@
         @apply bg-background text-on-surface font-sans antialiased;
     }
 
-    h1, h2, h3, h4 {
+    h1,
+    h2,
+    h3,
+    h4 {
         @apply font-heading text-balance;
     }
 
@@ -112,7 +115,9 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-        *, ::before, ::after {
+        *,
+        ::before,
+        ::after {
             animation-duration: 0.01ms !important;
             transition-duration: 0.01ms !important;
         }

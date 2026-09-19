@@ -27,8 +27,8 @@ export function DataConsentField({ control }) {
                             className="mt-0.5"
                         />
                         <label htmlFor={NAME} className="text-sm leading-relaxed text-on-surface">
-                            Autorizo a la Universidad Simón Bolívar el tratamiento de mis datos personales conforme a la
-                            Ley 1581 de 2012.
+                            Autorizo a la Universidad Simón Bolívar el tratamiento de mis datos personales conforme a la Ley 1581
+                            de 2012.
                         </label>
                     </div>
                     {fieldState.error && (

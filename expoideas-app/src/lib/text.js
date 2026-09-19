@@ -11,7 +11,10 @@ export function fullName(firstName, lastName) {
 
 /** Minúsculas y sin tildes, para búsquedas: "Ingeniería" -> "ingenieria". */
 export function normalizeText(text = '') {
-    return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+    return text
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .toLowerCase();
 }
 
 /** Orden alfabético en español, para listas de catálogos. */

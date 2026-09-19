@@ -28,8 +28,22 @@ export default function App() {
             <Suspense fallback={<Spinner className="min-h-dvh" />}>
                 <Routes>
                     {/* Acceso: pantalla completa, sin navegación */}
-                    <Route path={ROUTES.LOGIN} element={<GuestRoute><LoginPage /></GuestRoute>} />
-                    <Route path={ROUTES.REGISTER} element={<GuestRoute><RegisterPage /></GuestRoute>} />
+                    <Route
+                        path={ROUTES.LOGIN}
+                        element={
+                            <GuestRoute>
+                                <LoginPage />
+                            </GuestRoute>
+                        }
+                    />
+                    <Route
+                        path={ROUTES.REGISTER}
+                        element={
+                            <GuestRoute>
+                                <RegisterPage />
+                            </GuestRoute>
+                        }
+                    />
                     {/* La página misma decide: sin sesión va al inicio de sesión y sin pendientes, al inicio. */}
                     <Route path={ROUTES.ONBOARDING} element={<OnboardingPage />} />
 
@@ -39,17 +53,39 @@ export default function App() {
                         <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
 
                         {/* Con sesión */}
-                        <Route path={ROUTES.PROFILE} element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-                        <Route path={ROUTES.SECURITY} element={<ProtectedRoute><SecurityPage /></ProtectedRoute>} />
+                        <Route
+                            path={ROUTES.PROFILE}
+                            element={
+                                <ProtectedRoute>
+                                    <ProfilePage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path={ROUTES.SECURITY}
+                            element={
+                                <ProtectedRoute>
+                                    <SecurityPage />
+                                </ProtectedRoute>
+                            }
+                        />
 
                         {/* Gestión: MacondoLab y administradores */}
                         <Route
                             path={ROUTES.USERS}
-                            element={<ProtectedRoute allowedRoles={MANAGEMENT_ROLES}><UserAdminPage /></ProtectedRoute>}
+                            element={
+                                <ProtectedRoute allowedRoles={MANAGEMENT_ROLES}>
+                                    <UserAdminPage />
+                                </ProtectedRoute>
+                            }
                         />
                         <Route
                             path={ROUTES.CATALOGS}
-                            element={<ProtectedRoute allowedRoles={MANAGEMENT_ROLES}><CatalogsPage /></ProtectedRoute>}
+                            element={
+                                <ProtectedRoute allowedRoles={MANAGEMENT_ROLES}>
+                                    <CatalogsPage />
+                                </ProtectedRoute>
+                            }
                         />
 
                         <Route path="*" element={<NotFoundPage />} />

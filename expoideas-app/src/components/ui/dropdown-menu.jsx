@@ -32,7 +32,7 @@ export function DropdownMenuItem({ className, variant = 'default', ...props }) {
                 'relative flex cursor-pointer select-none items-center gap-2.5 rounded px-2.5 py-2 text-sm outline-none transition-colors',
                 'focus:bg-primary/10 focus:text-primary data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
                 'data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error-container data-[variant=destructive]:focus:text-on-error-container',
-                "[&_svg]:size-4 [&_svg]:shrink-0",
+                '[&_svg]:size-4 [&_svg]:shrink-0',
                 className,
             )}
             {...props}

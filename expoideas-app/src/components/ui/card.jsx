@@ -28,7 +28,9 @@ export function CardHeader({ className, ...props }) {
 }
 
 export function CardTitle({ className, as: Tag = 'h2', ...props }) {
-    return <Tag data-slot="card-title" className={cn('font-heading text-lg font-semibold leading-tight', className)} {...props} />;
+    return (
+        <Tag data-slot="card-title" className={cn('font-heading text-lg font-semibold leading-tight', className)} {...props} />
+    );
 }
 
 export function CardDescription({ className, ...props }) {

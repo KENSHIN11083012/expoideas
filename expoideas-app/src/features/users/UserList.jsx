@@ -18,9 +18,7 @@ export function UserList({ users, actor, isOwn, isBusy, handlers }) {
         <RoleSelector user={user} actor={actor} isOwn={isOwn(user)} disabled={isBusy(user)} onChange={onRoleChange} />
     );
     const userActions = (user) => <UserActions user={user} actor={actor} isOwn={isOwn(user)} {...actions} />;
-    const avatar = (user) => (
-        <Avatar firstName={user.firstName} lastName={user.lastName} photoUrl={fileUrl(user.photoId)} />
-    );
+    const avatar = (user) => <Avatar firstName={user.firstName} lastName={user.lastName} photoUrl={fileUrl(user.photoId)} />;
 
     return (
         <>
@@ -29,9 +27,15 @@ export function UserList({ users, actor, isOwn, isBusy, handlers }) {
                 <table className="w-full text-left text-sm">
                     <thead className="border-b border-outline-variant/60 bg-surface-container-low">
                         <tr className="label-mono text-on-surface-variant">
-                            <th scope="col" className="px-5 py-3">Usuario</th>
-                            <th scope="col" className="px-5 py-3">Adscripción</th>
-                            <th scope="col" className="px-5 py-3">Rol</th>
+                            <th scope="col" className="px-5 py-3">
+                                Usuario
+                            </th>
+                            <th scope="col" className="px-5 py-3">
+                                Adscripción
+                            </th>
+                            <th scope="col" className="px-5 py-3">
+                                Rol
+                            </th>
                             <th scope="col" className="px-5 py-3">
                                 <span className="sr-only">Acciones</span>
                             </th>

@@ -184,53 +184,65 @@ export default function ProjectPage() {
                 }
             />
 
-            <Card className="flex flex-col gap-4 p-6">
-                <dl className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <dt className="label-mono text-on-surface-variant">Sector</dt>
-                        <dd className="text-on-surface">{project.sector}</dd>
-                    </div>
-                    <div>
-                        <dt className="label-mono text-on-surface-variant">Docente del grupo</dt>
-                        <dd className="text-on-surface">{project.teacher}</dd>
-                    </div>
-                </dl>
-                {!open && (
-                    <p className="text-sm text-on-surface-variant">
-                        Las inscripciones de {project.edition} ya cerraron: el equipo y los datos quedaron fijos.
-                    </p>
-                )}
-            </Card>
+            {/*
+                En escritorio la ficha se va a una columna lateral: el equipo y los
+                entregables, que es donde se trabaja, quedan en un ancho legible en
+                vez de estirarse por los 1200 px del contenedor. En móvil y tablet
+                vuelve a ser una sola columna, con la ficha arriba.
+            */}
+            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-8">
+                <aside className="lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1">
+                    <Card className="flex flex-col gap-4 p-6">
+                        <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                            <div>
+                                <dt className="label-mono text-on-surface-variant">Sector</dt>
+                                <dd className="text-on-surface">{project.sector}</dd>
+                            </div>
+                            <div>
+                                <dt className="label-mono text-on-surface-variant">Docente del grupo</dt>
+                                <dd className="text-on-surface">{project.teacher}</dd>
+                            </div>
+                        </dl>
+                        {!open && (
+                            <p className="text-sm text-on-surface-variant">
+                                Las inscripciones de {project.edition} ya cerraron: el equipo y los datos quedaron fijos.
+                            </p>
+                        )}
+                    </Card>
+                </aside>
 
-            <section className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h2 className="font-heading text-lg font-bold text-on-surface">Equipo</h2>
-                    <p className="label-mono text-on-surface-variant">
-                        {accepted} de {project.maxMembers} integrantes · mínimo {project.minMembers}
-                    </p>
+                <div className="flex flex-col gap-8 lg:col-start-1 lg:row-start-1">
+                    <section className="flex flex-col gap-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h2 className="font-heading text-lg font-bold text-on-surface">Equipo</h2>
+                            <p className="label-mono text-on-surface-variant">
+                                {accepted} de {project.maxMembers} integrantes · mínimo {project.minMembers}
+                            </p>
+                        </div>
+
+                        <ul className="flex flex-col gap-2">
+                            {project.members.map((member) => (
+                                <TeamMember
+                                    key={member.userId}
+                                    member={member}
+                                    isMe={member.userId === user?.id}
+                                    canRemove={open && member.teamRole !== 'LEADER' && (isLeader || member.userId === user?.id)}
+                                    onRemove={() => setConfirm({ member })}
+                                />
+                            ))}
+                        </ul>
+
+                        {isLeader && open && <InviteForm projectId={project.id} disabled={full} />}
+                        {isLeader && open && full && (
+                            <p className="text-sm text-on-surface-variant">
+                                El equipo llegó al máximo de {project.maxMembers} integrantes.
+                            </p>
+                        )}
+                    </section>
+
+                    <ProjectDeliverables project={project} isMember={me?.status === 'ACCEPTED'} />
                 </div>
-
-                <ul className="flex flex-col gap-2">
-                    {project.members.map((member) => (
-                        <TeamMember
-                            key={member.userId}
-                            member={member}
-                            isMe={member.userId === user?.id}
-                            canRemove={open && member.teamRole !== 'LEADER' && (isLeader || member.userId === user?.id)}
-                            onRemove={() => setConfirm({ member })}
-                        />
-                    ))}
-                </ul>
-
-                {isLeader && open && <InviteForm projectId={project.id} disabled={full} />}
-                {isLeader && open && full && (
-                    <p className="text-sm text-on-surface-variant">
-                        El equipo llegó al máximo de {project.maxMembers} integrantes.
-                    </p>
-                )}
-            </section>
-
-            <ProjectDeliverables project={project} isMember={me?.status === 'ACCEPTED'} />
+            </div>
 
             {editing && <ProjectDialog project={project} onClose={() => setEditing(false)} />}
 

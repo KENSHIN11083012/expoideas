@@ -46,7 +46,7 @@ const desktopLinkClass = ({ isActive }) =>
         isActive ? 'text-primary after:opacity-100' : 'text-on-surface-variant after:opacity-0 hover:text-primary',
     );
 
-const mobileLinkClass = ({ isActive }) =>
+const sideLinkClass = ({ isActive }) =>
     cn(
         'flex items-center gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-sm font-semibold transition-colors',
         isActive
@@ -70,7 +70,7 @@ function AccountMenu({ user, role, onLogout }) {
                     aria-label="Abrir menú de la cuenta"
                 >
                     <UserAvatar user={user} size="sm" />
-                    <span className="hidden flex-col items-start text-left lg:flex">
+                    <span className="hidden flex-col items-start text-left xl:flex">
                         <span className="max-w-40 truncate text-sm font-semibold leading-tight text-on-surface">
                             {displayName(user)}
                         </span>
@@ -105,16 +105,16 @@ function AccountMenu({ user, role, onLogout }) {
     );
 }
 
-function MobileMenu({ links, signedIn, user, role, onLogout }) {
+function SideMenu({ links, signedIn, user, role, onLogout }) {
     const [open, setOpen] = useState(false);
     const close = () => setOpen(false);
     // En escritorio, Seguridad vive en el menú de la cuenta.
-    const mobileLinks = signedIn ? [...links, { to: ROUTES.SECURITY, label: 'Seguridad', icon: KeyRound }] : links;
+    const sideLinks = signedIn ? [...links, { to: ROUTES.SECURITY, label: 'Seguridad', icon: KeyRound }] : links;
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden" aria-label="Abrir menú">
+                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Abrir menú">
                     <Menu className="size-5" />
                 </Button>
             </SheetTrigger>
@@ -141,8 +141,8 @@ function MobileMenu({ links, signedIn, user, role, onLogout }) {
                 )}
 
                 <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3" aria-label="Principal">
-                    {mobileLinks.map(({ to, label, icon: Icon, end }) => (
-                        <NavLink key={to} to={to} end={end} onClick={close} className={mobileLinkClass}>
+                    {sideLinks.map(({ to, label, icon: Icon, end }) => (
+                        <NavLink key={to} to={to} end={end} onClick={close} className={sideLinkClass}>
                             <Icon className="size-4" aria-hidden="true" />
                             {label}
                         </NavLink>
@@ -182,8 +182,10 @@ function MobileMenu({ links, signedIn, user, role, onLogout }) {
 }
 
 /**
- * Barra superior fija con efecto cristal (Academic Nexus). En escritorio muestra
- * la navegación y el menú de la cuenta; por debajo de md, un menú lateral.
+ * Barra superior fija con efecto cristal (Academic Nexus). Desde lg muestra la
+ * navegación y el menú de la cuenta; por debajo, un panel lateral. El corte está
+ * en lg y no en md porque en tablet las seis secciones de la gestión ya no caben
+ * en una fila, y van a ser más cuando entren las de los jurados.
  */
 export function SiteHeader() {
     const { token, user, role, isManagement, logout } = useAuth();
@@ -207,7 +209,7 @@ export function SiteHeader() {
                 <span className="hidden h-8 w-px bg-outline-variant xl:block" aria-hidden="true" />
                 <InstitutionalLogos className="hidden xl:inline-flex" />
 
-                <nav className="ml-auto hidden h-full items-stretch md:flex" aria-label="Principal">
+                <nav className="ml-auto hidden h-full items-stretch lg:flex" aria-label="Principal">
                     {links.map(({ to, label, end }) => (
                         <NavLink key={to} to={to} end={end} className={desktopLinkClass}>
                             {label}
@@ -215,13 +217,13 @@ export function SiteHeader() {
                     ))}
                 </nav>
 
-                <div className="ml-auto flex items-center gap-2 md:ml-4">
+                <div className="ml-auto flex items-center gap-2 lg:ml-4">
                     {signedIn ? (
-                        <div className="hidden md:block">
+                        <div className="hidden lg:block">
                             <AccountMenu user={user} role={role} onLogout={signOut} />
                         </div>
                     ) : (
-                        <div className="hidden items-center gap-2 md:flex">
+                        <div className="hidden items-center gap-2 lg:flex">
                             <Button asChild variant="ghost">
                                 <Link to={ROUTES.LOGIN}>Iniciar sesión</Link>
                             </Button>
@@ -230,7 +232,7 @@ export function SiteHeader() {
                             </Button>
                         </div>
                     )}
-                    <MobileMenu links={links} signedIn={signedIn} user={user} role={role} onLogout={signOut} />
+                    <SideMenu links={links} signedIn={signedIn} user={user} role={role} onLogout={signOut} />
                 </div>
             </div>
         </header>

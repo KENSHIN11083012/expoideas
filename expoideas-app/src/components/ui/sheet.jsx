@@ -3,8 +3,8 @@ import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
- * Panel lateral (menú móvil). Es un Dialog de Radix que entra desde el borde:
- * atrapa el foco y se cierra con Escape o tocando fuera.
+ * Panel lateral (el menú en móvil y en tablet). Es un Dialog de Radix que entra
+ * desde el borde: atrapa el foco y se cierra con Escape o tocando fuera.
  */
 export const Sheet = DialogPrimitive.Root;
 export const SheetTrigger = DialogPrimitive.Trigger;

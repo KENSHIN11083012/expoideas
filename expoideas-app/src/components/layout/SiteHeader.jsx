@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Database, House, KeyRound, LogIn, LogOut, Menu, User, UserPlus, Users } from 'lucide-react';
+import { CalendarRange, Database, House, KeyRound, LogIn, LogOut, Menu, User, UserPlus, Users } from 'lucide-react';
 import { useAuth } from '@/features/auth/useAuth';
 import { fileUrl } from '@/lib/files';
 import { roleLabel } from '@/lib/roles';
@@ -31,6 +31,7 @@ const linksFor = (signedIn, management) => [
         ? [
               { to: ROUTES.USERS, label: 'Usuarios', icon: Users },
               { to: ROUTES.CATALOGS, label: 'Catálogos', icon: Database },
+              { to: ROUTES.EDITIONS, label: 'Ediciones', icon: CalendarRange },
           ]
         : []),
 ];

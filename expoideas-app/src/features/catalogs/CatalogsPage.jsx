@@ -44,12 +44,12 @@ const CATALOGS = [
         hasFaculty: true,
     },
     {
-        key: 'categories',
-        path: CATALOG_PATHS.categories,
-        label: 'Categorías',
-        singular: 'categoría',
-        newLabel: 'Nueva categoría',
-        article: 'una categoría',
+        key: 'sectors',
+        path: CATALOG_PATHS.sectors,
+        label: 'Sectores',
+        singular: 'sector',
+        newLabel: 'Nuevo sector',
+        article: 'un sector',
         icon: Shapes,
     },
     {

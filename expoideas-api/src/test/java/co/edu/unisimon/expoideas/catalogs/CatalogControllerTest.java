@@ -64,7 +64,7 @@ class CatalogControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void blankNameIs400() throws Exception {
-        mockMvc.perform(post("/api/v1/categories")
+        mockMvc.perform(post("/api/v1/sectors")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"  \"}"))
                 .andExpect(status().isBadRequest())
@@ -110,10 +110,10 @@ class CatalogControllerTest {
     @Test
     @WithMockUser(roles = "MACONDOLAB")
     void macondoLabWritesClassificationButNotStructure() throws Exception {
-        when(catalogService.createCategory(new CatalogItemRequest("Gastronomía")))
+        when(catalogService.createSector(new CatalogItemRequest("Gastronomía")))
                 .thenReturn(new CatalogItemResponse(4, "Gastronomía"));
 
-        mockMvc.perform(post("/api/v1/categories")
+        mockMvc.perform(post("/api/v1/sectors")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Gastronomía\"}"))
                 .andExpect(status().isCreated());
@@ -134,7 +134,7 @@ class CatalogControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Cúcuta\"}"))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(put("/api/v1/categories/1")
+        mockMvc.perform(put("/api/v1/sectors/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Fintech\"}"))
                 .andExpect(status().isForbidden());

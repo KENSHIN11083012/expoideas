@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Catálogos: lectura pública; los institucionales (sedes, facultades, programas)
- * los escribe el administrador y los de clasificación (categorías, keywords) también MacondoLab.
+ * los escribe el administrador y los de clasificación (sectores, keywords) también MacondoLab.
  */
 class CatalogIT extends IntegrationTest {
 
@@ -45,22 +45,22 @@ class CatalogIT extends IntegrationTest {
     @Test
     void classificationCatalogsAreWrittenByManagement() {
         String macondolab = loginAs(Role.MACONDOLAB);
-        String name = "Categoría " + System.nanoTime();
+        String name = "Sector " + System.nanoTime();
 
-        int id = post("/api/v1/categories", macondolab, Map.of("name", name))
+        int id = post("/api/v1/sectors", macondolab, Map.of("name", name))
                 .expect(201)
                 .json("$.id");
-        post("/api/v1/categories", macondolab, Map.of("name", name)).expect(409);
-        put("/api/v1/categories/" + id, macondolab, Map.of("name", name + " (editada)"))
+        post("/api/v1/sectors", macondolab, Map.of("name", name)).expect(409);
+        put("/api/v1/sectors/" + id, macondolab, Map.of("name", name + " (editado)"))
                 .expect(200);
         post("/api/v1/keywords", macondolab, Map.of("name", "keyword-" + System.nanoTime()))
                 .expect(201);
 
-        post("/api/v1/categories", loginAs(Role.STUDENT), Map.of("name", "Otra"))
+        post("/api/v1/sectors", loginAs(Role.STUDENT), Map.of("name", "Otro sector"))
                 .expect(403);
 
-        List<String> names = get("/api/v1/categories", null).expect(200).json("$[*].name");
-        assertThat(names).contains(name + " (editada)");
+        List<String> names = get("/api/v1/sectors", null).expect(200).json("$[*].name");
+        assertThat(names).contains(name + " (editado)");
     }
 
     @Test

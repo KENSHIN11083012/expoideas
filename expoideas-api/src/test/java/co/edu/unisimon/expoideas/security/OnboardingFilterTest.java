@@ -74,7 +74,7 @@ class OnboardingFilterTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"firstName\":\"Carla\",\"lastName\":\"Díaz\"}"))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/v1/categories")
+        mockMvc.perform(post("/api/v1/sectors")
                         .with(newAccount())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Textil\"}"))

@@ -16,6 +16,7 @@ const ProfilePage = lazy(() => import('@/features/profile/ProfilePage'));
 const SecurityPage = lazy(() => import('@/features/profile/SecurityPage'));
 const UserAdminPage = lazy(() => import('@/features/users/UserAdminPage'));
 const CatalogsPage = lazy(() => import('@/features/catalogs/CatalogsPage'));
+const EditionsPage = lazy(() => import('@/features/editions/EditionsPage'));
 const UnauthorizedPage = lazy(() => import('@/features/errors/UnauthorizedPage'));
 const NotFoundPage = lazy(() => import('@/features/errors/NotFoundPage'));
 
@@ -84,6 +85,14 @@ export default function App() {
                             element={
                                 <ProtectedRoute allowedRoles={MANAGEMENT_ROLES}>
                                     <CatalogsPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path={ROUTES.EDITIONS}
+                            element={
+                                <ProtectedRoute allowedRoles={MANAGEMENT_ROLES}>
+                                    <EditionsPage />
                                 </ProtectedRoute>
                             }
                         />

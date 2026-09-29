@@ -37,11 +37,11 @@ describe('Menú principal por rol', () => {
         expect(menuLinks()).toEqual(['Inicio', 'Mi perfil']);
     });
 
-    it.each([ROLES.MACONDOLAB, ROLES.ADMIN])('%s ve Usuarios y Catálogos', (role) => {
+    it.each([ROLES.MACONDOLAB, ROLES.ADMIN])('%s ve la gestión completa', (role) => {
         sessionAs(role);
         render(<SiteHeader />, { wrapper: MemoryRouter });
 
-        expect(menuLinks()).toEqual(['Inicio', 'Mi perfil', 'Usuarios', 'Catálogos']);
+        expect(menuLinks()).toEqual(['Inicio', 'Mi perfil', 'Usuarios', 'Catálogos', 'Ediciones']);
     });
 });
 

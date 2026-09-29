@@ -10,9 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Alta, edición y listado de los catálogos: estructura académica (sedes,
- * facultades, programas) y clasificación de proyectos (categorías, keywords).
+ * facultades, programas) y clasificación de proyectos (sectores, keywords).
  *
- * <p>Sedes, facultades, categorías y keywords solo tienen nombre y comparten el
+ * <p>Sedes, facultades, sectores y keywords solo tienen nombre y comparten el
  * mismo código a través de {@link CatalogItem}. Los programas llevan además su
  * facultad.
  *
@@ -26,7 +26,7 @@ public class CatalogService {
     private final CampusRepository campusRepository;
     private final FacultyRepository facultyRepository;
     private final AcademicProgramRepository academicProgramRepository;
-    private final CategoryRepository categoryRepository;
+    private final SectorRepository sectorRepository;
     private final KeywordRepository keywordRepository;
     private final CatalogLookup lookup;
 
@@ -93,22 +93,22 @@ public class CatalogService {
         return AcademicProgramResponse.from(academicProgramRepository.saveAndFlush(program));
     }
 
-    // ── Categorías ──────────────────────────────────────────────────────────
+    // ── Sectores ───────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<CatalogItemResponse> listCategories() {
-        return list(categoryRepository);
+    public List<CatalogItemResponse> listSectors() {
+        return list(sectorRepository);
     }
 
     @Transactional
-    public CatalogItemResponse createCategory(CatalogItemRequest request) {
-        return create(categoryRepository, Category::new, request);
+    public CatalogItemResponse createSector(CatalogItemRequest request) {
+        return create(sectorRepository, Sector::new, request);
     }
 
     /** @throws NoSuchElementException si el id no existe */
     @Transactional
-    public CatalogItemResponse updateCategory(Integer id, CatalogItemRequest request) {
-        return update(categoryRepository, id, request, "una categoría");
+    public CatalogItemResponse updateSector(Integer id, CatalogItemRequest request) {
+        return update(sectorRepository, id, request, "un sector");
     }
 
     // ── Keywords ────────────────────────────────────────────────────────────

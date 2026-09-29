@@ -38,7 +38,10 @@ public class SecurityConfig {
     };
 
     /** Clasificación de proyectos: la escriben MacondoLab y el administrador. */
-    private static final String[] CLASSIFICATION_CATALOGS = {"/api/v1/categories/**", "/api/v1/keywords/**"};
+    private static final String[] CLASSIFICATION_CATALOGS = {"/api/v1/sectors/**", "/api/v1/keywords/**"};
+
+    /** Ediciones de la Expo: las escribe MacondoLab; las fechas son públicas. */
+    private static final String EDITIONS = "/api/v1/editions/**";
 
     /** Descarga de archivos: los públicos no piden sesión; los privados los autoriza FileService. */
     private static final String FILES = "/api/v1/files/**";
@@ -83,6 +86,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, CLASSIFICATION_CATALOGS)
                         .hasRole("MACONDOLAB")
 
+                        // Ediciones de la Expo y su configuración.
+                        .requestMatchers(HttpMethod.POST, EDITIONS)
+                        .hasRole("MACONDOLAB")
+                        .requestMatchers(HttpMethod.PUT, EDITIONS)
+                        .hasRole("MACONDOLAB")
+
                         // Público: login, registro, documentación, salud y lecturas sin sesión.
                         .requestMatchers("/api/v1/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
                         .permitAll()
@@ -112,9 +121,16 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /** GET que no piden sesión: los catálogos (los usa el registro) y los archivos públicos. */
+    /**
+     * GET que no piden sesión: los catálogos (los usa el registro), las ediciones
+     * (las anuncia la portada) y los archivos públicos.
+     */
     private static String[] publicReads() {
-        return Stream.of(Stream.of(INSTITUTIONAL_CATALOGS), Stream.of(CLASSIFICATION_CATALOGS), Stream.of(FILES))
+        return Stream.of(
+                        Stream.of(INSTITUTIONAL_CATALOGS),
+                        Stream.of(CLASSIFICATION_CATALOGS),
+                        Stream.of(EDITIONS),
+                        Stream.of(FILES))
                 .flatMap(paths -> paths)
                 .toArray(String[]::new);
     }

@@ -11,14 +11,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Categoría para clasificar proyectos (base de los sectores). */
+/** Sector económico en el que se mueve un proyecto (moda y textil, salud...). */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "categories")
-public class Category implements CatalogItem {
+@Table(name = "sectors")
+public class Sector implements CatalogItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

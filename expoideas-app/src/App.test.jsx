@@ -62,7 +62,7 @@ describe('Sin sesión', () => {
         await expectPage(title, route);
     });
 
-    it.each([ROUTES.PROFILE, ROUTES.SECURITY, ROUTES.USERS, ROUTES.CATALOGS, ROUTES.ONBOARDING])(
+    it.each([ROUTES.PROFILE, ROUTES.SECURITY, ROUTES.USERS, ROUTES.CATALOGS, ROUTES.EDITIONS, ROUTES.ONBOARDING])(
         '%s lleva al inicio de sesión',
         async (route) => {
             visit(route);
@@ -82,7 +82,7 @@ describe('Estudiante al día', () => {
         await expectPage(title, route);
     });
 
-    it.each([ROUTES.USERS, ROUTES.CATALOGS])('%s no está permitido', async (route) => {
+    it.each([ROUTES.USERS, ROUTES.CATALOGS, ROUTES.EDITIONS])('%s no está permitido', async (route) => {
         visit(route);
         await expectPage('No tienes acceso a esta sección', ROUTES.UNAUTHORIZED);
     });
@@ -99,6 +99,7 @@ describe('Gestión', () => {
     it.each([
         [ROUTES.USERS, 'Usuarios'],
         [ROUTES.CATALOGS, 'Catálogos'],
+        [ROUTES.EDITIONS, 'Ediciones'],
     ])('%s muestra su página', async (route, title) => {
         visit(route);
         await expectPage(title, route);

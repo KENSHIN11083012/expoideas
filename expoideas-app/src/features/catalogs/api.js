@@ -5,7 +5,7 @@ export const CATALOG_PATHS = {
     campuses: '/campuses',
     faculties: '/faculties',
     academicPrograms: '/academic-programs',
-    categories: '/categories',
+    sectors: '/sectors',
     keywords: '/keywords',
 };
 

@@ -12,6 +12,7 @@ export const ROUTES = {
     PROFILE: '/perfil',
     SECURITY: '/seguridad',
     USERS: '/admin/usuarios',
+    EDITIONS: '/admin/ediciones',
     CATALOGS: '/admin/catalogos',
     UNAUTHORIZED: '/no-autorizado',
 };

@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Catálogos. La lectura es pública: la usa el registro antes de que haya sesión.
- * Sedes, facultades y programas los escribe el administrador; categorías y
+ * Sedes, facultades y programas los escribe el administrador; sectores y
  * keywords, también MacondoLab (ver SecurityConfig). No hay borrado: los
  * registros pueden estar referenciados por cuentas y programas.
  */
@@ -85,24 +85,23 @@ public class CatalogController {
         return catalogService.updateAcademicProgram(id, request);
     }
 
-    // ── Categorías ──────────────────────────────────────────────────────────
+    // ── Sectores ────────────────────────────────────────────────────────────
 
-    @GetMapping("/categories")
+    @GetMapping("/sectors")
     @SecurityRequirements
-    public List<CatalogItemResponse> listCategories() {
-        return catalogService.listCategories();
+    public List<CatalogItemResponse> listSectors() {
+        return catalogService.listSectors();
     }
 
-    @PostMapping("/categories")
+    @PostMapping("/sectors")
     @ResponseStatus(HttpStatus.CREATED)
-    public CatalogItemResponse createCategory(@Valid @RequestBody CatalogItemRequest request) {
-        return catalogService.createCategory(request);
+    public CatalogItemResponse createSector(@Valid @RequestBody CatalogItemRequest request) {
+        return catalogService.createSector(request);
     }
 
-    @PutMapping("/categories/{id}")
-    public CatalogItemResponse updateCategory(
-            @PathVariable Integer id, @Valid @RequestBody CatalogItemRequest request) {
-        return catalogService.updateCategory(id, request);
+    @PutMapping("/sectors/{id}")
+    public CatalogItemResponse updateSector(@PathVariable Integer id, @Valid @RequestBody CatalogItemRequest request) {
+        return catalogService.updateSector(id, request);
     }
 
     // ── Keywords ────────────────────────────────────────────────────────────

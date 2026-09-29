@@ -17,6 +17,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ErrorState, Skeleton } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { ProjectDeliverables } from '@/features/deliverables/ProjectDeliverables';
 import { useDeleteProject, useInviteMember, useProject, useRemoveMember } from './queries';
 import { invitationSchema } from './schemas';
 import { ProjectDialog } from './ProjectDialog';
@@ -226,6 +227,8 @@ export default function ProjectPage() {
                     </p>
                 )}
             </section>
+
+            <ProjectDeliverables project={project} isMember={me?.status === 'ACCEPTED'} />
 
             {editing && <ProjectDialog project={project} onClose={() => setEditing(false)} />}
 

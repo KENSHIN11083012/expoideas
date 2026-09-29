@@ -15,9 +15,6 @@ import org.junit.jupiter.api.Test;
  */
 class ProjectIT extends IntegrationTest {
 
-    /** Edición con la inscripción abierta hoy, compartida por todas las pruebas. */
-    private static Integer openEditionId;
-
     /** Edición que ya terminó, para probar los plazos. */
     private static Integer closedEditionId;
 
@@ -300,19 +297,6 @@ class ProjectIT extends IntegrationTest {
     private int firstSectorId() {
         List<Integer> ids = get("/api/v1/sectors", null).expect(200).json("$[*].id");
         return ids.getFirst();
-    }
-
-    /** Edición abierta hoy. Se crea una sola vez: dos ediciones no pueden cruzarse. */
-    private int openEdition() {
-        if (openEditionId == null) {
-            LocalDate today = LocalDate.now();
-            openEditionId = createEdition(
-                    "Expoideas abierta " + System.nanoTime(),
-                    today.minusDays(1),
-                    today.plusDays(10),
-                    today.plusDays(20));
-        }
-        return openEditionId;
     }
 
     private int closedEdition() {

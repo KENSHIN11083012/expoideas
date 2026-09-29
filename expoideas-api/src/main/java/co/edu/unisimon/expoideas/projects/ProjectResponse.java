@@ -7,8 +7,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Un proyecto con su equipo. Lleva los límites del grupo y si la inscripción
- * sigue abierta para que el cliente sepa qué ofrecer sin consultar la edición.
+ * Un proyecto con su equipo. Lleva los límites del grupo y si siguen abiertas la
+ * inscripción (equipo y datos) y las entregas, para que el cliente sepa qué
+ * ofrecer sin consultar la edición.
  */
 public record ProjectResponse(
         Integer id,
@@ -22,6 +23,7 @@ public record ProjectResponse(
         Integer teacherId,
         String teacher,
         boolean registrationOpen,
+        boolean submissionOpen,
         int minMembers,
         int maxMembers,
         List<MemberResponse> members,
@@ -41,6 +43,7 @@ public record ProjectResponse(
                 project.getTeacher().getId(),
                 project.getTeacher().fullName(),
                 project.getEdition().isRegistrationOpenOn(today),
+                project.getEdition().isSubmissionOpenOn(today),
                 settings.getMinMembers(),
                 settings.getMaxMembers(),
                 project.getMembers().stream().map(MemberResponse::from).toList(),

@@ -172,6 +172,7 @@ class ProjectControllerTest {
                 7,
                 "Carlos Mendoza",
                 true,
+                true,
                 2,
                 5,
                 List.of(new MemberResponse(

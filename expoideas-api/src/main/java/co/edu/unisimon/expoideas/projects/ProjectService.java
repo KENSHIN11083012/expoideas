@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,7 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final CatalogLookup catalogLookup;
     private final ProjectPolicy policy;
+    private final ApplicationEventPublisher events;
 
     /** Los proyectos de esa cuenta, incluidos aquellos a los que la invitaron. */
     @Transactional(readOnly = true)
@@ -89,8 +91,8 @@ public class ProjectService {
     }
 
     /**
-     * Borra la inscripción con su equipo. Solo el líder y solo con la inscripción
-     * abierta; los entregables se suman en su propia fase y habrá que revisarlo.
+     * Borra la inscripción con su equipo y sus entregables. Solo el líder y solo
+     * con la inscripción abierta.
      */
     @Transactional
     public void delete(Integer id, String email) {
@@ -99,6 +101,8 @@ public class ProjectService {
         policy.requireLeader(project, actor);
         policy.requireRegistrationOpen(project.getEdition());
 
+        // Los módulos que cuelgan del proyecto se llevan lo suyo antes del borrado.
+        events.publishEvent(new ProjectDeletedEvent(project.getId()));
         projectRepository.delete(project);
     }
 

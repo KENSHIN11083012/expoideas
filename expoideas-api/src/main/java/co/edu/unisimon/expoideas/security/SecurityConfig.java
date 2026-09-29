@@ -43,6 +43,9 @@ public class SecurityConfig {
     /** Ediciones de la Expo: las escribe MacondoLab; las fechas son públicas. */
     private static final String EDITIONS = "/api/v1/editions/**";
 
+    /** Entregables que pide cada cátedra: los escribe MacondoLab; leerlos pide sesión. */
+    private static final String DELIVERABLE_TYPES = "/api/v1/deliverable-types/**";
+
     /** Descarga de archivos: los públicos no piden sesión; los privados los autoriza FileService. */
     private static final String FILES = "/api/v1/files/**";
 
@@ -90,6 +93,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, EDITIONS)
                         .hasRole("MACONDOLAB")
                         .requestMatchers(HttpMethod.PUT, EDITIONS)
+                        .hasRole("MACONDOLAB")
+
+                        // Entregables que pide cada cátedra.
+                        .requestMatchers(HttpMethod.POST, DELIVERABLE_TYPES)
+                        .hasRole("MACONDOLAB")
+                        .requestMatchers(HttpMethod.PUT, DELIVERABLE_TYPES)
+                        .hasRole("MACONDOLAB")
+                        .requestMatchers(HttpMethod.DELETE, DELIVERABLE_TYPES)
                         .hasRole("MACONDOLAB")
 
                         // Público: login, registro, documentación, salud y lecturas sin sesión.

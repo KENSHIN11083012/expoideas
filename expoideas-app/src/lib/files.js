@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/lib/apiClient';
+import { session } from '@/lib/session';
 
 /**
  * Archivos de la plataforma. Las mismas reglas las aplica la API (FileService y
@@ -24,4 +25,24 @@ export const validateImage = (file) => {
     if (file.size === 0) return 'El archivo está vacío.';
     if (file.size > MAX_FILE_BYTES) return 'El archivo supera el tamaño máximo permitido de 5 MB.';
     return null;
+};
+
+/**
+ * Descarga un archivo privado (un entregable). Un enlace normal no sirve: el
+ * navegador no le pondría el token de la sesión, y la API responde 404 a quien
+ * no puede verlo.
+ */
+export const downloadFile = async (id, name) => {
+    const response = await fetch(fileUrl(id), { headers: { Authorization: `Bearer ${session.token()}` } });
+    if (!response.ok) {
+        throw new Error('No pudimos descargar el archivo.');
+    }
+    const url = URL.createObjectURL(await response.blob());
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
 };

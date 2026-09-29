@@ -15,6 +15,7 @@ import co.edu.unisimon.expoideas.support.TestData;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mock.web.MockMultipartFile;
@@ -45,6 +47,13 @@ class FileServiceTest {
 
     @Mock
     private FileStorage storage;
+
+    /**
+     * Sin permisos de otros módulos: aquí solo se prueban el propietario y la
+     * gestión. La regla de los entregables tiene sus pruebas de integración.
+     */
+    @Spy
+    private List<PrivateFileAccessRule> accessRules = List.of();
 
     @InjectMocks
     private FileService service;

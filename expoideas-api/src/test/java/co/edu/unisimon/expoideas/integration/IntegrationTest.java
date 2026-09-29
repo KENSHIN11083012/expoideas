@@ -13,8 +13,10 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +60,8 @@ abstract class IntegrationTest {
     protected static final Path FILES_DIR = createTempDir();
 
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
+
+    private static Integer openEditionId;
 
     static {
         MYSQL.start();
@@ -168,6 +172,38 @@ abstract class IntegrationTest {
                 .json("$.id");
     }
 
+    // ── Ediciones ───────────────────────────────────────────────────────────
+
+    /**
+     * Edición con la inscripción y las entregas abiertas hoy. La comparten todas
+     * las pruebas porque dos ediciones no pueden cruzarse en el tiempo: si cada
+     * clase creara la suya, la segunda chocaría con la primera.
+     */
+    protected int openEdition() {
+        if (openEditionId == null) {
+            LocalDate today = LocalDate.now();
+            openEditionId = post(
+                            "/api/v1/editions",
+                            loginAs(Role.MACONDOLAB),
+                            Map.of(
+                                    "name",
+                                    "Expoideas abierta " + SEQUENCE.incrementAndGet(),
+                                    "registrationOpensOn",
+                                    today.minusDays(1).toString(),
+                                    "registrationClosesOn",
+                                    today.plusDays(10).toString(),
+                                    "submissionClosesOn",
+                                    today.plusDays(20).toString(),
+                                    "tracks",
+                                    List.of(
+                                            Map.of("track", "INNPRENDE_I", "minMembers", 1, "maxMembers", 3),
+                                            Map.of("track", "INNPRENDE_II", "minMembers", 2, "maxMembers", 4))))
+                    .expect(201)
+                    .json("$.id");
+        }
+        return openEditionId;
+    }
+
     // ── Peticiones ──────────────────────────────────────────────────────────
 
     protected Response get(String uri, String token) {
@@ -195,13 +231,23 @@ abstract class IntegrationTest {
      * hace un navegador: la parte no declara su largo, así que el servidor la lee
      * hasta encontrar el límite.
      */
+    protected Response postFile(
+            String uri, String token, String part, String filename, MediaType type, byte[] content) {
+        return sendFile(HttpMethod.POST, uri, token, part, filename, type, content);
+    }
+
     protected Response putFile(String uri, String token, String part, String filename, MediaType type, byte[] content) {
+        return sendFile(HttpMethod.PUT, uri, token, part, filename, type, content);
+    }
+
+    private Response sendFile(
+            HttpMethod method, String uri, String token, String part, String filename, MediaType type, byte[] content) {
         HttpHeaders partHeaders = new HttpHeaders();
         partHeaders.setContentType(type);
         partHeaders.setContentDispositionFormData(part, filename);
         MultiValueMap<String, Object> multipart = new LinkedMultiValueMap<>();
         multipart.add(part, new HttpEntity<>(new InputStreamResource(new ByteArrayInputStream(content)), partHeaders));
-        RestTestClient.RequestHeadersSpec<?> request = client.put()
+        RestTestClient.RequestHeadersSpec<?> request = client.method(method)
                 .uri(uri)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .contentType(MediaType.MULTIPART_FORM_DATA)

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarClock, CalendarPlus, Pencil, Users } from 'lucide-react';
+import { CalendarClock, CalendarPlus, FileText, Pencil, Users } from 'lucide-react';
 import { TRACK_DESCRIPTIONS, TRACK_LIST, trackLabel } from '@/lib/tracks';
 import { PageContainer } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/ui/page-header';
@@ -9,10 +9,11 @@ import { Card } from '@/components/ui/card';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback';
 import { useEditions } from './queries';
 import { editionStatus, formatDay } from './status';
+import { DeliverableTypesDialog } from '@/features/deliverables/DeliverableTypesDialog';
 import { EditionDialog } from './EditionDialog';
 
 /** Configuración de una cátedra dentro de la tarjeta de la edición. */
-function TrackCard({ track, settings }) {
+function TrackCard({ track, settings, onDeliverables }) {
     return (
         <div className="flex flex-col gap-1 rounded border border-outline-variant/60 bg-surface-container-low p-4">
             <p className="label-mono text-on-surface-variant">{trackLabel(track)}</p>
@@ -21,12 +22,16 @@ function TrackCard({ track, settings }) {
                 <Users className="size-4 text-primary" aria-hidden="true" />
                 {settings ? `Grupos de ${settings.minMembers} a ${settings.maxMembers} integrantes` : 'Sin configurar'}
             </p>
+            <Button variant="outline" size="sm" className="mt-2 self-start" onClick={onDeliverables}>
+                <FileText /> Entregables
+            </Button>
         </div>
     );
 }
 
 function EditionCard({ edition, onEdit }) {
     const status = editionStatus(edition);
+    const [deliverablesOf, setDeliverablesOf] = useState(null);
 
     return (
         <Card className="flex flex-col gap-5 p-6">
@@ -58,9 +63,18 @@ function EditionCard({ edition, onEdit }) {
 
             <div className="grid gap-3 sm:grid-cols-2">
                 {TRACK_LIST.map((track) => (
-                    <TrackCard key={track} track={track} settings={edition.tracks?.find((item) => item.track === track)} />
+                    <TrackCard
+                        key={track}
+                        track={track}
+                        settings={edition.tracks?.find((item) => item.track === track)}
+                        onDeliverables={() => setDeliverablesOf(track)}
+                    />
                 ))}
             </div>
+
+            {deliverablesOf && (
+                <DeliverableTypesDialog edition={edition} track={deliverablesOf} onClose={() => setDeliverablesOf(null)} />
+            )}
         </Card>
     );
 }

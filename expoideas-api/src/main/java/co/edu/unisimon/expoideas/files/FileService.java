@@ -9,6 +9,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
@@ -45,6 +46,9 @@ public class FileService {
 
     private final FileRepository fileRepository;
     private final FileStorage storage;
+
+    /** Permisos que aportan otros módulos (entregables, galería...). Puede estar vacía. */
+    private final List<PrivateFileAccessRule> accessRules;
 
     /**
      * Valida y guarda un archivo subido.
@@ -137,12 +141,14 @@ public class FileService {
                 storage.open(file.getStoragePath()));
     }
 
-    private static boolean canSeePrivate(StoredFile file, Authentication authentication) {
+    private boolean canSeePrivate(StoredFile file, Authentication authentication) {
         if (authentication == null || !(authentication.getPrincipal() instanceof UserPrincipal principal)) {
             return false;
         }
-        return file.getOwner().getEmail().equalsIgnoreCase(principal.getUsername())
-                || principal.getRole().isManagement();
+        String email = principal.getUsername();
+        return file.getOwner().getEmail().equalsIgnoreCase(email)
+                || principal.getRole().isManagement()
+                || accessRules.stream().anyMatch(rule -> rule.canRead(file, email));
     }
 
     /** Sin carpetas ni caracteres de control, y con la extensión del formato real. */

@@ -14,6 +14,7 @@ const RegisterPage = lazy(() => import('@/features/auth/RegisterPage'));
 const OnboardingPage = lazy(() => import('@/features/auth/OnboardingPage'));
 const MyProjectsPage = lazy(() => import('@/features/projects/MyProjectsPage'));
 const ProjectPage = lazy(() => import('@/features/projects/ProjectPage'));
+const ProjectsPage = lazy(() => import('@/features/projects/ProjectsPage'));
 const ProfilePage = lazy(() => import('@/features/profile/ProfilePage'));
 const SecurityPage = lazy(() => import('@/features/profile/SecurityPage'));
 const UserAdminPage = lazy(() => import('@/features/users/UserAdminPage'));
@@ -64,11 +65,20 @@ export default function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        {/* La ficha la ven el equipo, el docente y la gestión: decide la API */}
                         <Route
-                            path={`${ROUTES.MY_PROJECTS}/:id`}
+                            path={`${ROUTES.PROJECTS}/:id`}
                             element={
-                                <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+                                <ProtectedRoute>
                                     <ProjectPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path={ROUTES.PROJECTS}
+                            element={
+                                <ProtectedRoute allowedRoles={[...MANAGEMENT_ROLES, ROLES.TEACHER]}>
+                                    <ProjectsPage />
                                 </ProtectedRoute>
                             }
                         />

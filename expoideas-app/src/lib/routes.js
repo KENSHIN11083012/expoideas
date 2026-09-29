@@ -10,6 +10,7 @@ export const ROUTES = {
     REGISTER: '/registro',
     ONBOARDING: '/primer-ingreso',
     MY_PROJECTS: '/mis-proyectos',
+    PROJECTS: '/proyectos',
     PROFILE: '/perfil',
     SECURITY: '/seguridad',
     USERS: '/admin/usuarios',
@@ -18,8 +19,8 @@ export const ROUTES = {
     UNAUTHORIZED: '/no-autorizado',
 };
 
-/** Un proyecto concreto, dentro de Mis proyectos. */
-ROUTES.project = (id) => `${ROUTES.MY_PROJECTS}/${id}`;
+/** La ficha de un proyecto. La misma para su equipo, su docente y la gestión. */
+ROUTES.project = (id) => `${ROUTES.PROJECTS}/${id}`;
 
 /** Donde aterriza cada rol tras iniciar sesión. */
 export const homeRouteFor = (role) => (isManagement(role) ? ROUTES.USERS : ROUTES.HOME);

@@ -30,11 +30,18 @@ const menuLinks = () =>
         .map((link) => link.textContent);
 
 describe('Menú principal por rol', () => {
-    it.each([ROLES.TEACHER, ROLES.JUDGE])('%s no ve la gestión ni Mis proyectos', (role) => {
-        sessionAs(role);
+    it('el jurado todavía no tiene secciones propias', () => {
+        sessionAs(ROLES.JUDGE);
         render(<SiteHeader />, { wrapper: MemoryRouter });
 
         expect(menuLinks()).toEqual(['Inicio', 'Mi perfil']);
+    });
+
+    it('el docente ve los proyectos de sus grupos', () => {
+        sessionAs(ROLES.TEACHER);
+        render(<SiteHeader />, { wrapper: MemoryRouter });
+
+        expect(menuLinks()).toEqual(['Inicio', 'Proyectos', 'Mi perfil']);
     });
 
     it('el estudiante ve Mis proyectos', () => {
@@ -48,7 +55,7 @@ describe('Menú principal por rol', () => {
         sessionAs(role);
         render(<SiteHeader />, { wrapper: MemoryRouter });
 
-        expect(menuLinks()).toEqual(['Inicio', 'Mi perfil', 'Usuarios', 'Catálogos', 'Ediciones']);
+        expect(menuLinks()).toEqual(['Inicio', 'Proyectos', 'Mi perfil', 'Usuarios', 'Catálogos', 'Ediciones']);
     });
 });
 

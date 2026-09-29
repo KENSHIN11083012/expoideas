@@ -24,9 +24,10 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from 
  * Secciones del menú. Solo aparecen las que existen: las de INNPRENDE I y II se
  * agregan en las fases del dominio.
  */
-const linksFor = (signedIn, management, student) => [
+const linksFor = (signedIn, management, student, teacher) => [
     { to: ROUTES.HOME, label: 'Inicio', icon: House, end: true },
     ...(student ? [{ to: ROUTES.MY_PROJECTS, label: 'Mis proyectos', icon: Lightbulb }] : []),
+    ...(management || teacher ? [{ to: ROUTES.PROJECTS, label: 'Proyectos', icon: Lightbulb, end: true }] : []),
     ...(signedIn ? [{ to: ROUTES.PROFILE, label: 'Mi perfil', icon: User }] : []),
     ...(management
         ? [
@@ -184,7 +185,7 @@ export function SiteHeader() {
     const { token, user, role, isManagement, logout } = useAuth();
     const navigate = useNavigate();
     const signedIn = Boolean(token);
-    const links = linksFor(signedIn, isManagement, role === ROLES.STUDENT);
+    const links = linksFor(signedIn, isManagement, role === ROLES.STUDENT, role === ROLES.TEACHER);
 
     const signOut = () => {
         logout();

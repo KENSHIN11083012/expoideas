@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,9 @@ public class UserManagementService {
     private final AffiliationResolver affiliation;
     private final PasswordUpdater passwords;
     private final FileService fileService;
+
+    /** Motivos para no eliminar una cuenta que aportan otros módulos. Puede estar vacía. */
+    private final List<AccountDeletionRule> deletionRules;
 
     @Transactional(readOnly = true)
     public List<UserResponse> list() {
@@ -163,6 +167,15 @@ public class UserManagementService {
         if (actor.getId().equals(user.getId())) {
             throw new ForbiddenActionException("No puedes eliminar tu propia cuenta.");
         }
+        // Otros módulos pueden tener motivos para conservarla (estar en un equipo,
+        // ser el docente de un proyecto...). Se explica el primero que aparezca.
+        deletionRules.stream()
+                .map(rule -> rule.reasonToKeep(user))
+                .flatMap(Optional::stream)
+                .findFirst()
+                .ifPresent(reason -> {
+                    throw new ConflictException(reason);
+                });
         // Sus archivos no pueden quedar sin dueño: se borran con la cuenta.
         user.setPhoto(null);
         fileService.deleteAllOwnedBy(user);

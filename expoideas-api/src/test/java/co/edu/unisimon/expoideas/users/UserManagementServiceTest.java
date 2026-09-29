@@ -26,6 +26,7 @@ import co.edu.unisimon.expoideas.common.InvalidFieldsException;
 import co.edu.unisimon.expoideas.files.FileService;
 import co.edu.unisimon.expoideas.files.StoredFile;
 import co.edu.unisimon.expoideas.support.TestData;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -75,8 +76,14 @@ class UserManagementServiceTest {
     void setUp() {
         CatalogLookup lookup =
                 new CatalogLookup(campusRepository, facultyRepository, academicProgramRepository, sectorRepository);
+        // Sin motivos de otros módulos para conservar una cuenta: los proyectos
+        // tienen su propia prueba de integración.
         service = new UserManagementService(
-                userRepository, new AffiliationResolver(lookup), new PasswordUpdater(passwordEncoder), fileService);
+                userRepository,
+                new AffiliationResolver(lookup),
+                new PasswordUpdater(passwordEncoder),
+                fileService,
+                List.of());
 
         admin = TestData.user(1, ADMIN_EMAIL, Role.ADMIN);
         User macondolab = TestData.user(2, MACONDOLAB_EMAIL, Role.MACONDOLAB);

@@ -259,6 +259,25 @@ class ProjectIT extends IntegrationTest {
                 .expect(403);
     }
 
+    @Test
+    void anAccountOnATeamOrTeachingAProjectCannotBeDeleted() {
+        Team team = newTeam();
+        createProject(team);
+        String admin = loginAs(Role.ADMIN);
+
+        Response leader =
+                delete("/api/v1/admin/users/" + idOf(team.leaderEmail()), admin).expect(409);
+        assertThat(leader.json("$.detail").toString()).contains("está en el equipo");
+
+        Response teacher = delete("/api/v1/admin/users/" + idOf(team.teacherEmail()), admin)
+                .expect(409);
+        assertThat(teacher.json("$.detail").toString()).contains("es el docente");
+
+        // Una cuenta sin proyectos se elimina como siempre.
+        delete("/api/v1/admin/users/" + idOf(createAccount(Role.STUDENT)), admin)
+                .expect(204);
+    }
+
     // ── Datos de apoyo ──────────────────────────────────────────────────────
 
     /** Líder, compañero y docente recién creados, con sus sesiones. */

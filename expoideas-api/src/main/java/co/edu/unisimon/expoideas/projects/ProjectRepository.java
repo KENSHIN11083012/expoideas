@@ -24,6 +24,34 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     List<Project> findAllOfMember(@Param("userId") Integer userId);
 
     /**
+     * Proyectos que cumplen los filtros, de la inscripción más reciente a la más
+     * antigua. Un filtro en null no filtra.
+     */
+    @EntityGraph(attributePaths = {"edition", "sector", "teacher", "members", "members.user"})
+    @Query("""
+            select distinct p from Project p
+            where (:editionId is null or p.edition.id = :editionId)
+              and (:track is null or p.track = :track)
+              and (:teacherId is null or p.teacher.id = :teacherId)
+              and (:sectorId is null or p.sector.id = :sectorId)
+              and (:search is null or lower(p.title) like lower(concat('%', :search, '%')))
+            order by p.createdAt desc
+            """)
+    List<Project> search(
+            @Param("editionId") Integer editionId,
+            @Param("track") Track track,
+            @Param("teacherId") Integer teacherId,
+            @Param("sectorId") Integer sectorId,
+            @Param("search") String search);
+
+    /** Si esa cuenta es el docente de algún proyecto. */
+    boolean existsByTeacherId(Integer teacherId);
+
+    /** Si esa cuenta está en el equipo de algún proyecto, invitada o aceptada. */
+    @Query("select count(m) > 0 from ProjectMember m where m.user.id = :userId")
+    boolean isOnSomeTeam(@Param("userId") Integer userId);
+
+    /**
      * Si esa cuenta ya está en un proyecto de esa cátedra: cada estudiante
      * inscribe uno solo por cátedra en cada edición. Las invitaciones sin
      * responder no cuentan, porque todavía puede rechazarlas.

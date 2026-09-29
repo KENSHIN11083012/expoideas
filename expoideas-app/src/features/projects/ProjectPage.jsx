@@ -124,6 +124,8 @@ export default function ProjectPage() {
     }
 
     const me = project.members.find((member) => member.userId === user?.id);
+    // El equipo vuelve a Mis proyectos; el docente y la gestión, al listado.
+    const listRoute = me ? ROUTES.MY_PROJECTS : ROUTES.PROJECTS;
     const isLeader = me?.teamRole === 'LEADER';
     const open = project.registrationOpen;
     const accepted = project.members.filter((member) => member.status === 'ACCEPTED').length;
@@ -158,8 +160,8 @@ export default function ProjectPage() {
     return (
         <PageContainer>
             <Button variant="ghost" size="sm" asChild className="self-start">
-                <Link to={ROUTES.MY_PROJECTS}>
-                    <ArrowLeft /> Mis proyectos
+                <Link to={listRoute}>
+                    <ArrowLeft /> {me ? 'Mis proyectos' : 'Proyectos'}
                 </Link>
             </Button>
 

@@ -1,0 +1,227 @@
+import { useDeferredValue, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Download, FolderOpen, SearchX } from 'lucide-react';
+import { toast } from 'sonner';
+import { ROLES } from '@/lib/roles';
+import { ROUTES } from '@/lib/routes';
+import { byName } from '@/lib/text';
+import { TRACK_LIST, trackLabel } from '@/lib/tracks';
+import { useAuth } from '@/features/auth/useAuth';
+import { CATALOG_PATHS } from '@/features/catalogs/api';
+import { useCatalogItems } from '@/features/catalogs/queries';
+import { useEditions } from '@/features/editions/queries';
+import { PageContainer } from '@/components/layout/AppShell';
+import { PageHeader } from '@/components/ui/page-header';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback';
+import { Field } from '@/components/ui/field';
+import { NativeSelect } from '@/components/ui/native-select';
+import { SearchInput } from '@/components/ui/search-input';
+import { downloadProjectsCsv, useProjectDirectory } from './directory';
+import { useTeachers } from './queries';
+
+const NO_FILTERS = { editionId: '', track: '', teacherId: '', sectorId: '', search: '' };
+
+/** Entregables: cuántos obligatorios lleva el proyecto. */
+function DeliverablesBadge({ project }) {
+    if (project.requiredDeliverables === 0) {
+        return <Badge variant="outline">Sin entregables configurados</Badge>;
+    }
+    const complete = project.deliveredDeliverables >= project.requiredDeliverables;
+    return (
+        <Badge variant={complete ? 'primary' : 'outline'}>
+            {complete ? 'Entregado' : `Faltan ${project.requiredDeliverables - project.deliveredDeliverables}`}
+        </Badge>
+    );
+}
+
+function ProjectRow({ project }) {
+    const short = project.members < project.minMembers;
+
+    return (
+        <tr className="transition-colors hover:bg-surface-container-low/60">
+            <td className="px-5 py-3">
+                <Link to={ROUTES.project(project.id)} className="font-medium text-primary hover:underline">
+                    {project.title}
+                </Link>
+                <p className="label-mono text-xs text-on-surface-variant">
+                    {project.edition} · {trackLabel(project.track)}
+                </p>
+            </td>
+            <td className="hidden px-5 py-3 text-on-surface-variant lg:table-cell">{project.sector}</td>
+            <td className="hidden px-5 py-3 text-on-surface-variant md:table-cell">{project.teacher}</td>
+            <td className="px-5 py-3 text-on-surface-variant">
+                {project.leader}
+                <p className={short ? 'text-xs font-medium text-tertiary' : 'text-xs text-on-surface-variant'}>
+                    {project.members} {project.members === 1 ? 'integrante' : 'integrantes'}
+                    {short ? ` · mínimo ${project.minMembers}` : ''}
+                </p>
+            </td>
+            <td className="px-5 py-3">
+                <DeliverablesBadge project={project} />
+            </td>
+        </tr>
+    );
+}
+
+/**
+ * Proyectos inscritos, para MacondoLab y para los docentes. La gestión los ve
+ * todos y filtra; un docente ve los que lo nombraron como docente del grupo.
+ */
+export default function ProjectsPage() {
+    const { role, isManagement } = useAuth();
+    const [filters, setFilters] = useState(NO_FILTERS);
+    const deferred = useDeferredValue(filters);
+    const { data: projects = [], isPending, error, refetch } = useProjectDirectory(deferred);
+    const { data: editions = [] } = useEditions();
+    const { data: sectors = [] } = useCatalogItems(CATALOG_PATHS.sectors);
+    const { data: teachers = [] } = useTeachers();
+    const [downloading, setDownloading] = useState(false);
+
+    const set = (key) => (event) => setFilters((current) => ({ ...current, [key]: event.target.value }));
+    const filtered = Object.values(filters).some(Boolean);
+
+    const download = async () => {
+        setDownloading(true);
+        try {
+            await downloadProjectsCsv(filters);
+        } catch (downloadError) {
+            toast.error(downloadError.message);
+        } finally {
+            setDownloading(false);
+        }
+    };
+
+    return (
+        <PageContainer>
+            <PageHeader
+                eyebrow={isManagement ? 'Gestión' : 'Docencia'}
+                title="Proyectos"
+                description={
+                    isManagement
+                        ? 'Todos los proyectos inscritos, con su equipo y sus entregables. Filtra y descarga la lista para trabajarla aparte.'
+                        : 'Los proyectos que te nombraron como docente del grupo, con su equipo y sus entregables.'
+                }
+                actions={
+                    <Button variant="outline" onClick={download} loading={downloading} disabled={projects.length === 0}>
+                        <Download /> Descargar CSV
+                    </Button>
+                }
+            />
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <SearchInput
+                    value={filters.search}
+                    onChange={set('search')}
+                    placeholder="Buscar por título"
+                    label="Buscar proyectos"
+                    className="sm:col-span-2"
+                />
+                <Field label="Edición">
+                    <NativeSelect value={filters.editionId} onChange={set('editionId')}>
+                        <option value="">Todas</option>
+                        {editions.map((edition) => (
+                            <option key={edition.id} value={String(edition.id)}>
+                                {edition.name}
+                            </option>
+                        ))}
+                    </NativeSelect>
+                </Field>
+                <Field label="Cátedra">
+                    <NativeSelect value={filters.track} onChange={set('track')}>
+                        <option value="">Las dos</option>
+                        {TRACK_LIST.map((track) => (
+                            <option key={track} value={track}>
+                                {trackLabel(track)}
+                            </option>
+                        ))}
+                    </NativeSelect>
+                </Field>
+                <Field label="Sector">
+                    <NativeSelect value={filters.sectorId} onChange={set('sectorId')}>
+                        <option value="">Todos</option>
+                        {[...sectors].sort(byName).map((sector) => (
+                            <option key={sector.id} value={String(sector.id)}>
+                                {sector.name}
+                            </option>
+                        ))}
+                    </NativeSelect>
+                </Field>
+                {role !== ROLES.TEACHER && (
+                    <Field label="Docente">
+                        <NativeSelect value={filters.teacherId} onChange={set('teacherId')}>
+                            <option value="">Todos</option>
+                            {teachers.map((teacher) => (
+                                <option key={teacher.id} value={String(teacher.id)}>
+                                    {teacher.fullName}
+                                </option>
+                            ))}
+                        </NativeSelect>
+                    </Field>
+                )}
+            </div>
+
+            {error ? (
+                <ErrorState title="No pudimos cargar los proyectos" error={error} onRetry={refetch} />
+            ) : isPending ? (
+                <div className="flex flex-col gap-2" aria-hidden="true">
+                    {[0, 1, 2, 3].map((index) => (
+                        <Skeleton key={index} className="h-14 rounded" />
+                    ))}
+                </div>
+            ) : projects.length === 0 ? (
+                <EmptyState
+                    icon={filtered ? SearchX : FolderOpen}
+                    title={filtered ? 'Sin resultados' : 'Todavía no hay proyectos inscritos'}
+                    description={
+                        filtered ? 'Prueba con otros filtros.' : 'Cuando los equipos inscriban sus proyectos, aparecerán aquí.'
+                    }
+                    action={
+                        filtered && (
+                            <Button size="sm" variant="outline" onClick={() => setFilters(NO_FILTERS)}>
+                                Quitar filtros
+                            </Button>
+                        )
+                    }
+                />
+            ) : (
+                <Card className="overflow-hidden">
+                    <table className="w-full text-left text-sm">
+                        <thead className="border-b border-outline-variant/60 bg-surface-container-low">
+                            <tr className="label-mono text-on-surface-variant">
+                                <th scope="col" className="px-5 py-3">
+                                    Proyecto
+                                </th>
+                                <th scope="col" className="hidden px-5 py-3 lg:table-cell">
+                                    Sector
+                                </th>
+                                <th scope="col" className="hidden px-5 py-3 md:table-cell">
+                                    Docente
+                                </th>
+                                <th scope="col" className="px-5 py-3">
+                                    Equipo
+                                </th>
+                                <th scope="col" className="px-5 py-3">
+                                    Entregables
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-outline-variant/50">
+                            {projects.map((project) => (
+                                <ProjectRow key={project.id} project={project} />
+                            ))}
+                        </tbody>
+                    </table>
+                    <p
+                        className="label-mono border-t border-outline-variant/50 px-5 py-3 text-on-surface-variant"
+                        aria-live="polite"
+                    >
+                        {projects.length} {projects.length === 1 ? 'proyecto' : 'proyectos'}
+                    </p>
+                </Card>
+            )}
+        </PageContainer>
+    );
+}

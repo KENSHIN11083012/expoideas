@@ -92,7 +92,7 @@ function PhaseCard({ phase, name, accent, icon: Icon, title, text, points, conne
     return (
         <>
             <Card accent={accent} className="flex flex-col gap-5 p-6 sm:p-8">
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
                     <Badge variant={lime ? 'lime' : 'primary'} mono>
                         {phase} · {name}
                     </Badge>
@@ -205,7 +205,7 @@ export default function HomePage() {
                     </p>
                 </div>
 
-                <div className="grid items-stretch gap-6 lg:grid-cols-[1fr_auto_1fr]">
+                <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[1fr_auto_1fr]">
                     {PHASES.map((phase, index) => (
                         <PhaseCard key={phase.phase} {...phase} connector={index === 0} />
                     ))}

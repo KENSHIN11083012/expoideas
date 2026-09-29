@@ -7,6 +7,15 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+    ignore:
+      # ESLint 10 no se puede instalar todavía: eslint-plugin-react va en la
+      # 7.37.5, que es la última publicada, y solo acepta ESLint hasta ^9.7. El
+      # salto rompe el `npm ci` con un ERESOLVE y tumba al grupo npm entero.
+      # Quitar estas dos reglas cuando el plugin soporte ESLint 10.
+      - dependency-name: eslint
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: maven
     directory: /expoideas-api

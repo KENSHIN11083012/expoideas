@@ -12,11 +12,11 @@ en el repositorio.
 
 | # | Tema | Qué se pidió | Estado |
 |---|---|---|---|
-| 1 | Registro | Solo correo institucional y contraseña. Vínculo, facultad y campus salen del registro: van al perfil o los asigna el administrador | Listo para construir |
+| 1 | Registro | Solo correo institucional y contraseña. Vínculo, facultad y campus salen del registro: van al perfil o los asigna el administrador | **Hecho (F1):** el primer ingreso tiene el paso obligatorio «Completa tu perfil» |
 | 2 | Roles | Todos entran como estudiante y el administrador cambia el rol. Una persona puede tener **varios roles** (un profesor puede ser jurado de proyectos de otros profesores) | Revisar el modelo actual |
-| 3 | Rol en vivo | Al cambiar el rol de alguien, esa persona tuvo que cerrar sesión para verlo | Bug o UX |
-| 4 | Textos | En la interfaz, «docente» pasa a ser «profesor» | Listo para construir |
-| 5 | Vista del profesor | No encontraba cómo entrar al proyecto. Se pidió un botón más visible | Listo para construir |
+| 3 | Rol en vivo | Al cambiar el rol de alguien, esa persona tuvo que cerrar sesión para verlo | **Hecho (F1):** la app consulta el rol cada minuto y al volver a la pestaña |
+| 4 | Textos | En la interfaz, «docente» pasa a ser «profesor» | **Hecho (F1)** |
+| 5 | Vista del profesor | No encontraba cómo entrar al proyecto. Se pidió un botón más visible | **Hecho (F1):** botón «Ver proyecto» en el listado, en tabla y en móvil |
 | 6 | Externos | Los jurados externos entran por invitación del administrador, sin correo institucional | Listo para construir |
 | 7 | Entregables | Plantilla del póster para descargar, diligenciar y subir. Entregable nuevo: **fotos de la sustentación** como evidencia (trazabilidad) | Listo para construir |
 | 8 | INNPRENDE II | Enlace externo (video en YouTube o prototipo), fotos y pitch. Lista de **tipo de prototipo** (digital, físico, etc.) y, según el tipo, qué evidencia y qué formato se piden | Faltan los tipos (con la profesora) |
@@ -44,7 +44,7 @@ Otros puntos de la reunión:
 
 ## Plan de fases propuesto
 
-1. **F1 · UX para el piloto:** puntos 1, 3, 4 y 5.
+1. **F1 · UX para el piloto:** puntos 1, 3, 4 y 5. **Hecha** (rama `feat/piloto-ux`).
 2. **F2 · Entregables:** plantillas por tipo y fotos de evidencia (punto 7).
 3. **F3 · Prerrequisito** de INNPRENDE I a II (punto 9).
 4. **F4 · Roles:** varios roles por persona e invitación de externos (puntos 2 y 6).

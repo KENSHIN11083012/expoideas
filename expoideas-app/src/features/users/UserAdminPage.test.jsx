@@ -69,7 +69,7 @@ describe('Usuarios como administrador', () => {
 
         expect(options(table.getByRole('combobox', { name: 'Rol de Ana María Pérez' }))).toEqual([
             'Estudiante',
-            'Docente',
+            'Profesor',
             'Jurado',
             'MacondoLab',
             'Administrador',
@@ -132,12 +132,12 @@ describe('Usuarios como MacondoLab', () => {
         expect(table.queryByRole('button', { name: 'Acciones para Carla Díaz' })).not.toBeInTheDocument();
     });
 
-    it('solo asigna estudiante, docente o jurado', () => {
+    it('solo asigna estudiante, profesor o jurado', () => {
         const table = renderAs(carla, 'MACONDOLAB');
 
         expect(options(table.getByRole('combobox', { name: 'Rol de Ana María Pérez' }))).toEqual([
             'Estudiante',
-            'Docente',
+            'Profesor',
             'Jurado',
         ]);
     });
@@ -168,13 +168,13 @@ describe('Nueva cuenta', () => {
         await user.type(dialog.getByLabelText(/^Contraseña temporal/), 'Temporal#2026');
     }
 
-    it('sugiere jurado sin adscripción y la pide al elegir docente', async () => {
+    it('sugiere jurado sin adscripción y la pide al elegir profesor', async () => {
         const user = userEvent.setup();
         const dialog = await openDialog(user);
 
         const role = dialog.getByLabelText(/^Rol/);
         expect(role).toHaveValue('JUDGE');
-        expect(options(role)).toEqual(['Estudiante', 'Docente', 'Jurado']);
+        expect(options(role)).toEqual(['Estudiante', 'Profesor', 'Jurado']);
         expect(dialog.getByText('Puede ser personal o de su organización.')).toBeInTheDocument();
         expect(dialog.queryByText('Adscripción académica')).not.toBeInTheDocument();
 
@@ -184,7 +184,7 @@ describe('Nueva cuenta', () => {
         expect(dialog.getByText('Debe terminar en @unisimon.edu.co')).toBeInTheDocument();
     });
 
-    it('a un docente le exige correo institucional, sede y facultad', async () => {
+    it('a un profesor le exige correo institucional, sede y facultad', async () => {
         const user = userEvent.setup();
         const dialog = await openDialog(user);
 
@@ -219,7 +219,7 @@ describe('Nueva cuenta', () => {
         });
     });
 
-    it('un docente se crea con su adscripción', async () => {
+    it('un profesor se crea con su adscripción', async () => {
         const user = userEvent.setup();
         createUser.mutateAsync.mockResolvedValue({ id: 10, firstName: 'Marta', lastName: 'Ríos' });
         const dialog = await openDialog(user);

@@ -5,16 +5,25 @@ import { ONBOARDING_REQUIRED_EVENT, UNAUTHORIZED_EVENT } from '@/lib/apiClient';
 import { ROLES, asRole, isManagement } from '@/lib/roles';
 import { session } from '@/lib/session';
 import { fullName } from '@/lib/text';
+import { useProfile } from '@/features/profile/queries';
 import { AuthContext } from './authContext';
 
 const NO_PROFILE = { id: null, email: null, firstName: null, lastName: null, photoId: null };
 
 const isExpired = (decoded) => typeof decoded?.exp === 'number' && decoded.exp < Date.now() / 1000;
 
+/** Cada cuánto se vuelve a pedir /users/me para ver si el rol cambió. */
+const PROFILE_REFRESH_MS = 60_000;
+
 /**
  * Sesión de la app. El token trae el correo, el rol y el vencimiento; el perfil
  * (nombre y foto, para la cabecera) y los pasos de primer ingreso se guardan
  * aparte. Todo persiste en localStorage (lib/session.js).
+ *
+ * El rol del token es el del momento de entrar. Como la gestión puede cambiarlo
+ * con la sesión abierta (y la API ya lo lee de la BD en cada petición), mientras
+ * hay sesión se consulta /users/me cada minuto y al volver a la pestaña, y manda
+ * el rol que devuelva.
  */
 export const AuthProvider = ({ children }) => {
     const queryClient = useQueryClient();
@@ -47,6 +56,12 @@ export const AuthProvider = ({ children }) => {
             return null;
         }
     }, [token]);
+
+    const { data: me, isError: profileFailed } = useProfile({
+        enabled: Boolean(decoded),
+        refetchInterval: PROFILE_REFRESH_MS,
+        refetchOnWindowFocus: true,
+    });
 
     // Hay token pero no sirve (vencido o ilegible). No hace falta tocar el estado:
     // `decoded` ya es null y la app se comporta como sin sesión. Aquí solo se
@@ -98,13 +113,19 @@ export const AuthProvider = ({ children }) => {
     );
 
     const value = useMemo(() => {
-        const role = decoded ? asRole(decoded.role) : null;
+        const role = decoded ? asRole(me?.role ?? decoded.role) : null;
         return {
             user: decoded
                 ? { ...profile, email: profile.email ?? decoded.sub, fullName: fullName(profile.firstName, profile.lastName) }
                 : null,
             token: decoded ? token : null,
             role,
+            /**
+             * Si `role` ya es el de la BD. Hasta que /users/me responda, es el del
+             * token, que puede estar viejo: las rutas por rol esperan antes de negar
+             * el acceso. Si la consulta falla, vale el del token.
+             */
+            roleReady: !decoded || me !== undefined || profileFailed,
             /** Pasos de primer ingreso sin completar; mientras haya, las rutas protegidas llevan al primer ingreso. */
             pendingSteps: decoded ? pendingSteps : [],
             isAdmin: role === ROLES.ADMIN,
@@ -115,7 +136,7 @@ export const AuthProvider = ({ children }) => {
             updateUser,
             completeStep,
         };
-    }, [decoded, profile, token, pendingSteps, login, logout, updateUser, completeStep]);
+    }, [decoded, me, profileFailed, profile, token, pendingSteps, login, logout, updateUser, completeStep]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

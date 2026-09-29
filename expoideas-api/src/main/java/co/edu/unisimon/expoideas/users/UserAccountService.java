@@ -34,11 +34,10 @@ public class UserAccountService {
 
     /**
      * Registro público: la cuenta nace como estudiante, con la autorización de
-     * datos que exige el formulario.
+     * datos que exige el formulario y sin nombre ni adscripción, que quedan como
+     * paso pendiente ({@link OnboardingStep#COMPLETE_PROFILE}) del primer ingreso.
      *
-     * @throws ConflictException      si el correo ya está en uso
-     * @throws InvalidFieldsException si el programa es de otra facultad
-     * @throws NoSuchElementException si la sede, la facultad o el programa no existen
+     * @throws ConflictException si el correo ya está en uso
      */
     @Transactional
     public UserResponse register(RegistrationRequest request) {
@@ -47,14 +46,11 @@ public class UserAccountService {
             throw new ConflictException("El correo institucional ya está registrado.");
         }
         User user = User.builder()
-                .firstName(request.firstName().strip())
-                .lastName(request.lastName().strip())
                 .email(email)
                 .passwordHash(passwords.hash(request.password()))
                 .role(Role.STUDENT)
                 .build();
         user.giveDataConsent();
-        affiliation.assign(user, request.campusId(), request.facultyId(), request.academicProgramId());
 
         User saved = userRepository.save(user);
         log.info("Usuario registrado con ID {}", saved.getId());

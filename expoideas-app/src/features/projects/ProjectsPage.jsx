@@ -1,6 +1,6 @@
 import { useDeferredValue, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, FolderOpen, SearchX } from 'lucide-react';
+import { ArrowRight, Download, FolderOpen, SearchX } from 'lucide-react';
 import { toast } from 'sonner';
 import { ROLES } from '@/lib/roles';
 import { ROUTES } from '@/lib/routes';
@@ -68,6 +68,13 @@ function ProjectRow({ project }) {
             <td className="px-5 py-3">
                 <DeliverablesBadge project={project} />
             </td>
+            <td className="px-5 py-3 text-right">
+                <Button variant="outline" size="sm" asChild>
+                    <Link to={ROUTES.project(project.id)}>
+                        Ver proyecto <ArrowRight />
+                    </Link>
+                </Button>
+            </td>
         </tr>
     );
 }
@@ -94,7 +101,7 @@ function ProjectCard({ project }) {
                         <dd className="text-on-surface">{project.sector}</dd>
                     </div>
                     <div className="flex gap-2">
-                        <dt className="text-on-surface-variant">Docente:</dt>
+                        <dt className="text-on-surface-variant">Profesor:</dt>
                         <dd className="text-on-surface">{project.teacher}</dd>
                     </div>
                     <div className="flex gap-2">
@@ -106,14 +113,19 @@ function ProjectCard({ project }) {
                     <TeamCount project={project} />
                     <DeliverablesBadge project={project} />
                 </div>
+                <Button variant="outline" size="sm" asChild className="self-end">
+                    <Link to={ROUTES.project(project.id)}>
+                        Ver proyecto <ArrowRight />
+                    </Link>
+                </Button>
             </Card>
         </li>
     );
 }
 
 /**
- * Proyectos inscritos, para MacondoLab y para los docentes. La gestión los ve
- * todos y filtra; un docente ve los que lo nombraron como docente del grupo.
+ * Proyectos inscritos, para MacondoLab y para los profesores. La gestión los ve
+ * todos y filtra; un profesor ve los que lo nombraron como profesor del grupo.
  */
 export default function ProjectsPage() {
     const { role, isManagement } = useAuth();
@@ -147,7 +159,7 @@ export default function ProjectsPage() {
                 description={
                     isManagement
                         ? 'Todos los proyectos inscritos, con su equipo y sus entregables. Filtra y descarga la lista para trabajarla aparte.'
-                        : 'Los proyectos que te nombraron como docente del grupo, con su equipo y sus entregables.'
+                        : 'Los proyectos que te nombraron como profesor del grupo, con su equipo y sus entregables.'
                 }
                 actions={
                     <Button variant="outline" onClick={download} loading={downloading} disabled={projects.length === 0}>
@@ -195,7 +207,7 @@ export default function ProjectsPage() {
                     </NativeSelect>
                 </Field>
                 {role !== ROLES.TEACHER && (
-                    <Field label="Docente">
+                    <Field label="Profesor">
                         <NativeSelect value={filters.teacherId} onChange={set('teacherId')}>
                             <option value="">Todos</option>
                             {teachers.map((teacher) => (
@@ -250,13 +262,16 @@ export default function ProjectsPage() {
                                         Sector
                                     </th>
                                     <th scope="col" className="hidden px-5 py-3 md:table-cell">
-                                        Docente
+                                        Profesor
                                     </th>
                                     <th scope="col" className="px-5 py-3">
                                         Equipo
                                     </th>
                                     <th scope="col" className="px-5 py-3">
                                         Entregables
+                                    </th>
+                                    <th scope="col" className="px-5 py-3">
+                                        <span className="sr-only">Abrir</span>
                                     </th>
                                 </tr>
                             </thead>

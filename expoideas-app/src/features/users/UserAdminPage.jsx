@@ -18,7 +18,7 @@ import { useDeleteUser, useUpdateUser, useUsers } from './queries';
 
 /** Lo que implica cada rol de gestión, para confirmarlo antes de otorgarlo. */
 const MANAGEMENT_SCOPE = {
-    [ROLES.MACONDOLAB]: 'Podrá gestionar las cuentas de estudiantes, docentes y jurados, y la clasificación de proyectos.',
+    [ROLES.MACONDOLAB]: 'Podrá gestionar las cuentas de estudiantes, profesores y jurados, y la clasificación de proyectos.',
     [ROLES.ADMIN]: 'Tendrá acceso completo a la plataforma, incluidas las cuentas de gestión y la estructura institucional.',
 };
 

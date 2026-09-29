@@ -31,6 +31,7 @@ export const sessionFor = ({ role = null, pendingSteps = [], user = {} } = {}) =
     return {
         token: role ? 'token' : null,
         role,
+        roleReady: true,
         pendingSteps,
         user: role ? { ...profile, fullName: fullName(profile.firstName, profile.lastName) } : null,
         isAdmin: role === ROLES.ADMIN,

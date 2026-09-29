@@ -1,5 +1,7 @@
 package co.edu.unisimon.expoideas.support;
 
+import co.edu.unisimon.expoideas.catalogs.Campus;
+import co.edu.unisimon.expoideas.catalogs.Faculty;
 import co.edu.unisimon.expoideas.common.ExpoideasProperties;
 import co.edu.unisimon.expoideas.common.ExpoideasProperties.CorsSettings;
 import co.edu.unisimon.expoideas.common.ExpoideasProperties.FilesSettings;
@@ -28,17 +30,20 @@ public final class TestData {
 
     private TestData() {}
 
-    /** Cuenta al día (sin pasos de primer ingreso) con ese rol. */
+    /** Cuenta al día (sin pasos de primer ingreso) con ese rol: con nombre y, si el rol la lleva, adscripción. */
     public static User user(int id, String email, Role role) {
-        return User.builder()
+        User.UserBuilder user = User.builder()
                 .id(id)
                 .firstName("Nombre")
                 .lastName("Apellido")
                 .email(email)
                 .passwordHash("hash-actual")
                 .role(role)
-                .dataConsent(true)
-                .build();
+                .dataConsent(true);
+        if (role.requiresAffiliation()) {
+            user.campus(new Campus(1, "Barranquilla")).faculty(new Faculty(10, "Ingeniería"));
+        }
+        return user.build();
     }
 
     public static ExpoideasProperties properties(Path filesDirectory) {

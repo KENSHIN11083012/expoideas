@@ -118,6 +118,6 @@ public class ProjectService {
         return userRepository
                 .findById(id)
                 .filter(candidate -> candidate.getRole() == Role.TEACHER)
-                .orElseThrow(() -> new InvalidFieldsException("teacherId", "Selecciona un docente de la lista"));
+                .orElseThrow(() -> new InvalidFieldsException("teacherId", "Selecciona un profesor de la lista"));
     }
 }

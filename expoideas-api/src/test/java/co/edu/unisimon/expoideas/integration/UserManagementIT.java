@@ -18,7 +18,9 @@ class UserManagementIT extends IntegrationTest {
         String admin = loginAs(Role.ADMIN);
         int faculty = createFaculty(admin);
         String email = uniqueEmail("listado");
-        register(email, campusId(), faculty, createProgram(admin, faculty)).expect(201);
+        register(email).expect(201);
+        completeProfile(login(email, PASSWORD), campusId(), faculty, createProgram(admin, faculty))
+                .expect(200);
 
         Response list = get("/api/v1/admin/users", loginAs(Role.MACONDOLAB)).expect(200);
         List<String> programs = list.json("$[?(@.email == '" + email + "')].academicProgram");

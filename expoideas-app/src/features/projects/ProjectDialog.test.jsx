@@ -42,7 +42,7 @@ describe('Inscribir un proyecto', () => {
         await userEvent.type(dialog.getByLabelText(/Título/), 'BioSensor');
         await userEvent.type(dialog.getByLabelText(/Propuesta de valor/), 'Sensores para detectar plagas.');
         await userEvent.selectOptions(dialog.getByLabelText(/Sector/), '3');
-        await userEvent.selectOptions(dialog.getByLabelText(/Docente/), '7');
+        await userEvent.selectOptions(dialog.getByLabelText(/Profesor/), '7');
         await userEvent.click(dialog.getByRole('button', { name: 'Inscribir' }));
 
         await waitFor(() =>
@@ -84,7 +84,7 @@ describe('Inscribir un proyecto', () => {
             expect.arrayContaining([
                 'Selecciona la edición',
                 'Ingresa el título del proyecto',
-                'Selecciona el docente del grupo',
+                'Selecciona el profesor del grupo',
             ]),
         );
         expect(save.mutateAsync).not.toHaveBeenCalled();

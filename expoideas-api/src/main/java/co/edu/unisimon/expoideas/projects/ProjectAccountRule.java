@@ -22,7 +22,7 @@ class ProjectAccountRule implements AccountDeletionRule {
     @Transactional(readOnly = true)
     public Optional<String> reasonToKeep(User user) {
         if (projectRepository.existsByTeacherId(user.getId())) {
-            return Optional.of("No puedes eliminar esta cuenta: es el docente de al menos un proyecto inscrito.");
+            return Optional.of("No puedes eliminar esta cuenta: es el profesor de al menos un proyecto inscrito.");
         }
         if (projectRepository.isOnSomeTeam(user.getId())) {
             return Optional.of(

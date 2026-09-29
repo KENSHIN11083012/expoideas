@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -69,11 +70,7 @@ class OnboardingFilterTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.detail").value("Antes de continuar, completa tu primer ingreso."))
                 .andExpect(jsonPath("$.pendingSteps", contains("CHANGE_PASSWORD", "DATA_CONSENT")));
-        mockMvc.perform(put("/api/v1/users/me")
-                        .with(newAccount())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"firstName\":\"Carla\",\"lastName\":\"Díaz\"}"))
-                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/v1/users/me/photo").with(newAccount())).andExpect(status().isForbidden());
         mockMvc.perform(post("/api/v1/sectors")
                         .with(newAccount())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -86,6 +83,12 @@ class OnboardingFilterTest {
     @Test
     void theStepsThemselvesAreAllowed() throws Exception {
         mockMvc.perform(get("/api/v1/users/me").with(newAccount())).andExpect(status().isOk());
+        // Completar el perfil (nombre y adscripción) también es un paso del primer ingreso.
+        mockMvc.perform(put("/api/v1/users/me")
+                        .with(newAccount())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"firstName\":\"Carla\",\"lastName\":\"Díaz\"}"))
+                .andExpect(status().isOk());
         mockMvc.perform(
                         put("/api/v1/users/me/password")
                                 .with(newAccount())
@@ -99,6 +102,7 @@ class OnboardingFilterTest {
                         .content("{\"dataConsent\":true}"))
                 .andExpect(status().isNoContent());
 
+        verify(accountService).updateProfile(eq(EMAIL), any());
         verify(accountService).changePassword(eq(EMAIL), any());
         verify(accountService).giveDataConsent(EMAIL);
     }

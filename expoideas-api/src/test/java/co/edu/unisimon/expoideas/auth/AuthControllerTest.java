@@ -1,5 +1,6 @@
 package co.edu.unisimon.expoideas.auth;
 
+import static org.hamcrest.Matchers.contains;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -10,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import co.edu.unisimon.expoideas.common.ConflictException;
 import co.edu.unisimon.expoideas.support.SecuredWebMvcTest;
+import co.edu.unisimon.expoideas.users.OnboardingStep;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.UserAccountService;
 import co.edu.unisimon.expoideas.users.UserResponse;
@@ -64,30 +66,27 @@ class AuthControllerTest {
     // ── Registro ────────────────────────────────────────────────────────────
 
     @Test
-    void validRegistrationIs201() throws Exception {
-        when(accountService.register(any()))
-                .thenReturn(new UserResponse(
-                        1,
-                        "Ana",
-                        "Pérez",
-                        EMAIL,
-                        Role.STUDENT,
-                        null,
-                        null,
-                        1,
-                        "Barranquilla",
-                        2,
-                        "Ingeniería",
-                        null,
-                        null,
-                        List.of()));
+    void validRegistrationIs201WithTheProfileStepPending() throws Exception {
+        when(accountService.register(any())).thenReturn(registered());
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registration(EMAIL, "Segura#2026", true)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.role").value("STUDENT"));
+                .andExpect(jsonPath("$.role").value("STUDENT"))
+                .andExpect(jsonPath("$.firstName").isEmpty())
+                .andExpect(jsonPath("$.pendingSteps", contains("COMPLETE_PROFILE")));
+    }
+
+    @Test
+    void institutionalDomainIsAcceptedInUpperCase() throws Exception {
+        when(accountService.register(any())).thenReturn(registered());
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registration("Ana.Perez@UNISIMON.EDU.CO", "Segura#2026", true)))
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -122,21 +121,6 @@ class AuthControllerTest {
     }
 
     @Test
-    void registrationRequiresCampusAndFacultyButNotProgram() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"firstName":"Ana","lastName":"Pérez","email":"%s","password":"Segura#2026","dataConsent":true}
-                                """.formatted(EMAIL)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.fields.campusId").exists())
-                .andExpect(jsonPath("$.fields.facultyId").exists())
-                .andExpect(jsonPath("$.fields.academicProgramId").doesNotExist());
-
-        verifyNoInteractions(accountService);
-    }
-
-    @Test
     void malformedJsonIs400() throws Exception {
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -157,10 +141,29 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.detail").value("El correo institucional ya está registrado."));
     }
 
-    /** Registro válido salvo lo que se varíe: sede 1, facultad 2 y sin programa. */
+    /** Registro válido salvo lo que se varíe: solo correo, contraseña y autorización. */
     private static String registration(String email, String password, boolean dataConsent) {
         return """
-                {"firstName":"Ana","lastName":"Pérez","email":"%s","password":"%s","dataConsent":%s,"campusId":1,"facultyId":2}
+                {"email":"%s","password":"%s","dataConsent":%s}
                 """.formatted(email, password, dataConsent);
+    }
+
+    /** Cuenta recién registrada: sin nombre ni adscripción, con el perfil pendiente. */
+    private static UserResponse registered() {
+        return new UserResponse(
+                1,
+                null,
+                null,
+                EMAIL,
+                Role.STUDENT,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                List.of(OnboardingStep.COMPLETE_PROFILE));
     }
 }

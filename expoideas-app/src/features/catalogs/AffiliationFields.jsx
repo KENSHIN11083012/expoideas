@@ -58,7 +58,7 @@ export function AffiliationFields({ form }) {
         ? 'Primero elige la facultad.'
         : facultyPrograms.length === 0
           ? 'Esta facultad aún no tiene programas registrados.'
-          : 'Opcional para docentes.';
+          : 'Opcional para profesores.';
 
     return (
         <div className="grid gap-5 sm:grid-cols-2">

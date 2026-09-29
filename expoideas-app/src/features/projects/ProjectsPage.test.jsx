@@ -120,11 +120,20 @@ describe('Listado para la gestión', () => {
     });
 });
 
-describe('Listado para un docente', () => {
-    it('no ofrece filtrar por docente, porque solo ve los suyos', () => {
+describe('Listado para un profesor', () => {
+    it('no ofrece filtrar por profesor, porque solo ve los suyos', () => {
         renderPage({ role: 'TEACHER' });
 
-        expect(screen.queryByLabelText('Docente')).not.toBeInTheDocument();
-        expect(screen.getByText(/te nombraron como docente del grupo/)).toBeInTheDocument();
+        expect(screen.queryByLabelText('Profesor')).not.toBeInTheDocument();
+        expect(screen.getByText(/te nombraron como profesor del grupo/)).toBeInTheDocument();
+    });
+
+    it('cada proyecto tiene un botón «Ver proyecto» que abre su ficha, en la tabla y en la tarjeta', () => {
+        renderPage({ role: 'TEACHER' });
+
+        const table = within(screen.getByRole('table'));
+        const cards = within(screen.getByRole('list', { name: 'Proyectos' }));
+        expect(table.getByRole('link', { name: /Ver proyecto/ })).toHaveAttribute('href', '/proyectos/10');
+        expect(cards.getByRole('link', { name: /Ver proyecto/ })).toHaveAttribute('href', '/proyectos/10');
     });
 });

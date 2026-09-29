@@ -20,8 +20,8 @@ export function DialogContent({ className, children, ...props }) {
             />
             <DialogPrimitive.Content
                 className={cn(
-                    'fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2',
-                    'overflow-y-auto rounded-lg border border-outline-variant/70 bg-surface-container-lowest shadow-xl',
+                    'fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col',
+                    'overflow-hidden rounded-lg border border-outline-variant/70 bg-surface-container-lowest shadow-xl',
                     'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
                     'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
                     className,
@@ -30,7 +30,7 @@ export function DialogContent({ className, children, ...props }) {
             >
                 {children}
                 <DialogPrimitive.Close
-                    className="absolute right-4 top-4 rounded p-1 text-outline transition-colors hover:bg-surface-container-low hover:text-on-surface"
+                    className="absolute right-2 top-2 flex size-11 items-center justify-center rounded text-outline transition-colors hover:bg-surface-container-low hover:text-on-surface sm:right-4 sm:top-4 sm:size-8"
                     aria-label="Cerrar"
                 >
                     <X className="size-4" />
@@ -43,7 +43,7 @@ export function DialogContent({ className, children, ...props }) {
 export function DialogHeader({ className, ...props }) {
     return (
         <div
-            className={cn('flex flex-col gap-1.5 border-b border-outline-variant/50 px-6 pb-4 pt-6 pr-12', className)}
+            className={cn('flex shrink-0 flex-col gap-1.5 border-b border-outline-variant/50 px-6 pb-4 pr-16 pt-6', className)}
             {...props}
         />
     );
@@ -57,15 +57,16 @@ export function DialogDescription({ className, ...props }) {
     return <DialogPrimitive.Description className={cn('text-sm text-on-surface-variant', className)} {...props} />;
 }
 
+/** Lo único que hace scroll cuando el diálogo no cabe: el pie sigue a la vista. */
 export function DialogBody({ className, ...props }) {
-    return <div className={cn('flex flex-col gap-4 px-6 py-5', className)} {...props} />;
+    return <div className={cn('flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5', className)} {...props} />;
 }
 
 export function DialogFooter({ className, ...props }) {
     return (
         <div
             className={cn(
-                'flex flex-col-reverse gap-2 border-t border-outline-variant/50 px-6 py-4 sm:flex-row sm:justify-end',
+                'flex shrink-0 flex-col-reverse gap-2 border-t border-outline-variant/50 bg-surface-container-lowest px-6 py-4 sm:flex-row sm:justify-end',
                 className,
             )}
             {...props}

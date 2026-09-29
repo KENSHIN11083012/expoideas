@@ -13,7 +13,7 @@ function Detail({ icon: Icon, label, value, empty = 'Sin asignar' }) {
         <div className="flex items-start gap-3 py-3">
             <Icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
             <div className="min-w-0">
-                <dt className="label-mono text-[10px] font-normal text-on-surface-variant">{label}</dt>
+                <dt className="label-mono text-[11px] font-normal sm:text-[10px] text-on-surface-variant">{label}</dt>
                 <dd className={value ? 'break-words text-sm text-on-surface' : 'text-sm italic text-outline'}>
                     {value ?? empty}
                 </dd>

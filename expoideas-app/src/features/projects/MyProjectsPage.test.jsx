@@ -80,7 +80,7 @@ describe('Mis proyectos', () => {
         renderPage({ projects: [invited], invitations: [invitation] });
 
         expect(screen.queryByRole('heading', { level: 2, name: 'Agua limpia' })).not.toBeInTheDocument();
-        expect(screen.getByText('Todavía no tienes proyectos')).toBeInTheDocument();
+        expect(screen.getByText('Aún no estás en ningún equipo')).toBeInTheDocument();
     });
 });
 
@@ -91,6 +91,14 @@ describe('Invitaciones', () => {
         const card = screen.getByText('Agua limpia').closest('div[data-slot="card"]');
         expect(within(card).getByText(/Camilo Montes te invitó/)).toBeInTheDocument();
         expect(within(card).getByText(/INNPRENDE II/)).toBeInTheDocument();
+    });
+
+    it('con una invitación sin responder no dice que no hay nada ni repite el botón', () => {
+        renderPage({ projects: [], invitations: [invitation] });
+
+        expect(screen.getByText('Aún no estás en ningún equipo')).toBeInTheDocument();
+        expect(screen.queryByText('Todavía no tienes proyectos')).not.toBeInTheDocument();
+        expect(screen.getAllByRole('button', { name: /Inscribir proyecto/ })).toHaveLength(1);
     });
 
     it('aceptar entra al equipo', async () => {

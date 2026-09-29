@@ -148,16 +148,21 @@ export default function MyProjectsPage() {
                     ))}
                 </div>
             ) : mine.length === 0 ? (
+                // Con una invitación sin responder el equipo ya está a un clic: no
+                // tiene sentido decir que no hay nada ni repetir el botón de arriba.
                 <EmptyState
                     icon={Lightbulb}
-                    title="Todavía no tienes proyectos"
+                    title={invitations.length > 0 ? 'Aún no estás en ningún equipo' : 'Todavía no tienes proyectos'}
                     description={
-                        registrationOpen
-                            ? 'Inscribe tu proyecto y después invita a tu equipo.'
-                            : 'Cuando se abran las inscripciones de una edición podrás inscribir tu proyecto.'
+                        invitations.length > 0
+                            ? 'Acepta la invitación que te hicieron o inscribe tu propio proyecto.'
+                            : registrationOpen
+                              ? 'Inscribe tu proyecto y después invita a tu equipo.'
+                              : 'Cuando se abran las inscripciones de una edición podrás inscribir tu proyecto.'
                     }
                     action={
-                        registrationOpen && (
+                        registrationOpen &&
+                        invitations.length === 0 && (
                             <Button size="sm" onClick={() => setCreating(true)}>
                                 <FolderPlus /> Inscribir proyecto
                             </Button>

@@ -32,7 +32,10 @@ export function FormDialog({
     return (
         <Dialog open onOpenChange={(open) => !open && onClose()}>
             <DialogContent className={className}>
-                <form onSubmit={onSubmit} noValidate>
+                {/* El formulario hereda la columna flexible del diálogo: así el cuerpo
+                    es lo único que hace scroll y el pie con el botón de envío no se
+                    sale de la pantalla. */}
+                <form onSubmit={onSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
                     <DialogHeader>
                         <DialogTitle>{title}</DialogTitle>
                         <DialogDescription>{description}</DialogDescription>

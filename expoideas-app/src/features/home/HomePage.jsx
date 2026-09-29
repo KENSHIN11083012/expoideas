@@ -183,7 +183,9 @@ export default function HomePage() {
                             />
                         </div>
                         <figcaption className="glass absolute -bottom-6 left-4 right-4 flex flex-col gap-3 rounded-lg border border-outline-variant/70 p-4 shadow-lg sm:left-auto sm:right-6 sm:w-80">
-                            <p className="label-mono text-[10px] font-normal text-on-surface-variant">Con el respaldo de</p>
+                            <p className="label-mono text-[11px] font-normal sm:text-[10px] text-on-surface-variant">
+                                Con el respaldo de
+                            </p>
                             <InstitutionalLogos />
                         </figcaption>
                     </figure>

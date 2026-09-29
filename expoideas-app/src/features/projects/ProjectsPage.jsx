@@ -37,9 +37,18 @@ function DeliverablesBadge({ project }) {
     );
 }
 
-function ProjectRow({ project }) {
+/** Integrantes aceptados, resaltando al grupo que no llega al mínimo. */
+function TeamCount({ project }) {
     const short = project.members < project.minMembers;
+    return (
+        <p className={short ? 'text-xs font-medium text-tertiary' : 'text-xs text-on-surface-variant'}>
+            {project.members} {project.members === 1 ? 'integrante' : 'integrantes'}
+            {short ? ` · mínimo ${project.minMembers}` : ''}
+        </p>
+    );
+}
 
+function ProjectRow({ project }) {
     return (
         <tr className="transition-colors hover:bg-surface-container-low/60">
             <td className="px-5 py-3">
@@ -54,15 +63,51 @@ function ProjectRow({ project }) {
             <td className="hidden px-5 py-3 text-on-surface-variant md:table-cell">{project.teacher}</td>
             <td className="px-5 py-3 text-on-surface-variant">
                 {project.leader}
-                <p className={short ? 'text-xs font-medium text-tertiary' : 'text-xs text-on-surface-variant'}>
-                    {project.members} {project.members === 1 ? 'integrante' : 'integrantes'}
-                    {short ? ` · mínimo ${project.minMembers}` : ''}
-                </p>
+                <TeamCount project={project} />
             </td>
             <td className="px-5 py-3">
                 <DeliverablesBadge project={project} />
             </td>
         </tr>
+    );
+}
+
+/**
+ * El mismo proyecto en móvil: la tabla ahí deja el título en menos de 140 px y
+ * lo parte en seis líneas, así que por debajo de md se muestra como tarjeta.
+ */
+function ProjectCard({ project }) {
+    return (
+        <li>
+            <Card className="flex flex-col gap-3 p-5">
+                <div className="flex flex-col gap-1">
+                    <p className="label-mono text-on-surface-variant">
+                        {project.edition} · {trackLabel(project.track)}
+                    </p>
+                    <Link to={ROUTES.project(project.id)} className="font-semibold text-primary hover:underline">
+                        {project.title}
+                    </Link>
+                </div>
+                <dl className="flex flex-col gap-1 text-sm">
+                    <div className="flex gap-2">
+                        <dt className="text-on-surface-variant">Sector:</dt>
+                        <dd className="text-on-surface">{project.sector}</dd>
+                    </div>
+                    <div className="flex gap-2">
+                        <dt className="text-on-surface-variant">Docente:</dt>
+                        <dd className="text-on-surface">{project.teacher}</dd>
+                    </div>
+                    <div className="flex gap-2">
+                        <dt className="text-on-surface-variant">Líder:</dt>
+                        <dd className="text-on-surface">{project.leader}</dd>
+                    </div>
+                </dl>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-outline-variant/50 pt-3">
+                    <TeamCount project={project} />
+                    <DeliverablesBadge project={project} />
+                </div>
+            </Card>
+        </li>
     );
 }
 
@@ -187,40 +232,46 @@ export default function ProjectsPage() {
                     }
                 />
             ) : (
-                <Card className="overflow-hidden">
-                    <table className="w-full text-left text-sm">
-                        <thead className="border-b border-outline-variant/60 bg-surface-container-low">
-                            <tr className="label-mono text-on-surface-variant">
-                                <th scope="col" className="px-5 py-3">
-                                    Proyecto
-                                </th>
-                                <th scope="col" className="hidden px-5 py-3 lg:table-cell">
-                                    Sector
-                                </th>
-                                <th scope="col" className="hidden px-5 py-3 md:table-cell">
-                                    Docente
-                                </th>
-                                <th scope="col" className="px-5 py-3">
-                                    Equipo
-                                </th>
-                                <th scope="col" className="px-5 py-3">
-                                    Entregables
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-outline-variant/50">
-                            {projects.map((project) => (
-                                <ProjectRow key={project.id} project={project} />
-                            ))}
-                        </tbody>
-                    </table>
-                    <p
-                        className="label-mono border-t border-outline-variant/50 px-5 py-3 text-on-surface-variant"
-                        aria-live="polite"
-                    >
+                <>
+                    <ul className="flex flex-col gap-3 md:hidden" aria-label="Proyectos">
+                        {projects.map((project) => (
+                            <ProjectCard key={project.id} project={project} />
+                        ))}
+                    </ul>
+
+                    <Card className="hidden overflow-hidden md:block">
+                        <table className="w-full text-left text-sm">
+                            <thead className="border-b border-outline-variant/60 bg-surface-container-low">
+                                <tr className="label-mono text-on-surface-variant">
+                                    <th scope="col" className="px-5 py-3">
+                                        Proyecto
+                                    </th>
+                                    <th scope="col" className="hidden px-5 py-3 lg:table-cell">
+                                        Sector
+                                    </th>
+                                    <th scope="col" className="hidden px-5 py-3 md:table-cell">
+                                        Docente
+                                    </th>
+                                    <th scope="col" className="px-5 py-3">
+                                        Equipo
+                                    </th>
+                                    <th scope="col" className="px-5 py-3">
+                                        Entregables
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-outline-variant/50">
+                                {projects.map((project) => (
+                                    <ProjectRow key={project.id} project={project} />
+                                ))}
+                            </tbody>
+                        </table>
+                    </Card>
+
+                    <p className="label-mono text-on-surface-variant" aria-live="polite">
                         {projects.length} {projects.length === 1 ? 'proyecto' : 'proyectos'}
                     </p>
-                </Card>
+                </>
             )}
         </PageContainer>
     );

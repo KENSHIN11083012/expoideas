@@ -146,10 +146,15 @@
 /* Etiqueta técnica de Academic Nexus: JetBrains Mono pequeña en mayúsculas. */
 @utility label-mono {
     font-family: var(--font-mono);
-    font-size: 11px;
+    /* En móvil sube a 12px: en mayúsculas y con tracking, 11px se lee justo. */
+    font-size: 12px;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: var(--tracking-wider);
+
+    @media (width >= 40rem) {
+        font-size: 11px;
+    }
 }
 
 @utility scrollbar-none {

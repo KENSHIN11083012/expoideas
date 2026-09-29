@@ -60,16 +60,28 @@ describe('Listado para la gestión', () => {
         expect(screen.getByText('1 proyecto')).toBeInTheDocument();
     });
 
+    it('en móvil el mismo proyecto sale como tarjeta, no como fila de tabla', () => {
+        renderPage();
+        // Sin CSS se pintan las dos listas; la tarjeta es la que se ve en móvil.
+        const cards = within(screen.getByRole('list', { name: 'Proyectos' }));
+
+        expect(cards.getByRole('link', { name: 'BioSensor IoT' })).toHaveAttribute('href', '/proyectos/10');
+        expect(cards.getByText('Agroindustria y alimentos')).toBeInTheDocument();
+        expect(cards.getByText('Carlos Mendoza')).toBeInTheDocument();
+        expect(cards.getByText('Ana María Pérez')).toBeInTheDocument();
+        expect(cards.getByText('Faltan 1')).toBeInTheDocument();
+    });
+
     it('avisa cuando el equipo no llega al mínimo', () => {
         renderPage({ projects: [{ ...summary, members: 1 }] });
 
-        expect(screen.getByText(/1 integrante · mínimo 2/)).toBeInTheDocument();
+        expect(screen.getAllByText(/1 integrante · mínimo 2/)).toHaveLength(2);
     });
 
     it('marca como entregado al que completó lo obligatorio', () => {
         renderPage({ projects: [{ ...summary, deliveredDeliverables: 2 }] });
 
-        expect(screen.getByText('Entregado')).toBeInTheDocument();
+        expect(screen.getAllByText('Entregado')).toHaveLength(2);
     });
 
     it('filtra por cátedra y por sector', async () => {

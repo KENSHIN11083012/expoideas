@@ -121,6 +121,8 @@ function DeliverableGroup({ group, projectId, canEdit, onRemove }) {
                         onClick={() => input.current?.click()}
                         loading={upload.isPending}
                         disabled={full}
+                        // Subir es la acción principal del equipo: cómoda de tocar en móvil.
+                        className="h-11 sm:h-8"
                     >
                         <Upload /> Subir archivo
                     </Button>

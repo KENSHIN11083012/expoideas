@@ -25,12 +25,14 @@ export const buttonVariants = cva(
                 ghost: 'text-on-surface hover:bg-surface-container-low hover:text-primary',
                 destructive: 'bg-error text-on-error hover:bg-on-error-container active:translate-y-px',
             },
+            // En móvil los botones de icono crecen a 44 px, el mínimo cómodo para
+            // el dedo; desde sm vuelven a su tamaño compacto.
             size: {
                 sm: 'h-8 px-3 text-xs',
                 default: 'h-10 px-4 text-sm',
                 lg: 'h-12 px-6 text-base',
-                icon: 'size-10',
-                'icon-sm': 'size-8',
+                icon: 'size-11 sm:size-10',
+                'icon-sm': 'size-11 sm:size-8',
             },
         },
         defaultVariants: {

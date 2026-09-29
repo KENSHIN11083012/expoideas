@@ -74,7 +74,9 @@ function AccountMenu({ user, role, onLogout }) {
                         <span className="max-w-40 truncate text-sm font-semibold leading-tight text-on-surface">
                             {displayName(user)}
                         </span>
-                        <span className="label-mono text-[10px] font-normal text-on-surface-variant">{roleLabel(role)}</span>
+                        <span className="label-mono text-[11px] font-normal sm:text-[10px] text-on-surface-variant">
+                            {roleLabel(role)}
+                        </span>
                     </span>
                 </button>
             </DropdownMenuTrigger>
@@ -131,7 +133,9 @@ function MobileMenu({ links, signedIn, user, role, onLogout }) {
                         <UserAvatar user={user} />
                         <div className="min-w-0">
                             <p className="truncate text-sm font-semibold">{displayName(user)}</p>
-                            <p className="label-mono text-[10px] font-normal text-on-surface-variant">{roleLabel(role)}</p>
+                            <p className="label-mono text-[11px] font-normal sm:text-[10px] text-on-surface-variant">
+                                {roleLabel(role)}
+                            </p>
                         </div>
                     </div>
                 )}

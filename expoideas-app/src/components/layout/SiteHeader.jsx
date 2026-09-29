@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { CalendarRange, Database, House, KeyRound, LogIn, LogOut, Menu, User, UserPlus, Users } from 'lucide-react';
+import { CalendarRange, Database, House, KeyRound, Lightbulb, LogIn, LogOut, Menu, User, UserPlus, Users } from 'lucide-react';
 import { useAuth } from '@/features/auth/useAuth';
 import { fileUrl } from '@/lib/files';
-import { roleLabel } from '@/lib/roles';
+import { ROLES, roleLabel } from '@/lib/roles';
 import { ROUTES } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 import { ExpoideasLogo } from '@/components/brand/ExpoideasLogo';
@@ -24,8 +24,9 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from 
  * Secciones del menú. Solo aparecen las que existen: las de INNPRENDE I y II se
  * agregan en las fases del dominio.
  */
-const linksFor = (signedIn, management) => [
+const linksFor = (signedIn, management, student) => [
     { to: ROUTES.HOME, label: 'Inicio', icon: House, end: true },
+    ...(student ? [{ to: ROUTES.MY_PROJECTS, label: 'Mis proyectos', icon: Lightbulb }] : []),
     ...(signedIn ? [{ to: ROUTES.PROFILE, label: 'Mi perfil', icon: User }] : []),
     ...(management
         ? [
@@ -183,7 +184,7 @@ export function SiteHeader() {
     const { token, user, role, isManagement, logout } = useAuth();
     const navigate = useNavigate();
     const signedIn = Boolean(token);
-    const links = linksFor(signedIn, isManagement);
+    const links = linksFor(signedIn, isManagement, role === ROLES.STUDENT);
 
     const signOut = () => {
         logout();

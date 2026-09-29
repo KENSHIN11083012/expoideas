@@ -30,11 +30,18 @@ const menuLinks = () =>
         .map((link) => link.textContent);
 
 describe('Menú principal por rol', () => {
-    it.each([ROLES.STUDENT, ROLES.TEACHER, ROLES.JUDGE])('%s no ve la gestión', (role) => {
+    it.each([ROLES.TEACHER, ROLES.JUDGE])('%s no ve la gestión ni Mis proyectos', (role) => {
         sessionAs(role);
         render(<SiteHeader />, { wrapper: MemoryRouter });
 
         expect(menuLinks()).toEqual(['Inicio', 'Mi perfil']);
+    });
+
+    it('el estudiante ve Mis proyectos', () => {
+        sessionAs(ROLES.STUDENT);
+        render(<SiteHeader />, { wrapper: MemoryRouter });
+
+        expect(menuLinks()).toEqual(['Inicio', 'Mis proyectos', 'Mi perfil']);
     });
 
     it.each([ROLES.MACONDOLAB, ROLES.ADMIN])('%s ve la gestión completa', (role) => {

@@ -39,7 +39,7 @@ export default function LoginPage() {
             const pendingSteps = data.pendingSteps ?? [];
             login(
                 data.token,
-                { email, firstName: data.firstName, lastName: data.lastName, photoId: data.photoId ?? null },
+                { id: data.id, email, firstName: data.firstName, lastName: data.lastName, photoId: data.photoId ?? null },
                 pendingSteps,
             );
 

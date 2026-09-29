@@ -111,6 +111,11 @@ public class User {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    /** Nombre para mostrar: "Ana María Pérez Gómez". */
+    public String fullName() {
+        return firstName + " " + lastName;
+    }
+
     /** Lo que la cuenta debe resolver antes de usar la plataforma, en el orden en que se pide. */
     public List<OnboardingStep> pendingSteps() {
         List<OnboardingStep> steps = new ArrayList<>();

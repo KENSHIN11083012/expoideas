@@ -51,7 +51,8 @@ describe('Inicio de sesión', () => {
 
         expect(login).toHaveBeenCalledWith(
             'jwt',
-            { email: 'coordinacion@unisimon.edu.co', firstName: 'Carla', lastName: 'Díaz', photoId: null },
+            // El id va en la sesión: con él la app sabe cuál integrante de un equipo es quien mira.
+            { id: 3, email: 'coordinacion@unisimon.edu.co', firstName: 'Carla', lastName: 'Díaz', photoId: null },
             ['CHANGE_PASSWORD', 'DATA_CONSENT'],
         );
         expect(await screen.findByText('Pantalla de primer ingreso')).toBeInTheDocument();

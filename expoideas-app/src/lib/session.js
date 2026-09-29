@@ -18,7 +18,7 @@ const readJson = (key, fallback, isValid) => {
 export const session = {
     token: () => localStorage.getItem(KEYS.token),
 
-    /** @returns {{ email?: string, firstName?: string, lastName?: string, photoId?: string } | null} */
+    /** @returns {{ id?: number, email?: string, firstName?: string, lastName?: string, photoId?: string } | null} */
     user: () => readJson(KEYS.user, null, (value) => value !== null && typeof value === 'object'),
 
     /** @returns {string[]} */

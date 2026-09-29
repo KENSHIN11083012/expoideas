@@ -62,13 +62,18 @@ describe('Sin sesión', () => {
         await expectPage(title, route);
     });
 
-    it.each([ROUTES.PROFILE, ROUTES.SECURITY, ROUTES.USERS, ROUTES.CATALOGS, ROUTES.EDITIONS, ROUTES.ONBOARDING])(
-        '%s lleva al inicio de sesión',
-        async (route) => {
-            visit(route);
-            await expectPage(LOGIN, ROUTES.LOGIN);
-        },
-    );
+    it.each([
+        ROUTES.PROFILE,
+        ROUTES.SECURITY,
+        ROUTES.USERS,
+        ROUTES.CATALOGS,
+        ROUTES.EDITIONS,
+        ROUTES.MY_PROJECTS,
+        ROUTES.ONBOARDING,
+    ])('%s lleva al inicio de sesión', async (route) => {
+        visit(route);
+        await expectPage(LOGIN, ROUTES.LOGIN);
+    });
 });
 
 describe('Estudiante al día', () => {
@@ -77,6 +82,7 @@ describe('Estudiante al día', () => {
     it.each([
         [ROUTES.PROFILE, 'Mi perfil'],
         [ROUTES.SECURITY, 'Seguridad'],
+        [ROUTES.MY_PROJECTS, 'Mis proyectos'],
     ])('%s muestra su página', async (route, title) => {
         visit(route);
         await expectPage(title, route);
@@ -103,6 +109,11 @@ describe('Gestión', () => {
     ])('%s muestra su página', async (route, title) => {
         visit(route);
         await expectPage(title, route);
+    });
+
+    it('Mis proyectos es de los estudiantes', async () => {
+        visit(ROUTES.MY_PROJECTS);
+        await expectPage('No tienes acceso a esta sección', ROUTES.UNAUTHORIZED);
     });
 
     it('al iniciar sesión llega a Usuarios', async () => {

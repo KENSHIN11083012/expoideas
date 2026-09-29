@@ -1,0 +1,38 @@
+package co.edu.unisimon.expoideas.projects;
+
+import co.edu.unisimon.expoideas.editions.Track;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+public interface ProjectRepository extends JpaRepository<Project, Integer> {
+
+    /**
+     * Con la edición, el sector, el docente y el equipo ya cargados. La
+     * configuración de la cátedra queda perezosa: traerla en la misma consulta
+     * serían dos colecciones a la vez, que Hibernate no permite.
+     */
+    @EntityGraph(attributePaths = {"edition", "sector", "teacher", "members", "members.user"})
+    Optional<Project> findWithTeamById(Integer id);
+
+    /** Los proyectos en los que esa cuenta está en el equipo, invitada o aceptada. */
+    @EntityGraph(attributePaths = {"edition", "sector", "teacher", "members", "members.user"})
+    @Query("select distinct p from Project p join p.members m where m.user.id = :userId order by p.createdAt desc")
+    List<Project> findAllOfMember(@Param("userId") Integer userId);
+
+    /**
+     * Si esa cuenta ya está en un proyecto de esa cátedra: cada estudiante
+     * inscribe uno solo por cátedra en cada edición. Las invitaciones sin
+     * responder no cuentan, porque todavía puede rechazarlas.
+     */
+    @Query("""
+            select count(p) > 0 from Project p join p.members m
+            where p.edition.id = :editionId and p.track = :track
+              and m.user.id = :userId and m.status = co.edu.unisimon.expoideas.projects.MembershipStatus.ACCEPTED
+            """)
+    boolean isAlreadyOnATeam(
+            @Param("editionId") Integer editionId, @Param("track") Track track, @Param("userId") Integer userId);
+}

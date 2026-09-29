@@ -7,7 +7,7 @@ import { session } from '@/lib/session';
 import { fullName } from '@/lib/text';
 import { AuthContext } from './authContext';
 
-const NO_PROFILE = { email: null, firstName: null, lastName: null, photoId: null };
+const NO_PROFILE = { id: null, email: null, firstName: null, lastName: null, photoId: null };
 
 const isExpired = (decoded) => typeof decoded?.exp === 'number' && decoded.exp < Date.now() / 1000;
 
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }) => {
 
     /**
      * @param {string} newToken  JWT del login; de él salen el rol y el vencimiento
-     * @param {{ email?: string, firstName?: string, lastName?: string, photoId?: string }} user
+     * @param {{ id?: number, email?: string, firstName?: string, lastName?: string, photoId?: string }} user
      * @param {string[]} [steps] pasos de primer ingreso que devolvió el login
      */
     const login = useCallback((newToken, user = {}, steps = []) => {

@@ -27,7 +27,7 @@ export function renderWithProviders(ui, { route = '/', queryClient = createTestQ
  * archivo de prueba simula el hook con vi.mock('@/features/auth/useAuth').
  */
 export const sessionFor = ({ role = null, pendingSteps = [], user = {} } = {}) => {
-    const profile = { email: 'marta@empresa.com', firstName: 'Marta', lastName: 'Ríos', photoId: null, ...user };
+    const profile = { id: 1, email: 'marta@empresa.com', firstName: 'Marta', lastName: 'Ríos', photoId: null, ...user };
     return {
         token: role ? 'token' : null,
         role,

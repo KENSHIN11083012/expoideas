@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { MANAGEMENT_ROLES } from '@/lib/roles';
+import { MANAGEMENT_ROLES, ROLES } from '@/lib/roles';
 import { ROUTES } from '@/lib/routes';
 import { AppShell } from '@/components/layout/AppShell';
 import { Spinner } from '@/components/ui/feedback';
@@ -12,6 +12,8 @@ const HomePage = lazy(() => import('@/features/home/HomePage'));
 const LoginPage = lazy(() => import('@/features/auth/LoginPage'));
 const RegisterPage = lazy(() => import('@/features/auth/RegisterPage'));
 const OnboardingPage = lazy(() => import('@/features/auth/OnboardingPage'));
+const MyProjectsPage = lazy(() => import('@/features/projects/MyProjectsPage'));
+const ProjectPage = lazy(() => import('@/features/projects/ProjectPage'));
 const ProfilePage = lazy(() => import('@/features/profile/ProfilePage'));
 const SecurityPage = lazy(() => import('@/features/profile/SecurityPage'));
 const UserAdminPage = lazy(() => import('@/features/users/UserAdminPage'));
@@ -54,6 +56,22 @@ export default function App() {
                         <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
 
                         {/* Con sesión */}
+                        <Route
+                            path={ROUTES.MY_PROJECTS}
+                            element={
+                                <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+                                    <MyProjectsPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path={`${ROUTES.MY_PROJECTS}/:id`}
+                            element={
+                                <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+                                    <ProjectPage />
+                                </ProtectedRoute>
+                            }
+                        />
                         <Route
                             path={ROUTES.PROFILE}
                             element={

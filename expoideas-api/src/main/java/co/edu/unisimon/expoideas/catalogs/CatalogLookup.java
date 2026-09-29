@@ -17,6 +17,7 @@ public class CatalogLookup {
     private final CampusRepository campusRepository;
     private final FacultyRepository facultyRepository;
     private final AcademicProgramRepository academicProgramRepository;
+    private final SectorRepository sectorRepository;
 
     /** @throws NoSuchElementException si no existe */
     public Campus campus(Integer id) {
@@ -30,6 +31,13 @@ public class CatalogLookup {
         return facultyRepository
                 .findById(id)
                 .orElseThrow(() -> new NoSuchElementException("No existe una facultad con ID: " + id));
+    }
+
+    /** @throws NoSuchElementException si no existe */
+    public Sector sector(Integer id) {
+        return sectorRepository
+                .findById(id)
+                .orElseThrow(() -> new NoSuchElementException("No existe un sector con ID: " + id));
     }
 
     /** @throws NoSuchElementException si no existe */

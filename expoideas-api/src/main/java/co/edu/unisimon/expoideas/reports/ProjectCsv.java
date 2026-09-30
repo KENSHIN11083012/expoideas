@@ -21,7 +21,7 @@ final class ProjectCsv {
             "Cátedra",
             "Proyecto",
             "Sector",
-            "Docente",
+            "Profesor",
             "Líder",
             "Integrantes",
             "Mínimo de integrantes",

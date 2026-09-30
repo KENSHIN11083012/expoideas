@@ -2,6 +2,10 @@ package co.edu.unisimon.expoideas.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import co.edu.unisimon.expoideas.catalogs.Campus;
+import co.edu.unisimon.expoideas.catalogs.CampusRepository;
+import co.edu.unisimon.expoideas.catalogs.Faculty;
+import co.edu.unisimon.expoideas.catalogs.FacultyRepository;
 import co.edu.unisimon.expoideas.support.TestData;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
@@ -84,6 +88,12 @@ abstract class IntegrationTest {
     protected UserRepository userRepository;
 
     @Autowired
+    private CampusRepository campusRepository;
+
+    @Autowired
+    private FacultyRepository facultyRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private RestTestClient client;
@@ -104,20 +114,35 @@ abstract class IntegrationTest {
 
     /**
      * Crea una cuenta al día (sin pasos de primer ingreso) directamente en la BD,
-     * como haría el procedimiento del primer administrador. Devuelve el correo.
+     * como haría el procedimiento del primer administrador: con nombre y, si el
+     * rol la lleva, con sede y facultad. Devuelve el correo.
      */
     protected String createAccount(Role role) {
         String email = uniqueEmail(role.name().toLowerCase());
-        userRepository.save(User.builder()
+        User.UserBuilder user = User.builder()
                 .firstName("Prueba")
                 .lastName(role.name())
                 .email(email)
                 .passwordHash(passwordEncoder.encode(PASSWORD))
                 .role(role)
                 .dataConsent(true)
-                .dataConsentAt(LocalDateTime.now())
-                .build());
+                .dataConsentAt(LocalDateTime.now());
+        if (role.requiresAffiliation()) {
+            user.campus(anyCampus()).faculty(anyFaculty());
+        }
+        userRepository.save(user.build());
         return email;
+    }
+
+    private Campus anyCampus() {
+        return campusRepository.findAll().getFirst();
+    }
+
+    /** Una facultad cualquiera; la primera prueba que la necesita la crea. */
+    private Faculty anyFaculty() {
+        return facultyRepository.findAll().stream()
+                .findFirst()
+                .orElseGet(() -> facultyRepository.save(new Faculty(null, "Facultad de pruebas")));
     }
 
     /** Id de la cuenta con ese correo. */
@@ -136,18 +161,23 @@ abstract class IntegrationTest {
                 .json("$.token");
     }
 
-    /** Registro público de un estudiante con la adscripción indicada. Devuelve la respuesta. */
-    protected Response register(String email, int campusId, int facultyId, Integer programId) {
+    /** Registro público: solo correo, contraseña y autorización de datos. Devuelve la respuesta. */
+    protected Response register(String email) {
+        return post("/api/v1/auth/register", null, Map.of("email", email, "password", PASSWORD, "dataConsent", true));
+    }
+
+    /**
+     * El paso de perfil del primer ingreso de una cuenta registrada: nombre y
+     * adscripción. Devuelve la respuesta.
+     */
+    protected Response completeProfile(String token, int campusId, int facultyId, Integer programId) {
         Map<String, Object> body = new HashMap<>();
         body.put("firstName", "Estudiante");
         body.put("lastName", "De Prueba");
-        body.put("email", email);
-        body.put("password", PASSWORD);
         body.put("campusId", campusId);
         body.put("facultyId", facultyId);
         body.put("academicProgramId", programId);
-        body.put("dataConsent", true);
-        return post("/api/v1/auth/register", null, body);
+        return put("/api/v1/users/me", token, body);
     }
 
     // ── Catálogos ───────────────────────────────────────────────────────────

@@ -14,7 +14,8 @@ public final class ValidationPatterns {
     public static final String PASSWORD_MESSAGE =
             "La contraseña debe tener entre 8 y 100 caracteres, incluyendo números y símbolos";
 
-    public static final String INSTITUTIONAL_EMAIL = "^[^@\\s]+@unisimon\\.edu\\.co$";
+    /** Sin distinguir mayúsculas, igual que el {@code /i} de lib/validation.js en la app. */
+    public static final String INSTITUTIONAL_EMAIL = "(?i)^[^@\\s]+@unisimon\\.edu\\.co$";
 
     public static final String INSTITUTIONAL_EMAIL_MESSAGE = "El correo debe terminar en @unisimon.edu.co";
 

@@ -44,13 +44,14 @@ class OnboardingIT extends IntegrationTest {
         assertThat(login.<List<String>>json("$.pendingSteps")).containsExactly("CHANGE_PASSWORD", "DATA_CONSENT");
         String token = login.json("$.token");
 
-        // Permitido mientras tanto: ver su perfil y leer catálogos públicos.
+        // Permitido mientras tanto: ver y completar su perfil y leer catálogos públicos.
         get("/api/v1/users/me", token).expect(200);
+        put("/api/v1/users/me", token, Map.of("firstName", "Jurado", "lastName", "Externo"))
+                .expect(200);
         get("/api/v1/campuses", token).expect(200);
 
         // Cualquier otra cosa: 403 con los pasos que faltan.
-        Response blocked = put("/api/v1/users/me", token, Map.of("firstName", "X", "lastName", "Y"))
-                .expect(403);
+        Response blocked = delete("/api/v1/users/me/photo", token).expect(403);
         assertThat(blocked.<List<String>>json("$.pendingSteps")).containsExactly("CHANGE_PASSWORD", "DATA_CONSENT");
 
         put(
@@ -58,16 +59,14 @@ class OnboardingIT extends IntegrationTest {
                         token,
                         Map.of("currentPassword", TEMPORAL, "newPassword", DEFINITIVA, "confirmPassword", DEFINITIVA))
                 .expect(204);
-        Response stillBlocked = put("/api/v1/users/me", token, Map.of("firstName", "X", "lastName", "Y"))
-                .expect(403);
+        Response stillBlocked = delete("/api/v1/users/me/photo", token).expect(403);
         assertThat(stillBlocked.<List<String>>json("$.pendingSteps")).containsExactly("DATA_CONSENT");
 
         put("/api/v1/users/me/data-consent", token, Map.of("dataConsent", false))
                 .expect(400);
         put("/api/v1/users/me/data-consent", token, Map.of("dataConsent", true)).expect(204);
 
-        put("/api/v1/users/me", token, Map.of("firstName", "Jurado", "lastName", "Validado"))
-                .expect(200);
+        delete("/api/v1/users/me/photo", token).expect(204);
         Response again = post("/api/v1/auth/login", null, Map.of("email", email, "password", DEFINITIVA))
                 .expect(200);
         assertThat(again.<List<String>>json("$.pendingSteps")).isEmpty();

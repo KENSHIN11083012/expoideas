@@ -39,14 +39,22 @@ dominio.
 
 ## Qué falta
 
-La evaluación y lo que depende de ella, a la espera de que MacondoLab defina criterios y rúbricas
-(ver [docs/preguntas-ti.md](docs/preguntas-ti.md) para lo pendiente de infraestructura y el
-cronograma en curso):
+Lo que pidió MacondoLab en la [reunión de septiembre de 2026](docs/reunion-2026-09.md), en el
+orden en que se va a construir. Ya está hecho lo del piloto: registro con solo correo y contraseña
+(el nombre y la facultad se completan en el primer ingreso), el rol se actualiza sin cerrar sesión,
+«profesor» en vez de «docente» y el botón «Ver proyecto» en el listado.
 
-- Asignación de jurados y evaluación.
-- Rúbricas y puntajes.
-- Ranking y premios por sector.
-- Vitrina pública (aparte de las cátedras).
+- Plantillas descargables por entregable, entregables de tipo enlace y fotos de la sustentación.
+- Prerrequisito: aprobar INNPRENDE I para inscribirse en II, y no cursar las dos a la vez.
+- Jurados asignados por proyecto e invitación de jurados externos.
+- Correo (invitaciones, cuentas creadas, sustentaciones) y agenda de sustentaciones.
+- Tipos de prototipo en INNPRENDE II (faltan los tipos).
+- Cambio de marca a Ideario (faltan logos, paleta y nombres).
+- Evaluación con rúbrica y recordatorios a los jurados (la rúbrica está en el SharePoint).
+- Precarga del listado de la cátedra para asignar roles al registrarse (falta el listado).
+
+Sin definir por MacondoLab, y por eso fuera del piloto: ranking y premios por sector, y la vitrina
+pública (ver [docs/preguntas-ti.md](docs/preguntas-ti.md) para lo pendiente de infraestructura).
 
 ## Requisitos
 
@@ -237,10 +245,11 @@ el comentario del `.env.example`.
 
 ### Primer administrador
 
-Toda cuenta nace como estudiante, y el registro exige elegir sede y facultad. Una base recién creada
-trae las dos sedes (Barranquilla y Cúcuta) pero ninguna facultad, así que hay que crear una antes de
-poder registrarse. Las demás las carga después el administrador desde **Catálogos**, sin volver a
-tocar la base de datos.
+Toda cuenta nace como estudiante. El registro pide solo correo y contraseña; el nombre y la
+adscripción (sede y facultad) se completan en el primer ingreso, y hasta entonces la cuenta no puede
+hacer nada más. Una base recién creada trae las dos sedes (Barranquilla y Cúcuta) pero ninguna
+facultad, así que hay que crear una para poder terminar ese primer ingreso. Las demás las carga
+después el administrador desde **Catálogos**, sin volver a tocar la base de datos.
 
 **1. Crear una facultad.** Con Docker Compose (camino A):
 
@@ -259,7 +268,8 @@ docker exec -it expoideas-mysql mysql --default-character-set=utf8mb4 -uroot -p 
 El `--default-character-set=utf8mb4` no es un adorno: sin él los acentos entran mal desde la consola.
 
 **2. Registrarse** en la plataforma con el correo institucional (`@unisimon.edu.co`) de quien vaya a
-administrar. La contraseña necesita ocho caracteres o más, con al menos un número y un símbolo.
+administrar. La contraseña necesita ocho caracteres o más, con al menos un número y un símbolo. Al
+entrar, la app pide el nombre y la facultad.
 
 **3. Darle el rol**, cambiando el correo por el que registraste:
 
@@ -268,9 +278,10 @@ docker compose exec mysql mysql --default-character-set=utf8mb4 -uexpoideas -p e
   -e "UPDATE users SET role = 'ADMIN' WHERE email = 'persona@unisimon.edu.co';"
 ```
 
-**4. Cerrar sesión y volver a entrar.** El rol viaja dentro del token, así que la sesión vieja sigue
-siendo de estudiante hasta que se renueve. Desde ahí, ese administrador crea las demás cuentas y
-reparte roles desde **Usuarios**.
+**4. Volver a la pestaña de la app.** La sesión consulta su rol cada minuto y al volver a la
+pestaña, así que en menos de un minuto (o al cerrar sesión y entrar de nuevo) aparece el menú de
+administración. Desde ahí, ese administrador crea las demás cuentas y reparte roles desde
+**Usuarios**.
 
 ### Comprobar que quedó bien
 

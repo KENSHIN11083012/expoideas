@@ -199,7 +199,7 @@ export default function ProjectPage() {
                                 <dd className="text-on-surface">{project.sector}</dd>
                             </div>
                             <div>
-                                <dt className="label-mono text-on-surface-variant">Docente del grupo</dt>
+                                <dt className="label-mono text-on-surface-variant">Profesor del grupo</dt>
                                 <dd className="text-on-surface">{project.teacher}</dd>
                             </div>
                         </dl>

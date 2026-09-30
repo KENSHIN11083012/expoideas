@@ -236,7 +236,7 @@ class ProjectIT extends IntegrationTest {
         body.put("teacherId", idOf(team.leaderEmail()));
 
         Response rejected = post("/api/v1/projects", team.leaderToken(), body).expect(400);
-        assertThat(rejected.json("$.fields.teacherId").toString()).contains("docente");
+        assertThat(rejected.json("$.fields.teacherId").toString()).contains("profesor");
     }
 
     @Test
@@ -271,7 +271,7 @@ class ProjectIT extends IntegrationTest {
 
         Response teacher = delete("/api/v1/admin/users/" + idOf(team.teacherEmail()), admin)
                 .expect(409);
-        assertThat(teacher.json("$.detail").toString()).contains("es el docente");
+        assertThat(teacher.json("$.detail").toString()).contains("es el profesor");
 
         // Una cuenta sin proyectos se elimina como siempre.
         delete("/api/v1/admin/users/" + idOf(createAccount(Role.STUDENT)), admin)

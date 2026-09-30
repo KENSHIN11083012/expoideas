@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { ArrowRight } from 'lucide-react';
+import { affiliationToApi } from '@/lib/affiliation';
+import { requiresAffiliation } from '@/lib/roles';
 import { ROUTES, homeRouteFor } from '@/lib/routes';
 import { handleFormError } from '@/lib/validation';
 import { cn } from '@/lib/utils';
@@ -12,24 +14,15 @@ import { DataConsentField } from '@/components/forms/DataConsentField';
 import { PasswordFields } from '@/components/forms/PasswordFields';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Alert } from '@/components/ui/feedback';
+import { AffiliationFields } from '@/features/catalogs/AffiliationFields';
+import { useUpdateProfile } from '@/features/profile/queries';
+import { personalDataSchema, profileSchema } from '@/features/profile/schemas';
 import { accountApi } from './api';
 import { dataConsentSchema, passwordChangeSchema } from './schemas';
 import { useAuth } from './useAuth';
-
-/** Pasos que conoce la app, en el orden en que se piden (el mismo de la API). */
-const ONBOARDING_STEPS = {
-    CHANGE_PASSWORD: {
-        title: 'Crea tu contraseña',
-        description: 'La contraseña que recibiste es temporal. Elige una propia para proteger tu cuenta.',
-    },
-    DATA_CONSENT: {
-        title: 'Autoriza el tratamiento de tus datos',
-        description:
-            'Para usar Expoideas, la Universidad Simón Bolívar necesita tu autorización para tratar tus datos personales.',
-    },
-};
 
 function ChangePasswordStep({ onDone }) {
     const {
@@ -101,10 +94,86 @@ function DataConsentStep({ onDone }) {
 }
 
 /**
+ * Nombre y, si el rol la lleva, adscripción académica. Es el mismo formulario
+ * de Mi perfil, sin datos previos: el registro solo pidió correo y contraseña.
+ */
+function CompleteProfileStep({ onDone }) {
+    const { role } = useAuth();
+    const withAffiliation = requiresAffiliation(role);
+    const update = useUpdateProfile();
+    const form = useForm({
+        resolver: zodResolver(withAffiliation ? profileSchema : personalDataSchema),
+        mode: 'onTouched',
+        defaultValues: { firstName: '', lastName: '', campusId: '', facultyId: '', academicProgramId: '' },
+    });
+    const {
+        register,
+        handleSubmit,
+        setError,
+        formState: { errors, isSubmitting },
+    } = form;
+
+    const submit = async ({ firstName, lastName, ...affiliation }) => {
+        const body = withAffiliation ? { firstName, lastName, ...affiliationToApi(affiliation) } : { firstName, lastName };
+        try {
+            await update.mutateAsync(body);
+            onDone();
+        } catch (error) {
+            handleFormError(error, setError);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit(submit)} noValidate className="flex flex-col gap-5">
+            {errors.root && <Alert variant="error" title={errors.root.message} />}
+            <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="Nombres" error={errors.firstName?.message} required>
+                    <Input autoComplete="given-name" {...register('firstName')} />
+                </Field>
+                <Field label="Apellidos" error={errors.lastName?.message} required>
+                    <Input autoComplete="family-name" {...register('lastName')} />
+                </Field>
+            </div>
+            {withAffiliation && (
+                <fieldset className="flex flex-col gap-4 rounded-lg border border-outline-variant/70 p-4">
+                    <legend className="px-1 font-heading text-sm font-semibold text-on-surface">
+                        Tu vínculo con la universidad
+                    </legend>
+                    <AffiliationFields form={{ ...form, errors }} />
+                </fieldset>
+            )}
+            <Button type="submit" size="lg" loading={isSubmitting} className="mt-1 w-full">
+                Guardar y continuar <ArrowRight />
+            </Button>
+        </form>
+    );
+}
+
+/** Pasos que conoce la app, en el orden en que se piden (el mismo de la API). */
+const ONBOARDING_STEPS = {
+    CHANGE_PASSWORD: {
+        title: 'Crea tu contraseña',
+        description: 'La contraseña que recibiste es temporal. Elige una propia para proteger tu cuenta.',
+        Step: ChangePasswordStep,
+    },
+    DATA_CONSENT: {
+        title: 'Autoriza el tratamiento de tus datos',
+        description:
+            'Para usar Expoideas, la Universidad Simón Bolívar necesita tu autorización para tratar tus datos personales.',
+        Step: DataConsentStep,
+    },
+    COMPLETE_PROFILE: {
+        title: 'Completa tu perfil',
+        description: 'Cuéntanos cómo te llamas y cuál es tu vínculo con la universidad. Así aparecerás en tus proyectos.',
+        Step: CompleteProfileStep,
+    },
+};
+
+/**
  * Primer ingreso de una cuenta con pasos pendientes (contraseña temporal,
- * autorización de datos). La API no deja hacer nada más hasta completarlos. Al
- * terminar el último, la sesión queda sin pendientes y la página lleva al inicio
- * que corresponde al rol.
+ * autorización de datos, perfil incompleto). La API no deja hacer nada más
+ * hasta completarlos. Al terminar el último, la sesión queda sin pendientes y
+ * la página lleva al inicio que corresponde al rol.
  */
 export default function OnboardingPage() {
     const { token, role, user, pendingSteps, completeStep, logout } = useAuth();
@@ -117,6 +186,7 @@ export default function OnboardingPage() {
     if (steps.length === 0) return <Navigate to={homeRouteFor(role)} replace />;
 
     const step = steps[0];
+    const { title, description, Step } = ONBOARDING_STEPS[step];
     const total = Math.max(initialTotal, steps.length);
     const current = total - steps.length + 1;
 
@@ -134,7 +204,7 @@ export default function OnboardingPage() {
         <AuthLayout
             title="Primer ingreso"
             panelTitle="Te damos la bienvenida a Expoideas"
-            panelText="Antes de empezar, asegura tu cuenta y autoriza el uso de tus datos. Solo se hace una vez."
+            panelText="Antes de empezar, completa tu cuenta. Solo se hace una vez."
         >
             <div className="flex flex-col gap-3">
                 <p className="label-mono text-primary">
@@ -148,16 +218,12 @@ export default function OnboardingPage() {
                         />
                     ))}
                 </div>
-                <h1 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">{ONBOARDING_STEPS[step].title}</h1>
-                <p className="text-on-surface-variant">{ONBOARDING_STEPS[step].description}</p>
+                <h1 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
+                <p className="text-on-surface-variant">{description}</p>
             </div>
 
             <div className="mt-8">
-                {step === 'CHANGE_PASSWORD' ? (
-                    <ChangePasswordStep key={step} onDone={complete} />
-                ) : (
-                    <DataConsentStep key={step} onDone={complete} />
-                )}
+                <Step key={step} onDone={complete} />
             </div>
 
             <p className="mt-6 text-center text-sm text-on-surface-variant">

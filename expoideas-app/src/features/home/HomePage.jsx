@@ -47,7 +47,7 @@ const PHASES = [
 
 const AUDIENCES = [
     { icon: UserRound, title: 'Estudiantes', text: 'Inscriben sus proyectos, suben sus entregables y consultan su evaluación.' },
-    { icon: GraduationCap, title: 'Docentes', text: 'Acompañan a sus grupos y siguen sus resultados.' },
+    { icon: GraduationCap, title: 'Profesores', text: 'Acompañan a sus grupos y siguen sus resultados.' },
     { icon: Scale, title: 'Jurados', text: 'Evalúan los proyectos que tienen asignados con criterios comunes.' },
     { icon: Handshake, title: 'MacondoLab', text: 'Coordina las fases, valida a los jurados y publica los resultados.' },
 ];

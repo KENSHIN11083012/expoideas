@@ -14,10 +14,20 @@ function Consumer() {
     useEffect(() => {
         session.current = auth;
     });
-    return <p>{auth.pendingSteps.join(',') || 'sin pendientes'}</p>;
+    return (
+        <>
+            <p>{auth.pendingSteps.join(',') || 'sin pendientes'}</p>
+            <p>rol: {auth.role ?? 'ninguno'}</p>
+        </>
+    );
 }
 
-const renderSession = () => {
+/**
+ * Con sesión, AuthProvider consulta /users/me; salvo que la prueba diga otra
+ * cosa, la API responde con ese perfil.
+ */
+const renderSession = (profile = {}) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(profile)));
     const queryClient = createTestQueryClient();
     render(
         <QueryClientProvider client={queryClient}>
@@ -94,5 +104,37 @@ describe('Pasos de primer ingreso en la sesión', () => {
         expect(screen.getByText('sin pendientes')).toBeInTheDocument();
         expect(localStorage.getItem('pendingSteps')).toBeNull();
         expect(queryClient.getQueryData(['profile'])).toBeUndefined();
+    });
+});
+
+describe('El rol de la sesión', () => {
+    it('sale del token al entrar y, en cuanto responde /users/me, del perfil: un cambio de rol no exige cerrar sesión', async () => {
+        renderSession({ id: 1, email: 'ana@unisimon.edu.co', role: 'TEACHER', pendingSteps: [] });
+
+        act(() => session.current.login(fakeJwt('STUDENT', 'ana@unisimon.edu.co'), { email: 'ana@unisimon.edu.co' }, []));
+        expect(screen.getByText('rol: STUDENT')).toBeInTheDocument();
+
+        expect(await screen.findByText('rol: TEACHER')).toBeInTheDocument();
+        expect(fetch).toHaveBeenCalledWith(expect.stringMatching(/\/users\/me$/), expect.anything());
+    });
+
+    it('se vuelve a consultar al volver a la pestaña', async () => {
+        renderSession({ role: 'STUDENT' });
+        act(() => session.current.login(fakeJwt('STUDENT', 'ana@unisimon.edu.co'), { email: 'ana@unisimon.edu.co' }, []));
+        expect(await screen.findByText('rol: STUDENT')).toBeInTheDocument();
+
+        fetch.mockResolvedValue(jsonResponse({ role: 'TEACHER' }));
+        act(() => {
+            window.dispatchEvent(new Event('visibilitychange'));
+        });
+
+        expect(await screen.findByText('rol: TEACHER')).toBeInTheDocument();
+    });
+
+    it('sin sesión no se consulta el perfil', () => {
+        renderSession();
+
+        expect(screen.getByText('rol: ninguno')).toBeInTheDocument();
+        expect(fetch).not.toHaveBeenCalled();
     });
 });

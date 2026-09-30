@@ -4,7 +4,8 @@ import { profileApi } from './api';
 
 const profileKey = ['profile'];
 
-export const useProfile = () => useQuery({ queryKey: profileKey, queryFn: profileApi.get });
+/** @param {object} [options] opciones de useQuery (enabled, refetchInterval...). */
+export const useProfile = (options = {}) => useQuery({ queryKey: profileKey, queryFn: profileApi.get, ...options });
 
 /**
  * Guarda el perfil devuelto por la API en la caché y en la sesión (nombre y foto

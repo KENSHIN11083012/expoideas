@@ -1,36 +1,54 @@
 package co.edu.unisimon.expoideas.users;
 
 import static co.edu.unisimon.expoideas.users.OnboardingStep.CHANGE_PASSWORD;
+import static co.edu.unisimon.expoideas.users.OnboardingStep.COMPLETE_PROFILE;
 import static co.edu.unisimon.expoideas.users.OnboardingStep.DATA_CONSENT;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import co.edu.unisimon.expoideas.catalogs.Faculty;
 import java.time.LocalDateTime;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class UserTest {
 
+    private static final String EMAIL = "ana.perez@unisimon.edu.co";
+
+    /** Cuenta con todo resuelto: nombre, adscripción y autorización de datos. */
+    private static User.UserBuilder complete(Role role) {
+        return User.builder()
+                .email(EMAIL)
+                .firstName("Ana")
+                .lastName("Pérez")
+                .role(role)
+                .faculty(new Faculty(1, "Ingeniería"))
+                .dataConsent(true);
+    }
+
     @Test
-    void registeredAccountWithConsentHasNoPendingSteps() {
-        assertThat(User.builder().dataConsent(true).build().pendingSteps()).isEmpty();
+    void completeAccountHasNoPendingSteps() {
+        assertThat(complete(Role.STUDENT).build().pendingSteps()).isEmpty();
     }
 
     @Test
     void accountCreatedByManagementAsksForPasswordThenConsent() {
-        User user = User.builder().mustChangePassword(true).dataConsent(false).build();
+        User user =
+                complete(Role.JUDGE).mustChangePassword(true).dataConsent(false).build();
 
         assertThat(user.pendingSteps()).containsExactly(CHANGE_PASSWORD, DATA_CONSENT);
     }
 
     @Test
     void resetPasswordOnlyAsksToChangeIt() {
-        User user = User.builder().mustChangePassword(true).dataConsent(true).build();
+        User user = complete(Role.STUDENT).mustChangePassword(true).build();
 
         assertThat(user.pendingSteps()).containsExactly(CHANGE_PASSWORD);
     }
 
     @Test
     void withoutRecordedConsentItAsksForIt() {
-        assertThat(User.builder().build().pendingSteps()).containsExactly(DATA_CONSENT);
+        assertThat(complete(Role.STUDENT).dataConsent(false).build().pendingSteps())
+                .containsExactly(DATA_CONSENT);
     }
 
     @Test
@@ -44,5 +62,68 @@ class UserTest {
         assertThat(user.isDataConsent()).isTrue();
         assertThat(first).isNotNull();
         assertThat(user.getDataConsentAt()).isSameAs(first);
+    }
+
+    /** El registro solo pide correo y contraseña: el resto se completa en el primer ingreso. */
+    @Nested
+    class CompleteProfile {
+
+        @Test
+        void registeredAccountMustCompleteItsProfile() {
+            User user = User.builder().email(EMAIL).dataConsent(true).build();
+
+            assertThat(user.pendingSteps()).containsExactly(COMPLETE_PROFILE);
+        }
+
+        @Test
+        void blankNamesCountAsMissing() {
+            User user = complete(Role.STUDENT).firstName(" ").lastName("").build();
+
+            assertThat(user.pendingSteps()).containsExactly(COMPLETE_PROFILE);
+        }
+
+        @Test
+        void studentsAndTeachersAlsoNeedTheirFaculty() {
+            assertThat(complete(Role.STUDENT).faculty(null).build().pendingSteps())
+                    .containsExactly(COMPLETE_PROFILE);
+            assertThat(complete(Role.TEACHER).faculty(null).build().pendingSteps())
+                    .containsExactly(COMPLETE_PROFILE);
+        }
+
+        @Test
+        void rolesWithoutAffiliationOnlyNeedTheirName() {
+            assertThat(complete(Role.JUDGE).faculty(null).build().pendingSteps())
+                    .isEmpty();
+            assertThat(complete(Role.MACONDOLAB).faculty(null).build().pendingSteps())
+                    .isEmpty();
+            assertThat(complete(Role.ADMIN).faculty(null).build().pendingSteps())
+                    .isEmpty();
+        }
+
+        @Test
+        void theProfileComesAfterPasswordAndConsent() {
+            User user = User.builder()
+                    .email(EMAIL)
+                    .role(Role.STUDENT)
+                    .mustChangePassword(true)
+                    .build();
+
+            assertThat(user.pendingSteps()).containsExactly(CHANGE_PASSWORD, DATA_CONSENT, COMPLETE_PROFILE);
+        }
+    }
+
+    @Nested
+    class FullName {
+
+        @Test
+        void joinsNamesAndSurnames() {
+            assertThat(complete(Role.STUDENT).build().fullName()).isEqualTo("Ana Pérez");
+        }
+
+        @Test
+        void fallsBackToTheLocalPartOfTheEmailUntilTheProfileIsComplete() {
+            assertThat(User.builder().email(EMAIL).build().fullName()).isEqualTo("ana.perez");
+            assertThat(complete(Role.STUDENT).lastName(null).build().fullName()).isEqualTo("ana.perez");
+        }
     }
 }

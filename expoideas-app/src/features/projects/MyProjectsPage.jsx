@@ -74,7 +74,7 @@ function ProjectCard({ project }) {
                     <dd className="font-medium text-on-surface">{project.sector}</dd>
                 </div>
                 <div className="flex gap-2">
-                    <dt>Docente:</dt>
+                    <dt>Profesor:</dt>
                     <dd className="font-medium text-on-surface">{project.teacher}</dd>
                 </div>
             </dl>

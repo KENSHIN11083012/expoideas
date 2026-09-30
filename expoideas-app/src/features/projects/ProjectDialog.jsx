@@ -133,13 +133,13 @@ export function ProjectDialog({ project, onClose }) {
                             </NativeSelect>
                         </Field>
                         <Field
-                            label="Docente del grupo"
+                            label="Profesor del grupo"
                             error={errors.teacherId?.message}
-                            hint={teachers.length === 0 ? 'Todavía no hay docentes registrados.' : undefined}
+                            hint={teachers.length === 0 ? 'Todavía no hay profesores registrados.' : undefined}
                             required
                         >
                             <NativeSelect {...register('teacherId')}>
-                                <option value="">Selecciona el docente</option>
+                                <option value="">Selecciona el profesor</option>
                                 {teachers.map((teacher) => (
                                     <option key={teacher.id} value={String(teacher.id)}>
                                         {teacher.fullName}

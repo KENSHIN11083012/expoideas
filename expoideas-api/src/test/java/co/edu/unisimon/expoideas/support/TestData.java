@@ -6,6 +6,7 @@ import co.edu.unisimon.expoideas.common.ExpoideasProperties;
 import co.edu.unisimon.expoideas.common.ExpoideasProperties.CorsSettings;
 import co.edu.unisimon.expoideas.common.ExpoideasProperties.FilesSettings;
 import co.edu.unisimon.expoideas.common.ExpoideasProperties.JwtSettings;
+import co.edu.unisimon.expoideas.common.ExpoideasProperties.MailSettings;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
 import java.io.ByteArrayOutputStream;
@@ -57,7 +58,9 @@ public final class TestData {
         return new ExpoideasProperties(
                 new JwtSettings(JWT_SECRET, Duration.ofMinutes(1)),
                 new CorsSettings(List.of()),
-                new FilesSettings(filesDirectory));
+                new FilesSettings(filesDirectory),
+                new MailSettings("expoideas@pruebas.local"),
+                "");
     }
 
     public static byte[] ascii(String text) {

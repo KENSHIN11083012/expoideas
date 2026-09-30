@@ -43,6 +43,17 @@ public enum Role {
         };
     }
 
+    /** Nombre en español, para los correos. La app tiene el suyo en lib/roles.js. */
+    public String label() {
+        return switch (this) {
+            case ADMIN -> "Administrador";
+            case MACONDOLAB -> "MacondoLab";
+            case TEACHER -> "Profesor";
+            case JUDGE -> "Jurado";
+            case STUDENT -> "Estudiante";
+        };
+    }
+
     /** Autoridad de Spring Security: ROLE_ADMIN, ROLE_STUDENT... */
     public String authority() {
         return "ROLE_" + name();

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, Crown, LogOut, Pencil, Trash2, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, CalendarClock, Crown, LogOut, Pencil, Trash2, UserPlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { ROUTES } from '@/lib/routes';
 import { trackLabel } from '@/lib/tracks';
@@ -19,6 +19,8 @@ import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { ProjectDeliverables } from '@/features/deliverables/ProjectDeliverables';
+import { useProjectPresentation } from '@/features/presentations/queries';
+import { formatDateTime } from '@/features/presentations/schemas';
 import { useDeleteProject, useInviteMember, useProject, useRemoveMember, useSetResult } from './queries';
 import { RESULTS, RESULT_LABELS, invitationSchema, resultLabel } from './schemas';
 import { ProjectDialog } from './ProjectDialog';
@@ -119,6 +121,22 @@ function ProjectResult({ project, canSet }) {
                 </div>
             )}
         </div>
+    );
+}
+
+/** La cita de sustentación, cuando la gestión ya la programó. */
+function PresentationCard({ projectId }) {
+    const { data: presentation } = useProjectPresentation(projectId);
+    if (!presentation) return null;
+    return (
+        <Card className="flex flex-col gap-2 p-6">
+            <p className="flex items-center gap-2 label-mono text-on-surface-variant">
+                <CalendarClock className="size-4 text-primary" aria-hidden="true" /> Sustentación
+            </p>
+            <p className="font-medium text-on-surface">{formatDateTime(presentation.startsAt)}</p>
+            <p className="text-sm text-on-surface">{presentation.place}</p>
+            {presentation.notes && <p className="text-sm text-on-surface-variant">{presentation.notes}</p>}
+        </Card>
     );
 }
 
@@ -251,7 +269,8 @@ export default function ProjectPage() {
                 vuelve a ser una sola columna, con la ficha arriba.
             */}
             <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-8">
-                <aside className="lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1">
+                <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1">
+                    <PresentationCard projectId={project.id} />
                     <Card className="flex flex-col gap-4 p-6">
                         <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                             <div>

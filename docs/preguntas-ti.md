@@ -38,8 +38,11 @@ siguiente. La arquitectura propuesta está en [despliegue.md](despliegue.md).
 
 ## Servicios de la universidad
 
-12. ¿Hay un servidor de correo (SMTP) que podamos usar para notificaciones y recuperación de
-    contraseña?
+12. ¿Hay un servidor de correo (SMTP) que podamos usar para los avisos de la plataforma
+    (invitaciones a equipos, cuentas creadas por la gestión, fecha y lugar de las sustentaciones)?
+    Necesitamos host, puerto, si exige STARTTLS, usuario y contraseña, y una dirección remitente
+    autorizada (proponemos `no-reply@unisimon.edu.co`). ¿Hay un límite de correos por hora? Estimamos
+    del orden de cientos por semestre, con picos el día en que se programan las sustentaciones.
 13. A futuro: ¿es posible integrarse con el inicio de sesión institucional (Microsoft 365/Entra
     ID) o con el aula virtual? ¿Qué permisos y trámites implica?
 

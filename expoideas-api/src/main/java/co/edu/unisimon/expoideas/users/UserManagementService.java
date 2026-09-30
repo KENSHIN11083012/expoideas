@@ -5,6 +5,7 @@ import co.edu.unisimon.expoideas.common.ForbiddenActionException;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
 import co.edu.unisimon.expoideas.common.ValidationPatterns;
 import co.edu.unisimon.expoideas.files.FileService;
+import co.edu.unisimon.expoideas.notifications.AccountCreatedEvent;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,7 @@ public class UserManagementService {
     private final AffiliationResolver affiliation;
     private final PasswordUpdater passwords;
     private final FileService fileService;
+    private final ApplicationEventPublisher events;
 
     /** Motivos para no eliminar una cuenta que aportan otros módulos. Puede estar vacía. */
     private final List<AccountDeletionRule> deletionRules;
@@ -87,6 +90,12 @@ public class UserManagementService {
 
         User saved = userRepository.save(user);
         log.info("Usuario ID {} creado desde la gestión con rol {}", saved.getId(), saved.getRole());
+        // La contraseña temporal le llega por correo: es como se entera de que ya puede entrar.
+        events.publishEvent(new AccountCreatedEvent(
+                saved.getEmail(),
+                saved.fullName(),
+                request.password(),
+                saved.getRole().label()));
         return UserResponse.from(saved);
     }
 

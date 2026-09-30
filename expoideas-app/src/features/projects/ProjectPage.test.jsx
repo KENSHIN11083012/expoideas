@@ -5,9 +5,11 @@ import { useAuth } from '@/features/auth/useAuth';
 import { apiError, renderWithProviders, sessionFor } from '@/test/utils';
 import { project } from '@/test/fixtures';
 import ProjectPage from './ProjectPage';
+import { useProjectPresentation } from '@/features/presentations/queries';
 import { useDeleteProject, useInviteMember, useProject, useRemoveMember, useSetResult } from './queries';
 
 vi.mock('@/features/auth/useAuth', () => ({ useAuth: vi.fn() }));
+vi.mock('@/features/presentations/queries', () => ({ useProjectPresentation: vi.fn() }));
 vi.mock('./queries', () => ({
     useProject: vi.fn(),
     useInviteMember: vi.fn(),
@@ -51,6 +53,7 @@ beforeEach(() => {
     removeMember = { mutateAsync: vi.fn().mockResolvedValue({}), isPending: false };
     deleteProject = { mutateAsync: vi.fn().mockResolvedValue({}), isPending: false };
     setResult = { mutateAsync: vi.fn().mockResolvedValue({}), isPending: false };
+    useProjectPresentation.mockReturnValue({ data: null, isPending: false, error: null });
     useInviteMember.mockReturnValue(invite);
     useRemoveMember.mockReturnValue(removeMember);
     useDeleteProject.mockReturnValue(deleteProject);
@@ -202,5 +205,33 @@ describe('El resultado del proyecto', () => {
 
         expect(screen.getByText('Aprobado')).toBeInTheDocument();
         expect(screen.queryByLabelText('Resultado del proyecto')).not.toBeInTheDocument();
+    });
+});
+
+describe('La sustentación', () => {
+    it('aparece en la ficha cuando la gestión ya la programó', () => {
+        useProjectPresentation.mockReturnValue({
+            data: {
+                id: 3,
+                projectId: 10,
+                startsAt: '2026-11-20T09:30:00',
+                place: 'Auditorio Jorge Artel',
+                notes: 'Llegar antes.',
+            },
+            isPending: false,
+            error: null,
+        });
+        renderPage();
+
+        expect(screen.getByText('Sustentación')).toBeInTheDocument();
+        expect(screen.getByText(/20 de noviembre de 2026/)).toBeInTheDocument();
+        expect(screen.getByText('Auditorio Jorge Artel')).toBeInTheDocument();
+        expect(screen.getByText('Llegar antes.')).toBeInTheDocument();
+    });
+
+    it('no ocupa espacio mientras no haya cita', () => {
+        renderPage();
+
+        expect(screen.queryByText('Sustentación')).not.toBeInTheDocument();
     });
 });

@@ -1,6 +1,19 @@
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { CalendarRange, Database, House, KeyRound, Lightbulb, LogIn, LogOut, Menu, User, UserPlus, Users } from 'lucide-react';
+import {
+    CalendarClock,
+    CalendarRange,
+    Database,
+    House,
+    KeyRound,
+    Lightbulb,
+    LogIn,
+    LogOut,
+    Menu,
+    User,
+    UserPlus,
+    Users,
+} from 'lucide-react';
 import { useAuth } from '@/features/auth/useAuth';
 import { fileUrl } from '@/lib/files';
 import { ROLES, roleLabel } from '@/lib/roles';
@@ -34,6 +47,7 @@ const linksFor = (signedIn, management, student, teacher) => [
               { to: ROUTES.USERS, label: 'Usuarios', icon: Users },
               { to: ROUTES.CATALOGS, label: 'Catálogos', icon: Database },
               { to: ROUTES.EDITIONS, label: 'Ediciones', icon: CalendarRange },
+              { to: ROUTES.PRESENTATIONS, label: 'Sustentaciones', icon: CalendarClock },
           ]
         : []),
 ];

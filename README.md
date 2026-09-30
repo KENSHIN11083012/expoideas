@@ -45,10 +45,11 @@ orden en que se va a construir. Ya está hecho lo del piloto: registro con solo 
 «profesor» en vez de «docente» y el botón «Ver proyecto» en el listado. También las plantillas
 descargables por entregable, los entregables de tipo enlace y el cierre propio para las fotos de la
 sustentación. Y el prerrequisito: el profesor registra el resultado del proyecto al cerrar las
-entregas, aprobar INNPRENDE I habilita para II, y nadie cursa las dos a la vez.
+entregas, aprobar INNPRENDE I habilita para II, y nadie cursa las dos a la vez. También la agenda
+de sustentaciones y los avisos por correo (invitaciones, cuentas creadas por la gestión y
+sustentaciones); el servidor SMTP lo pone TI.
 
 - Jurados asignados por proyecto e invitación de jurados externos.
-- Correo (invitaciones, cuentas creadas, sustentaciones) y agenda de sustentaciones.
 - Tipos de prototipo en INNPRENDE II (faltan los tipos).
 - Cambio de marca a Ideario (faltan logos, paleta y nombres).
 - Evaluación con rúbrica y recordatorios a los jurados (la rúbrica está en el SharePoint).
@@ -218,6 +219,17 @@ Debe responder `{"status":"UP"}`.
 
 - API: `http://localhost:8080`
 - Swagger: `http://localhost:8080/swagger-ui.html` (apagado en el perfil `prod`)
+
+**Correos en desarrollo (opcional).** La API envía avisos (invitaciones, cuentas creadas,
+sustentaciones). Para verlos sin un SMTP real, levanta Mailpit y deja las líneas `spring.mail.*`
+del `application-local.properties`:
+
+```bash
+docker compose --profile dev up -d mailpit
+```
+
+Los correos quedan en **http://localhost:8025**. Sin Mailpit ni SMTP, la API funciona igual y
+solo deja en el log qué correo habría enviado.
 
 **Si el puerto 8080 está ocupado** —pasa a menudo—, descomenta `server.port` en
 `config/application-local.properties` (por ejemplo, `server.port=8081`) y apunta el frontend a ese

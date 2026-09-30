@@ -92,6 +92,10 @@ comprobación de origen correctas).
 | `PORT` | No | Puerto de la API (por defecto 8080) |
 | `JWT_EXPIRATION` | No | Duración de la sesión: `4h`, `30m`… (por defecto 4 h; un número sin unidad son milisegundos) |
 | `ALLOWED_ORIGINS` | No | Orígenes externos permitidos por CORS, separados por comas. Por defecto vacío: solo el mismo origen, como detrás de Nginx |
+| `SPRING_MAIL_HOST` / `SPRING_MAIL_PORT` | No | Servidor SMTP de TI para los avisos (invitaciones, cuentas creadas, sustentaciones). Sin host no se envía nada y la API lo dice en el log. En `docker-compose.yml` salen de `MAIL_HOST` y `MAIL_PORT` |
+| `SPRING_MAIL_USERNAME` / `SPRING_MAIL_PASSWORD` | No | Credenciales del SMTP (`MAIL_USERNAME` y `MAIL_PASSWORD` en el `.env`). Con `MAIL_AUTH=false` y `MAIL_STARTTLS=false` se desactivan la autenticación y STARTTLS |
+| `MAIL_FROM` | No | Remitente de los avisos (por defecto `no-reply@unisimon.edu.co`; debe ser una dirección que el SMTP acepte) |
+| `APP_URL` | No | URL pública de la app, para los enlaces de los correos (`https://<dominio>.unisimon.edu.co/expoideas`) |
 | `JAVA_TOOL_OPTIONS` | No | Opciones de la JVM. La imagen Docker ya trae `-XX:MaxRAMPercentage=75`; fuera de Docker no hay valor por defecto |
 
 ## Primer administrador

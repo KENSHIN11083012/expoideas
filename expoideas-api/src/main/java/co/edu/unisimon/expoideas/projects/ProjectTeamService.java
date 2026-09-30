@@ -3,12 +3,14 @@ package co.edu.unisimon.expoideas.projects;
 import co.edu.unisimon.expoideas.common.ConflictException;
 import co.edu.unisimon.expoideas.common.ForbiddenActionException;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
+import co.edu.unisimon.expoideas.notifications.TeamInvitationEvent;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
 import co.edu.unisimon.expoideas.users.UserRepository;
 import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,7 @@ public class ProjectTeamService {
     private final ProjectMemberRepository memberRepository;
     private final UserRepository userRepository;
     private final ProjectPolicy policy;
+    private final ApplicationEventPublisher events;
 
     /** Invita a un compañero. Devuelve el proyecto con el equipo ya actualizado. */
     @Transactional
@@ -61,7 +64,15 @@ public class ProjectTeamService {
         }
 
         project.addMember(invitee, MemberRole.MEMBER, MembershipStatus.INVITED);
-        return ProjectResponse.from(projectRepository.save(project), policy.today());
+        ProjectResponse response = ProjectResponse.from(projectRepository.save(project), policy.today());
+        // El correo sale después del commit; si la invitación no se guarda, no hay aviso.
+        events.publishEvent(new TeamInvitationEvent(
+                invitee.getEmail(),
+                invitee.fullName(),
+                actor.fullName(),
+                project.getTitle(),
+                project.getTrack().name().replace('_', ' ')));
+        return response;
     }
 
     /** Invitaciones sin responder de quien consulta. */

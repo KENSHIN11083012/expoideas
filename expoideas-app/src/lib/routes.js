@@ -15,6 +15,7 @@ export const ROUTES = {
     SECURITY: '/seguridad',
     USERS: '/admin/usuarios',
     EDITIONS: '/admin/ediciones',
+    PRESENTATIONS: '/admin/sustentaciones',
     CATALOGS: '/admin/catalogos',
     UNAUTHORIZED: '/no-autorizado',
 };

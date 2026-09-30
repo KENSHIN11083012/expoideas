@@ -49,6 +49,11 @@ public class SecurityConfig {
     /** Descarga de archivos: los públicos no piden sesión; los privados los autoriza FileService. */
     private static final String FILES = "/api/v1/files/**";
 
+    /** Sustentaciones: la gestión programa y consulta la agenda; cada equipo ve la suya por su proyecto. */
+    private static final String PRESENTATION = "/api/v1/projects/*/presentation";
+
+    private static final String PRESENTATIONS = "/api/v1/presentations";
+
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final HandlerExceptionResolver exceptionResolver;
@@ -93,6 +98,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, EDITIONS)
                         .hasRole("MACONDOLAB")
                         .requestMatchers(HttpMethod.PUT, EDITIONS)
+                        .hasRole("MACONDOLAB")
+
+                        // Sustentaciones: las programa la gestión.
+                        .requestMatchers(HttpMethod.PUT, PRESENTATION)
+                        .hasRole("MACONDOLAB")
+                        .requestMatchers(HttpMethod.DELETE, PRESENTATION)
+                        .hasRole("MACONDOLAB")
+                        .requestMatchers(HttpMethod.GET, PRESENTATIONS)
                         .hasRole("MACONDOLAB")
 
                         // Entregables que pide cada cátedra.

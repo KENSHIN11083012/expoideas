@@ -35,6 +35,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -64,6 +65,9 @@ class UserManagementServiceTest {
     @Mock
     private FileService fileService;
 
+    @Mock
+    private ApplicationEventPublisher events;
+
     private UserManagementService service;
 
     private final Faculty engineering = new Faculty(10, "Ingeniería");
@@ -83,6 +87,7 @@ class UserManagementServiceTest {
                 new AffiliationResolver(lookup),
                 new PasswordUpdater(passwordEncoder),
                 fileService,
+                events,
                 List.of());
 
         admin = TestData.user(1, ADMIN_EMAIL, Role.ADMIN);

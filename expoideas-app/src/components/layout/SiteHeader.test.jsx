@@ -55,7 +55,7 @@ describe('Menú principal por rol', () => {
         sessionAs(role);
         render(<SiteHeader />, { wrapper: MemoryRouter });
 
-        expect(menuLinks()).toEqual(['Inicio', 'Proyectos', 'Mi perfil', 'Usuarios', 'Catálogos', 'Ediciones']);
+        expect(menuLinks()).toEqual(['Inicio', 'Proyectos', 'Mi perfil', 'Usuarios', 'Catálogos', 'Ediciones', 'Sustentaciones']);
     });
 });
 

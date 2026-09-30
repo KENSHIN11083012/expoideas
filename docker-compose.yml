@@ -51,6 +51,15 @@ services:
       JWT_EXPIRATION: ${JWT_EXPIRATION:-4h}
       # La app llama a la API por el mismo origen: no hace falta abrir CORS.
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+      # Correo: servidor SMTP de TI. Sin MAIL_HOST no se envía nada.
+      SPRING_MAIL_HOST: ${MAIL_HOST:-}
+      SPRING_MAIL_PORT: ${MAIL_PORT:-587}
+      SPRING_MAIL_USERNAME: ${MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: ${MAIL_AUTH:-true}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: ${MAIL_STARTTLS:-true}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@unisimon.edu.co}
+      APP_URL: ${APP_URL:-}
     volumes:
       # FILES_DIR=/data/files ya viene fijado en el Dockerfile de la API.
       - files:/data/files
@@ -64,6 +73,16 @@ services:
         condition: service_healthy
     ports:
       - "${HTTP_PORT:-8080}:8080"
+
+  # Solo en desarrollo (docker compose --profile dev up -d mailpit): atrapa los
+  # correos que envía la API y los muestra en http://localhost:8025.
+  mailpit:
+    image: axllent/mailpit
+    profiles: ["dev"]
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
 
 volumes:
   mysql-data:

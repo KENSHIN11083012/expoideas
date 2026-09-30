@@ -10,7 +10,11 @@ import co.edu.unisimon.expoideas.support.TestData;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
 import co.edu.unisimon.expoideas.users.UserRepository;
+import com.icegreen.greenmail.util.GreenMail;
+import com.icegreen.greenmail.util.ServerSetupTest;
 import com.jayway.jsonpath.JsonPath;
+import jakarta.mail.Message;
+import jakarta.mail.internet.MimeMessage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -19,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,12 +68,16 @@ abstract class IntegrationTest {
 
     protected static final Path FILES_DIR = createTempDir();
 
+    /** SMTP en memoria: recibe los correos que la API envía tras cada commit. */
+    protected static final GreenMail MAIL = new GreenMail(ServerSetupTest.SMTP.dynamicPort());
+
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
 
     private static Integer openEditionId;
 
     static {
         MYSQL.start();
+        MAIL.start();
     }
 
     @DynamicPropertySource
@@ -79,6 +88,61 @@ abstract class IntegrationTest {
         registry.add("expoideas.jwt.secret", () -> TestData.JWT_SECRET);
         registry.add("expoideas.files.directory", FILES_DIR::toString);
         registry.add("expoideas.cors.allowed-origins", () -> "http://localhost:5173");
+        registry.add("spring.mail.host", () -> "localhost");
+        registry.add("spring.mail.port", () -> MAIL.getSmtp().getPort());
+        registry.add("expoideas.mail.from", () -> "expoideas@pruebas.local");
+        registry.add("expoideas.app-url", () -> "http://localhost:5173/expoideas");
+    }
+
+    // ── Correos ─────────────────────────────────────────────────────────────
+
+    /**
+     * Los correos recibidos por esa dirección, en orden de llegada, esperando a
+     * que haya al menos {@code count}: se envían en otro hilo tras el commit.
+     */
+    protected static List<MimeMessage> awaitMailTo(String email, int count) throws Exception {
+        long deadline = System.currentTimeMillis() + 10_000;
+        List<MimeMessage> found = mailTo(email);
+        while (found.size() < count && System.currentTimeMillis() < deadline) {
+            Thread.sleep(100);
+            found = mailTo(email);
+        }
+        assertThat(found).as("correos para %s", email).hasSizeGreaterThanOrEqualTo(count);
+        return found;
+    }
+
+    /** El último correo para esa dirección cuyo asunto empieza así, esperando a que llegue. */
+    protected static MimeMessage awaitMail(String email, String subjectStart) throws Exception {
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (System.currentTimeMillis() < deadline) {
+            List<MimeMessage> matching = new java.util.ArrayList<>();
+            for (MimeMessage message : mailTo(email)) {
+                if (message.getSubject().startsWith(subjectStart)) {
+                    matching.add(message);
+                }
+            }
+            if (!matching.isEmpty()) {
+                return matching.getLast();
+            }
+            Thread.sleep(100);
+        }
+        throw new AssertionError("No llegó a " + email + " un correo cuyo asunto empiece por \"" + subjectStart + "\"");
+    }
+
+    private static List<MimeMessage> mailTo(String email) throws Exception {
+        List<MimeMessage> found = new java.util.ArrayList<>();
+        for (MimeMessage message : MAIL.getReceivedMessages()) {
+            boolean addressed = Arrays.stream(message.getRecipients(Message.RecipientType.TO))
+                    .anyMatch(address -> address.toString().equalsIgnoreCase(email));
+            if (addressed) {
+                found.add(message);
+            }
+        }
+        return found;
+    }
+
+    protected static String body(MimeMessage message) throws Exception {
+        return message.getContent().toString();
     }
 
     @LocalServerPort

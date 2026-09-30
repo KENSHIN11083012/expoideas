@@ -20,7 +20,9 @@ import org.springframework.validation.annotation.Validated;
 public record ExpoideasProperties(
         @NotNull @Valid JwtSettings jwt,
         @DefaultValue CorsSettings cors,
-        @DefaultValue FilesSettings files) {
+        @DefaultValue FilesSettings files,
+        @DefaultValue MailSettings mail,
+        @DefaultValue("") String appUrl) {
 
     /**
      * @param secret     clave HMAC en Base64, de al menos 256 bits (JWT_SECRET)
@@ -34,4 +36,8 @@ public record ExpoideasProperties(
 
     /** Carpeta del contenido de los archivos subidos (FILES_DIR). */
     public record FilesSettings(@DefaultValue("uploads") Path directory) {}
+
+    /** Remitente de los correos (MAIL_FROM). El servidor SMTP va en spring.mail.*. */
+    public record MailSettings(
+            @DefaultValue("no-reply@unisimon.edu.co") String from) {}
 }

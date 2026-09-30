@@ -21,6 +21,7 @@ const UserAdminPage = lazy(() => import('@/features/users/UserAdminPage'));
 const CatalogsPage = lazy(() => import('@/features/catalogs/CatalogsPage'));
 const EditionsPage = lazy(() => import('@/features/editions/EditionsPage'));
 const PresentationsPage = lazy(() => import('@/features/presentations/PresentationsPage'));
+const JuryProjectsPage = lazy(() => import('@/features/jury/JuryProjectsPage'));
 const UnauthorizedPage = lazy(() => import('@/features/errors/UnauthorizedPage'));
 const NotFoundPage = lazy(() => import('@/features/errors/NotFoundPage'));
 
@@ -96,6 +97,16 @@ export default function App() {
                             element={
                                 <ProtectedRoute>
                                     <SecurityPage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Jurado: cualquier cuenta a la que la gestión le asigne proyectos */}
+                        <Route
+                            path={ROUTES.JURY_PROJECTS}
+                            element={
+                                <ProtectedRoute allowedRoles={[...MANAGEMENT_ROLES, ROLES.TEACHER, ROLES.JUDGE]}>
+                                    <JuryProjectsPage />
                                 </ProtectedRoute>
                             }
                         />

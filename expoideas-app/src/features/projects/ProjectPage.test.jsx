@@ -10,6 +10,7 @@ import { useDeleteProject, useInviteMember, useProject, useRemoveMember, useSetR
 
 vi.mock('@/features/auth/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('@/features/presentations/queries', () => ({ useProjectPresentation: vi.fn() }));
+vi.mock('@/features/jury/JurorsPanel', () => ({ JurorsPanel: () => <section>Panel de jurados</section> }));
 vi.mock('./queries', () => ({
     useProject: vi.fn(),
     useInviteMember: vi.fn(),
@@ -233,5 +234,25 @@ describe('La sustentación', () => {
         renderPage();
 
         expect(screen.queryByText('Sustentación')).not.toBeInTheDocument();
+    });
+});
+
+describe('Los jurados', () => {
+    it('la gestión ve el panel para asignarlos', () => {
+        renderPage(project, { role: 'MACONDOLAB', userId: 9 });
+
+        expect(screen.getByText('Panel de jurados')).toBeInTheDocument();
+    });
+
+    it('el equipo y el profesor no lo ven', () => {
+        renderPage(project, { role: 'TEACHER', userId: 7 });
+
+        expect(screen.queryByText('Panel de jurados')).not.toBeInTheDocument();
+    });
+
+    it('un jurado vuelve a Evaluar desde la ficha', () => {
+        renderPage(project, { role: 'JUDGE', userId: 8 });
+
+        expect(screen.getByRole('link', { name: /Evaluar/ })).toHaveAttribute('href', '/jurado/proyectos');
     });
 });

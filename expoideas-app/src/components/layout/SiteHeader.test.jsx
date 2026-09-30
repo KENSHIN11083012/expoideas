@@ -3,9 +3,11 @@ import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ROLES, isManagement } from '@/lib/roles';
 import { useAuth } from '@/features/auth/useAuth';
+import { useJuryProjects } from '@/features/jury/queries';
 import { SiteHeader } from './SiteHeader';
 
 vi.mock('@/features/auth/useAuth', () => ({ useAuth: vi.fn() }));
+vi.mock('@/features/jury/queries', () => ({ useJuryProjects: vi.fn(() => ({ data: [] })) }));
 
 const sessionAs = (role, user = {}) =>
     useAuth.mockReturnValue({
@@ -30,18 +32,23 @@ const menuLinks = () =>
         .map((link) => link.textContent);
 
 describe('Menú principal por rol', () => {
-    it('el jurado todavía no tiene secciones propias', () => {
+    it('el jurado ve Evaluar', () => {
         sessionAs(ROLES.JUDGE);
         render(<SiteHeader />, { wrapper: MemoryRouter });
 
-        expect(menuLinks()).toEqual(['Inicio', 'Mi perfil']);
+        expect(menuLinks()).toEqual(['Inicio', 'Evaluar', 'Mi perfil']);
     });
 
-    it('el docente ve los proyectos de sus grupos', () => {
+    it('el docente ve los proyectos de sus grupos y, solo si le asignaron alguno, Evaluar', () => {
         sessionAs(ROLES.TEACHER);
-        render(<SiteHeader />, { wrapper: MemoryRouter });
-
+        const { unmount } = render(<SiteHeader />, { wrapper: MemoryRouter });
         expect(menuLinks()).toEqual(['Inicio', 'Proyectos', 'Mi perfil']);
+        unmount();
+
+        useJuryProjects.mockReturnValue({ data: [{ id: 10 }] });
+        render(<SiteHeader />, { wrapper: MemoryRouter });
+        expect(menuLinks()).toEqual(['Inicio', 'Proyectos', 'Evaluar', 'Mi perfil']);
+        useJuryProjects.mockReturnValue({ data: [] });
     });
 
     it('el estudiante ve Mis proyectos', () => {

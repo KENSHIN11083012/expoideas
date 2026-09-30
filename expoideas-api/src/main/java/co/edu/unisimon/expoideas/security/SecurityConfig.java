@@ -54,6 +54,9 @@ public class SecurityConfig {
 
     private static final String PRESENTATIONS = "/api/v1/presentations";
 
+    /** Jurados de un proyecto: los asigna y consulta la gestión. Cada jurado ve los suyos en /jury/projects. */
+    private static final String JURORS = "/api/v1/projects/*/jurors/**";
+
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final HandlerExceptionResolver exceptionResolver;
@@ -98,6 +101,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, EDITIONS)
                         .hasRole("MACONDOLAB")
                         .requestMatchers(HttpMethod.PUT, EDITIONS)
+                        .hasRole("MACONDOLAB")
+
+                        // Jurados: los asigna la gestión.
+                        .requestMatchers(JURORS)
                         .hasRole("MACONDOLAB")
 
                         // Sustentaciones: las programa la gestión.

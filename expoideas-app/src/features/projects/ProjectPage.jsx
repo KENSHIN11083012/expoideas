@@ -19,6 +19,7 @@ import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { ProjectDeliverables } from '@/features/deliverables/ProjectDeliverables';
+import { JurorsPanel } from '@/features/jury/JurorsPanel';
 import { useProjectPresentation } from '@/features/presentations/queries';
 import { formatDateTime } from '@/features/presentations/schemas';
 import { useDeleteProject, useInviteMember, useProject, useRemoveMember, useSetResult } from './queries';
@@ -200,8 +201,10 @@ export default function ProjectPage() {
     }
 
     const me = project.members.find((member) => member.userId === user?.id);
-    // El equipo vuelve a Mis proyectos; el docente y la gestión, al listado.
-    const listRoute = me ? ROUTES.MY_PROJECTS : ROUTES.PROJECTS;
+    const isTeacher = project.teacherId === user?.id;
+    // El equipo vuelve a Mis proyectos; el profesor y la gestión, al listado; un jurado, a Evaluar.
+    const listRoute = me ? ROUTES.MY_PROJECTS : isManagement || isTeacher ? ROUTES.PROJECTS : ROUTES.JURY_PROJECTS;
+    const listLabel = me ? 'Mis proyectos' : isManagement || isTeacher ? 'Proyectos' : 'Evaluar';
     const isLeader = me?.teamRole === 'LEADER';
     const open = project.registrationOpen;
     const accepted = project.members.filter((member) => member.status === 'ACCEPTED').length;
@@ -239,7 +242,7 @@ export default function ProjectPage() {
         <PageContainer>
             <Button variant="ghost" size="sm" asChild className="self-start">
                 <Link to={listRoute}>
-                    <ArrowLeft /> {me ? 'Mis proyectos' : 'Proyectos'}
+                    <ArrowLeft /> {listLabel}
                 </Link>
             </Button>
 
@@ -321,6 +324,8 @@ export default function ProjectPage() {
                     </section>
 
                     <ProjectDeliverables project={project} isMember={me?.status === 'ACCEPTED'} />
+
+                    {isManagement && <JurorsPanel projectId={project.id} />}
                 </div>
             </div>
 

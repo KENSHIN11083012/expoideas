@@ -9,6 +9,7 @@ import co.edu.unisimon.expoideas.users.User;
 import co.edu.unisimon.expoideas.users.UserRepository;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,9 @@ public class ProjectPolicy {
     private final ProjectRepository projectRepository;
     private final TrackApprovalRepository approvalRepository;
     private final Clock clock;
+
+    /** Quién más puede ver un proyecto, según otros módulos (los jurados asignados). Puede estar vacía. */
+    private final List<ProjectVisibilityRule> visibilityRules;
 
     public LocalDate today() {
         return LocalDate.now(clock);
@@ -50,13 +54,18 @@ public class ProjectPolicy {
     /** El proyecto, si esa cuenta puede verlo; si no, como si no existiera. */
     public Project findVisible(Integer id, User viewer) {
         Project project = find(id);
-        boolean allowed = project.memberOf(viewer).isPresent()
-                || project.getTeacher().getId().equals(viewer.getId())
-                || viewer.getRole().isManagement();
-        if (!allowed) {
+        if (!canView(project, viewer)) {
             throw new NoSuchElementException("No existe un proyecto con ID: " + id);
         }
         return project;
+    }
+
+    /** Si esa cuenta ve el proyecto: el equipo, el profesor del grupo, la gestión y quien digan las reglas. */
+    public boolean canView(Project project, User viewer) {
+        return project.memberOf(viewer).isPresent()
+                || project.getTeacher().getId().equals(viewer.getId())
+                || viewer.getRole().isManagement()
+                || visibilityRules.stream().anyMatch(rule -> rule.canView(project, viewer));
     }
 
     public void requireStudent(User user) {

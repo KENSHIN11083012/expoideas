@@ -47,9 +47,10 @@ descargables por entregable, los entregables de tipo enlace y el cierre propio p
 sustentación. Y el prerrequisito: el profesor registra el resultado del proyecto al cerrar las
 entregas, aprobar INNPRENDE I habilita para II, y nadie cursa las dos a la vez. También la agenda
 de sustentaciones y los avisos por correo (invitaciones, cuentas creadas por la gestión y
-sustentaciones); el servidor SMTP lo pone TI.
+sustentaciones); el servidor SMTP lo pone TI. Y los jurados por asignación: la gestión asigna
+profesores, jurados externos o cuentas de gestión a cada proyecto, y cada jurado ve los suyos en
+«Evaluar», con sus entregables.
 
-- Jurados asignados por proyecto e invitación de jurados externos.
 - Tipos de prototipo en INNPRENDE II (faltan los tipos).
 - Cambio de marca a Ideario (faltan logos, paleta y nombres).
 - Evaluación con rúbrica y recordatorios a los jurados (la rúbrica está en el SharePoint).

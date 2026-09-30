@@ -16,6 +16,7 @@ export const ROUTES = {
     USERS: '/admin/usuarios',
     EDITIONS: '/admin/ediciones',
     PRESENTATIONS: '/admin/sustentaciones',
+    JURY_PROJECTS: '/jurado/proyectos',
     CATALOGS: '/admin/catalogos',
     UNAUTHORIZED: '/no-autorizado',
 };

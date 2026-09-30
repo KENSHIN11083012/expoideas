@@ -4,6 +4,7 @@ import {
     CalendarClock,
     CalendarRange,
     Database,
+    Gavel,
     House,
     KeyRound,
     Lightbulb,
@@ -15,6 +16,8 @@ import {
     Users,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/useAuth';
+import { useJuryProjects } from '@/features/jury/queries';
+import { canBeJuror } from '@/features/jury/schemas';
 import { fileUrl } from '@/lib/files';
 import { ROLES, roleLabel } from '@/lib/roles';
 import { ROUTES } from '@/lib/routes';
@@ -37,10 +40,11 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from 
  * Secciones del menú. Solo aparecen las que existen: las de INNPRENDE I y II se
  * agregan en las fases del dominio.
  */
-const linksFor = (signedIn, management, student, teacher) => [
+const linksFor = (signedIn, management, student, teacher, juror) => [
     { to: ROUTES.HOME, label: 'Inicio', icon: House, end: true },
     ...(student ? [{ to: ROUTES.MY_PROJECTS, label: 'Mis proyectos', icon: Lightbulb }] : []),
     ...(management || teacher ? [{ to: ROUTES.PROJECTS, label: 'Proyectos', icon: Lightbulb, end: true }] : []),
+    ...(juror ? [{ to: ROUTES.JURY_PROJECTS, label: 'Evaluar', icon: Gavel }] : []),
     ...(signedIn ? [{ to: ROUTES.PROFILE, label: 'Mi perfil', icon: User }] : []),
     ...(management
         ? [
@@ -205,7 +209,10 @@ export function SiteHeader() {
     const { token, user, role, isManagement, logout } = useAuth();
     const navigate = useNavigate();
     const signedIn = Boolean(token);
-    const links = linksFor(signedIn, isManagement, role === ROLES.STUDENT, role === ROLES.TEACHER);
+    // «Evaluar» siempre para el rol jurado; para profesores y gestión, solo si tienen proyectos asignados.
+    const { data: juryProjects } = useJuryProjects({ enabled: signedIn && canBeJuror(role) });
+    const juror = role === ROLES.JUDGE || (juryProjects?.length ?? 0) > 0;
+    const links = linksFor(signedIn, isManagement, role === ROLES.STUDENT, role === ROLES.TEACHER, juror);
 
     const signOut = () => {
         logout();

@@ -2,19 +2,16 @@ package co.edu.unisimon.expoideas.deliverables;
 
 import co.edu.unisimon.expoideas.files.PrivateFileAccessRule;
 import co.edu.unisimon.expoideas.files.StoredFile;
-import co.edu.unisimon.expoideas.projects.Project;
-import co.edu.unisimon.expoideas.users.User;
+import co.edu.unisimon.expoideas.projects.ProjectPolicy;
 import co.edu.unisimon.expoideas.users.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Los entregables son archivos privados: los abre el equipo del proyecto y su
- * docente. La gestión ya tiene permiso por su rol y el propietario, por serlo.
- *
- * <p>Los jurados se sumarán en la fase de evaluación, con los proyectos que les
- * toquen.
+ * Los entregables son archivos privados: los abre quien puede ver el proyecto
+ * (el equipo, su profesor, la gestión y los jurados asignados), según decide
+ * {@link ProjectPolicy}. El propietario del archivo ya tiene permiso por serlo.
  */
 @Component
 @RequiredArgsConstructor
@@ -22,6 +19,7 @@ class DeliverableAccessRule implements PrivateFileAccessRule {
 
     private final DeliverableRepository deliverableRepository;
     private final UserRepository userRepository;
+    private final ProjectPolicy policy;
 
     @Override
     @Transactional(readOnly = true)
@@ -29,12 +27,7 @@ class DeliverableAccessRule implements PrivateFileAccessRule {
         return deliverableRepository
                 .findByFileId(file.getId())
                 .map(Deliverable::getProject)
-                .flatMap(project -> userRepository.findByEmail(email).map(viewer -> belongsTo(project, viewer)))
+                .flatMap(project -> userRepository.findByEmail(email).map(viewer -> policy.canView(project, viewer)))
                 .orElse(false);
-    }
-
-    private static boolean belongsTo(Project project, User viewer) {
-        return project.memberOf(viewer).isPresent()
-                || project.getTeacher().getId().equals(viewer.getId());
     }
 }

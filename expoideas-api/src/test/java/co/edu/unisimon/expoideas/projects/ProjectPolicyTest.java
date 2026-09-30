@@ -1,5 +1,6 @@
 package co.edu.unisimon.expoideas.projects;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,6 +20,7 @@ import co.edu.unisimon.expoideas.users.UserRepository;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,6 +44,9 @@ class ProjectPolicyTest {
     @Mock
     private TrackApprovalRepository approvalRepository;
 
+    @Mock
+    private ProjectVisibilityRule rule;
+
     private ProjectPolicy policy;
     private Edition edition;
     private final User ana = TestData.user(1, "ana@unisimon.edu.co", Role.STUDENT);
@@ -49,7 +54,7 @@ class ProjectPolicyTest {
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(TODAY.atStartOfDay(BOGOTA).toInstant(), BOGOTA);
-        policy = new ProjectPolicy(userRepository, projectRepository, approvalRepository, clock);
+        policy = new ProjectPolicy(userRepository, projectRepository, approvalRepository, clock, List.of(rule));
         edition = mock(Edition.class);
         lenient().when(edition.getId()).thenReturn(5);
     }
@@ -95,6 +100,37 @@ class ProjectPolicyTest {
 
             assertThatCode(() -> policy.requireEligibleFor(ana, edition, Track.INNPRENDE_II))
                     .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class Visibility {
+
+        private final User teacher = TestData.user(7, "carlos@unisimon.edu.co", Role.TEACHER);
+        private final User judge = TestData.user(8, "marta@empresa.com", Role.JUDGE);
+        private final Project project = new Project();
+
+        @BeforeEach
+        void project() {
+            project.setTeacher(teacher);
+            project.addMember(ana, MemberRole.LEADER, MembershipStatus.ACCEPTED);
+        }
+
+        @Test
+        void theTeamTheTeacherAndManagementSeeIt() {
+            assertThat(policy.canView(project, ana)).isTrue();
+            assertThat(policy.canView(project, teacher)).isTrue();
+            assertThat(policy.canView(project, TestData.user(9, "c@unisimon.edu.co", Role.MACONDOLAB)))
+                    .isTrue();
+        }
+
+        @Test
+        void anyoneElseOnlyIfARuleSaysSo() {
+            when(rule.canView(project, judge)).thenReturn(false);
+            assertThat(policy.canView(project, judge)).isFalse();
+
+            when(rule.canView(project, judge)).thenReturn(true);
+            assertThat(policy.canView(project, judge)).isTrue();
         }
     }
 

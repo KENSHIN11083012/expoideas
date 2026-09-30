@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { byName } from '@/lib/text';
@@ -30,12 +30,14 @@ export function ProjectDialog({ project, onClose }) {
 
     const { data: editions = [], isPending: loadingEditions } = useEditions();
     const { data: sectors = [], isPending: loadingSectors } = useCatalogItems(CATALOG_PATHS.sectors);
+    const { data: prototypeTypes = [] } = useCatalogItems(CATALOG_PATHS.prototypeTypes);
     const { data: teachers = [], isPending: loadingTeachers } = useTeachers();
 
     const openEditions = editions.filter((edition) => edition.registrationOpen);
 
     const {
         register,
+        control,
         handleSubmit,
         setError,
         formState: { errors, isSubmitting, isDirty },
@@ -43,9 +45,12 @@ export function ProjectDialog({ project, onClose }) {
         resolver: zodResolver(projectSchema),
         defaultValues: toFormValues(project),
     });
+    // El tipo de prototipo es cosa de INNPRENDE II, y solo cuando MacondoLab ya cargó el catálogo.
+    const track = useWatch({ control, name: 'track' });
+    const asksPrototypeType = track === 'INNPRENDE_II' && prototypeTypes.length > 0;
 
     const submit = async (values) => {
-        const body = toProjectRequest(values);
+        const body = toProjectRequest({ ...values, prototypeTypeId: asksPrototypeType ? values.prototypeTypeId : '' });
         try {
             await save.mutateAsync({ id: project?.id, body });
             toast.success(editing ? 'Los datos del proyecto se actualizaron' : `"${body.title}" quedó inscrito`);
@@ -132,6 +137,23 @@ export function ProjectDialog({ project, onClose }) {
                                 ))}
                             </NativeSelect>
                         </Field>
+                        {asksPrototypeType && (
+                            <Field
+                                label="Tipo de prototipo"
+                                error={errors.prototypeTypeId?.message}
+                                hint="De él depende qué evidencias se piden."
+                                required
+                            >
+                                <NativeSelect {...register('prototypeTypeId')}>
+                                    <option value="">Selecciona el tipo</option>
+                                    {[...prototypeTypes].sort(byName).map((type) => (
+                                        <option key={type.id} value={String(type.id)}>
+                                            {type.name}
+                                        </option>
+                                    ))}
+                                </NativeSelect>
+                            </Field>
+                        )}
                         <Field
                             label="Profesor del grupo"
                             error={errors.teacherId?.message}

@@ -51,10 +51,12 @@ public class DeliverableService {
                         .collect(Collectors.groupingBy(
                                 deliverable -> deliverable.getType().getId(), LinkedHashMap::new, Collectors.toList()));
 
+        // Los generales de la cátedra más los del tipo de prototipo del proyecto.
         return typeRepository
                 .findByEditionIdAndTrackOrderBySortOrderAscIdAsc(
                         project.getEdition().getId(), project.getTrack())
                 .stream()
+                .filter(type -> type.appliesTo(project))
                 .map(type -> DeliverableGroupResponse.of(type, byType.getOrDefault(type.getId(), List.of())))
                 .toList();
     }
@@ -120,7 +122,8 @@ public class DeliverableService {
                                 .getEdition()
                                 .getId()
                                 .equals(project.getEdition().getId())
-                        && candidate.getTrack() == project.getTrack())
+                        && candidate.getTrack() == project.getTrack()
+                        && candidate.appliesTo(project))
                 .orElseThrow(() -> new NoSuchElementException("No existe un entregable con ID: " + typeId));
         policy.requireSubmissionOpen(project.getEdition(), type.getClosesOn());
 

@@ -104,6 +104,26 @@ public class CatalogController {
         return catalogService.updateSector(id, request);
     }
 
+    // ── Tipos de prototipo (INNPRENDE II) ───────────────────────────────────
+
+    @GetMapping("/prototype-types")
+    @SecurityRequirements
+    public List<CatalogItemResponse> listPrototypeTypes() {
+        return catalogService.listPrototypeTypes();
+    }
+
+    @PostMapping("/prototype-types")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CatalogItemResponse createPrototypeType(@Valid @RequestBody CatalogItemRequest request) {
+        return catalogService.createPrototypeType(request);
+    }
+
+    @PutMapping("/prototype-types/{id}")
+    public CatalogItemResponse updatePrototypeType(
+            @PathVariable Integer id, @Valid @RequestBody CatalogItemRequest request) {
+        return catalogService.updatePrototypeType(id, request);
+    }
+
     // ── Keywords ────────────────────────────────────────────────────────────
 
     @GetMapping("/keywords")

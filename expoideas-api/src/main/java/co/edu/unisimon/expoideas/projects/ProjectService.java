@@ -1,9 +1,11 @@
 package co.edu.unisimon.expoideas.projects;
 
 import co.edu.unisimon.expoideas.catalogs.CatalogLookup;
+import co.edu.unisimon.expoideas.catalogs.PrototypeType;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
 import co.edu.unisimon.expoideas.editions.Edition;
 import co.edu.unisimon.expoideas.editions.EditionRepository;
+import co.edu.unisimon.expoideas.editions.Track;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
 import co.edu.unisimon.expoideas.users.UserRepository;
@@ -145,7 +147,30 @@ public class ProjectService {
         project.setTitle(request.title().strip());
         project.setSummary(request.summary().strip());
         project.setSector(catalogLookup.sector(request.sectorId()));
+        project.setPrototypeType(prototypeType(project.getTrack(), request.prototypeTypeId()));
         project.setTeacher(teacher(request.teacherId()));
+    }
+
+    /**
+     * El tipo de prototipo es cosa de INNPRENDE II. Se exige solo cuando
+     * MacondoLab ya cargó el catálogo: antes, los proyectos de II van sin tipo.
+     *
+     * @throws InvalidFieldsException si viene en I, o falta en II con catálogo cargado
+     */
+    private PrototypeType prototypeType(Track track, Integer prototypeTypeId) {
+        if (track != Track.INNPRENDE_II) {
+            if (prototypeTypeId != null) {
+                throw new InvalidFieldsException("prototypeTypeId", "El tipo de prototipo es solo para INNPRENDE II");
+            }
+            return null;
+        }
+        if (prototypeTypeId == null) {
+            if (catalogLookup.hasPrototypeTypes()) {
+                throw new InvalidFieldsException("prototypeTypeId", "Elige el tipo de prototipo");
+            }
+            return null;
+        }
+        return catalogLookup.prototypeType(prototypeTypeId);
     }
 
     private User teacher(Integer id) {

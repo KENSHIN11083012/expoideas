@@ -8,6 +8,8 @@ export const projectSchema = z.object({
     title: z.string().trim().min(1, 'Ingresa el título del proyecto').max(150, 'Máximo 150 caracteres'),
     summary: z.string().trim().min(1, 'Describe tu propuesta de valor').max(500, 'Máximo 500 caracteres'),
     sectorId: z.string().min(1, 'Selecciona el sector'),
+    /** Solo en INNPRENDE II. Si el catálogo tiene tipos, la API lo exige y devuelve el error en el campo. */
+    prototypeTypeId: z.string(),
     teacherId: z.string().min(1, 'Selecciona el profesor del grupo'),
 });
 
@@ -23,6 +25,7 @@ export const toProjectRequest = (values) => ({
     title: values.title,
     summary: values.summary,
     sectorId: Number(values.sectorId),
+    prototypeTypeId: values.prototypeTypeId ? Number(values.prototypeTypeId) : null,
     teacherId: Number(values.teacherId),
 });
 
@@ -33,6 +36,7 @@ export const toFormValues = (project) => ({
     title: project?.title ?? '',
     summary: project?.summary ?? '',
     sectorId: project ? String(project.sectorId) : '',
+    prototypeTypeId: project?.prototypeTypeId ? String(project.prototypeTypeId) : '',
     teacherId: project ? String(project.teacherId) : '',
 });
 

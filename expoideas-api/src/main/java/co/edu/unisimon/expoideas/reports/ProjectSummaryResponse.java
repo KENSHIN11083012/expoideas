@@ -18,6 +18,7 @@ public record ProjectSummaryResponse(
         Track track,
         String title,
         String sector,
+        String prototypeType,
         String teacher,
         String leader,
         int members,
@@ -35,6 +36,7 @@ public record ProjectSummaryResponse(
                 project.getTrack(),
                 project.getTitle(),
                 project.getSector().getName(),
+                project.getPrototypeType() != null ? project.getPrototypeType().getName() : null,
                 project.getTeacher().fullName(),
                 project.leader().getUser().fullName(),
                 (int) project.getMembers().stream()

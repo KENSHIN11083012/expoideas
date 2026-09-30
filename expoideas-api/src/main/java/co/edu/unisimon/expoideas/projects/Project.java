@@ -1,5 +1,6 @@
 package co.edu.unisimon.expoideas.projects;
 
+import co.edu.unisimon.expoideas.catalogs.PrototypeType;
 import co.edu.unisimon.expoideas.catalogs.Sector;
 import co.edu.unisimon.expoideas.editions.Edition;
 import co.edu.unisimon.expoideas.editions.EditionTrack;
@@ -62,6 +63,11 @@ public class Project {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "sector_id", nullable = false)
     private Sector sector;
+
+    /** Solo en INNPRENDE II, y solo cuando MacondoLab ya cargó el catálogo. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "prototype_type_id")
+    private PrototypeType prototypeType;
 
     /** Docente que acompaña al grupo, elegido por el líder. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

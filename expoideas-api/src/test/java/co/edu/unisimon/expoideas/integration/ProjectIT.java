@@ -44,6 +44,7 @@ class ProjectIT extends IntegrationTest {
         Team team = newTeam();
         Map<String, Object> body = projectBody(team);
         body.put("track", "INNPRENDE_II");
+        chooseAnyPrototypeType(body);
 
         Response refused = post("/api/v1/projects", team.leaderToken(), body).expect(403);
         assertThat(refused.json("$.detail").toString()).contains("aprobado INNPRENDE I");
@@ -92,6 +93,7 @@ class ProjectIT extends IntegrationTest {
 
         Map<String, Object> second = projectBody(team);
         second.put("track", "INNPRENDE_II");
+        chooseAnyPrototypeType(second);
         Response refused = post("/api/v1/projects", team.leaderToken(), second).expect(409);
         assertThat(refused.json("$.detail").toString()).contains("misma edición");
 
@@ -138,6 +140,7 @@ class ProjectIT extends IntegrationTest {
         assertThat(projects).containsExactly(finished);
         Map<String, Object> trackTwo = projectBody(team);
         trackTwo.put("track", "INNPRENDE_II");
+        chooseAnyPrototypeType(trackTwo);
         post("/api/v1/projects", team.memberToken(), trackTwo).expect(201);
         post("/api/v1/projects", team.leaderToken(), trackTwo).expect(409);
 

@@ -22,4 +22,7 @@ public record ProjectRequest(
         String summary,
 
         @NotNull(message = "El sector es obligatorio") Integer sectorId,
+
+        /** Solo en INNPRENDE II: obligatorio si el catálogo tiene tipos; en I no se acepta. */
+        Integer prototypeTypeId,
         @NotNull(message = "El profesor es obligatorio") Integer teacherId) {}

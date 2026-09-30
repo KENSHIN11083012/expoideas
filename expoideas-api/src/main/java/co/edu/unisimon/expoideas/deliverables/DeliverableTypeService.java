@@ -1,5 +1,6 @@
 package co.edu.unisimon.expoideas.deliverables;
 
+import co.edu.unisimon.expoideas.catalogs.CatalogLookup;
 import co.edu.unisimon.expoideas.common.ConflictException;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
 import co.edu.unisimon.expoideas.editions.Edition;
@@ -35,6 +36,7 @@ public class DeliverableTypeService {
     private final EditionRepository editionRepository;
     private final UserRepository userRepository;
     private final FileService fileService;
+    private final CatalogLookup catalogLookup;
 
     @Transactional(readOnly = true)
     public List<DeliverableTypeResponse> list(Integer editionId, Track track) {
@@ -131,6 +133,11 @@ public class DeliverableTypeService {
         type.setMaxFiles(request.maxFiles());
         type.setSortOrder(request.sortOrder());
         type.setClosesOn(request.closesOn());
+        if (request.prototypeTypeId() != null && type.getTrack() != Track.INNPRENDE_II) {
+            throw new InvalidFieldsException("prototypeTypeId", "El tipo de prototipo es solo para INNPRENDE II");
+        }
+        type.setPrototypeType(
+                request.prototypeTypeId() == null ? null : catalogLookup.prototypeType(request.prototypeTypeId()));
         // saveAndFlush: un nombre repetido en la misma cátedra falla aquí, con 409.
         return DeliverableTypeResponse.from(typeRepository.saveAndFlush(type));
     }

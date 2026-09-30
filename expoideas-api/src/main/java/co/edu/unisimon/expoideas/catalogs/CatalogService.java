@@ -27,6 +27,7 @@ public class CatalogService {
     private final FacultyRepository facultyRepository;
     private final AcademicProgramRepository academicProgramRepository;
     private final SectorRepository sectorRepository;
+    private final PrototypeTypeRepository prototypeTypeRepository;
     private final KeywordRepository keywordRepository;
     private final CatalogLookup lookup;
 
@@ -109,6 +110,24 @@ public class CatalogService {
     @Transactional
     public CatalogItemResponse updateSector(Integer id, CatalogItemRequest request) {
         return update(sectorRepository, id, request, "un sector");
+    }
+
+    // ── Tipos de prototipo ──────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<CatalogItemResponse> listPrototypeTypes() {
+        return list(prototypeTypeRepository);
+    }
+
+    @Transactional
+    public CatalogItemResponse createPrototypeType(CatalogItemRequest request) {
+        return create(prototypeTypeRepository, PrototypeType::new, request);
+    }
+
+    /** @throws NoSuchElementException si el id no existe */
+    @Transactional
+    public CatalogItemResponse updatePrototypeType(Integer id, CatalogItemRequest request) {
+        return update(prototypeTypeRepository, id, request, "un tipo de prototipo");
     }
 
     // ── Keywords ────────────────────────────────────────────────────────────

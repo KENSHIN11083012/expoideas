@@ -40,6 +40,8 @@ export const deliverableTypeSchema = z.object({
         .pipe(z.coerce.number().int('Usa un número entero').min(1, 'Mínimo 1').max(10, 'Máximo 10')),
     /** Cierre propio ("2026-11-28"); vacío usa el de la edición. */
     closesOn: z.string(),
+    /** Solo en INNPRENDE II: el tipo de prototipo al que se le pide; vacío, a todos. */
+    prototypeTypeId: z.string(),
 });
 
 export const toTypeRequest = (values, editionId, track) => ({
@@ -52,6 +54,7 @@ export const toTypeRequest = (values, editionId, track) => ({
     maxFiles: values.maxFiles,
     sortOrder: values.sortOrder ?? 0,
     closesOn: values.closesOn || null,
+    prototypeTypeId: values.prototypeTypeId ? Number(values.prototypeTypeId) : null,
 });
 
 export const toTypeFormValues = (type) => ({
@@ -62,6 +65,7 @@ export const toTypeFormValues = (type) => ({
     maxFiles: type ? String(type.maxFiles) : '1',
     sortOrder: type?.sortOrder ?? 0,
     closesOn: type?.closesOn ?? '',
+    prototypeTypeId: type?.prototypeTypeId ? String(type.prototypeTypeId) : '',
 });
 
 /** Un enlace para un entregable de tipo LINK. Espejo de DeliverableLinkRequest. */

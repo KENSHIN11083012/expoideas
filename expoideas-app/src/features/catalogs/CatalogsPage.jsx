@@ -1,4 +1,4 @@
-import { Building2, GraduationCap, Landmark, Shapes, Tags } from 'lucide-react';
+import { Box, Building2, GraduationCap, Landmark, Shapes, Tags } from 'lucide-react';
 import { useAuth } from '@/features/auth/useAuth';
 import { PageContainer } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/ui/page-header';
@@ -51,6 +51,16 @@ const CATALOGS = [
         newLabel: 'Nuevo sector',
         article: 'un sector',
         icon: Shapes,
+    },
+    {
+        // INNPRENDE II: según el tipo se piden unos entregables u otros. Nace vacío; los define MacondoLab.
+        key: 'prototypeTypes',
+        path: CATALOG_PATHS.prototypeTypes,
+        label: 'Tipos de prototipo',
+        singular: 'tipo de prototipo',
+        newLabel: 'Nuevo tipo de prototipo',
+        article: 'un tipo de prototipo',
+        icon: Box,
     },
     {
         key: 'keywords',

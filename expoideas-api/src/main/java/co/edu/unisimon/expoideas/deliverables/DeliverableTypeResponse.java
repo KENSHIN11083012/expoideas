@@ -22,7 +22,9 @@ public record DeliverableTypeResponse(
         int sortOrder,
         String templateFileId,
         String templateFileName,
-        LocalDate closesOn) {
+        LocalDate closesOn,
+        Integer prototypeTypeId,
+        String prototypeType) {
 
     public static DeliverableTypeResponse from(DeliverableType type) {
         StoredFile template = type.getTemplate();
@@ -38,6 +40,8 @@ public record DeliverableTypeResponse(
                 type.getSortOrder(),
                 template != null ? template.getUuid() : null,
                 template != null ? template.getOriginalName() : null,
-                type.getClosesOn());
+                type.getClosesOn(),
+                type.getPrototypeType() != null ? type.getPrototypeType().getId() : null,
+                type.getPrototypeType() != null ? type.getPrototypeType().getName() : null);
     }
 }

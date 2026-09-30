@@ -233,6 +233,8 @@ class ProjectControllerTest {
                 "Sensores para detectar plagas antes de que se vean.",
                 3,
                 "Agroindustria y alimentos",
+                null,
+                null,
                 7,
                 "Carlos Mendoza",
                 true,

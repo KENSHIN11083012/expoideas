@@ -38,7 +38,9 @@ public class SecurityConfig {
     };
 
     /** Clasificación de proyectos: la escriben MacondoLab y el administrador. */
-    private static final String[] CLASSIFICATION_CATALOGS = {"/api/v1/sectors/**", "/api/v1/keywords/**"};
+    private static final String[] CLASSIFICATION_CATALOGS = {
+        "/api/v1/sectors/**", "/api/v1/keywords/**", "/api/v1/prototype-types/**"
+    };
 
     /** Ediciones de la Expo: las escribe MacondoLab; las fechas son públicas. */
     private static final String EDITIONS = "/api/v1/editions/**";

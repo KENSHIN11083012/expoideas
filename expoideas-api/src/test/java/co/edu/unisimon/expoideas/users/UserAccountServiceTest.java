@@ -18,6 +18,7 @@ import co.edu.unisimon.expoideas.catalogs.CampusRepository;
 import co.edu.unisimon.expoideas.catalogs.CatalogLookup;
 import co.edu.unisimon.expoideas.catalogs.Faculty;
 import co.edu.unisimon.expoideas.catalogs.FacultyRepository;
+import co.edu.unisimon.expoideas.catalogs.PrototypeTypeRepository;
 import co.edu.unisimon.expoideas.catalogs.SectorRepository;
 import co.edu.unisimon.expoideas.common.ConflictException;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
@@ -59,6 +60,9 @@ class UserAccountServiceTest {
     private SectorRepository sectorRepository;
 
     @Mock
+    private PrototypeTypeRepository prototypeTypeRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
@@ -75,8 +79,12 @@ class UserAccountServiceTest {
 
     @BeforeEach
     void setUp() {
-        CatalogLookup lookup =
-                new CatalogLookup(campusRepository, facultyRepository, academicProgramRepository, sectorRepository);
+        CatalogLookup lookup = new CatalogLookup(
+                campusRepository,
+                facultyRepository,
+                academicProgramRepository,
+                sectorRepository,
+                prototypeTypeRepository);
         service = new UserAccountService(
                 userRepository, new AffiliationResolver(lookup), new PasswordUpdater(passwordEncoder), fileService);
 

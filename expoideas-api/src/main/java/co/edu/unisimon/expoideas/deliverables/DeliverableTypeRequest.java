@@ -35,4 +35,7 @@ public record DeliverableTypeRequest(
 
         int sortOrder,
 
-        LocalDate closesOn) {}
+        LocalDate closesOn,
+
+        /** Solo en INNPRENDE II: el entregable se pide solo a los proyectos de ese tipo. Null: a todos. */
+        Integer prototypeTypeId) {}

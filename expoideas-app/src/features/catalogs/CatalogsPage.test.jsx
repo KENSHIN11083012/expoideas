@@ -16,7 +16,14 @@ describe('Catálogos por rol', () => {
         useAuth.mockReturnValue({ isAdmin: true });
         render(<CatalogsPage />);
 
-        expect(tabs()).toEqual(['Sedes', 'Facultades', 'Programas académicos', 'Sectores', 'Palabras clave']);
+        expect(tabs()).toEqual([
+            'Sedes',
+            'Facultades',
+            'Programas académicos',
+            'Sectores',
+            'Tipos de prototipo',
+            'Palabras clave',
+        ]);
         expect(screen.getByText('Panel de Sedes')).toBeInTheDocument();
     });
 
@@ -24,7 +31,7 @@ describe('Catálogos por rol', () => {
         useAuth.mockReturnValue({ isAdmin: false });
         render(<CatalogsPage />);
 
-        expect(tabs()).toEqual(['Sectores', 'Palabras clave']);
+        expect(tabs()).toEqual(['Sectores', 'Tipos de prototipo', 'Palabras clave']);
         expect(screen.getByText('Panel de Sectores')).toBeInTheDocument();
         expect(screen.queryByText(/Sedes/)).not.toBeInTheDocument();
     });

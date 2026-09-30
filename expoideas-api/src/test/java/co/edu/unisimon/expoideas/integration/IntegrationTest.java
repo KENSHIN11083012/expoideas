@@ -266,6 +266,17 @@ abstract class IntegrationTest {
                 .json("$.id");
     }
 
+    /**
+     * Si alguna prueba ya cargó tipos de prototipo, un proyecto de INNPRENDE II tiene
+     * que elegir uno: el catálogo es compartido y las pruebas no dependen del orden.
+     */
+    protected void chooseAnyPrototypeType(Map<String, Object> projectBody) {
+        List<Integer> ids = get("/api/v1/prototype-types", null).expect(200).json("$[*].id");
+        if (!ids.isEmpty()) {
+            projectBody.put("prototypeTypeId", ids.getFirst());
+        }
+    }
+
     // ── Ediciones ───────────────────────────────────────────────────────────
 
     /**

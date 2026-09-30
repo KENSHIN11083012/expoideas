@@ -15,11 +15,11 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
      * configuración de la cátedra queda perezosa: traerla en la misma consulta
      * serían dos colecciones a la vez, que Hibernate no permite.
      */
-    @EntityGraph(attributePaths = {"edition", "sector", "teacher", "members", "members.user"})
+    @EntityGraph(attributePaths = {"edition", "sector", "prototypeType", "teacher", "members", "members.user"})
     Optional<Project> findWithTeamById(Integer id);
 
     /** Los proyectos en los que esa cuenta está en el equipo, invitada o aceptada. */
-    @EntityGraph(attributePaths = {"edition", "sector", "teacher", "members", "members.user"})
+    @EntityGraph(attributePaths = {"edition", "sector", "prototypeType", "teacher", "members", "members.user"})
     @Query("select distinct p from Project p join p.members m where m.user.id = :userId order by p.createdAt desc")
     List<Project> findAllOfMember(@Param("userId") Integer userId);
 
@@ -27,7 +27,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
      * Proyectos que cumplen los filtros, de la inscripción más reciente a la más
      * antigua. Un filtro en null no filtra.
      */
-    @EntityGraph(attributePaths = {"edition", "sector", "teacher", "members", "members.user"})
+    @EntityGraph(attributePaths = {"edition", "sector", "prototypeType", "teacher", "members", "members.user"})
     @Query("""
             select distinct p from Project p
             where (:editionId is null or p.edition.id = :editionId)

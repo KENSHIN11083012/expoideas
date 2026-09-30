@@ -18,6 +18,7 @@ public class CatalogLookup {
     private final FacultyRepository facultyRepository;
     private final AcademicProgramRepository academicProgramRepository;
     private final SectorRepository sectorRepository;
+    private final PrototypeTypeRepository prototypeTypeRepository;
 
     /** @throws NoSuchElementException si no existe */
     public Campus campus(Integer id) {
@@ -38,6 +39,18 @@ public class CatalogLookup {
         return sectorRepository
                 .findById(id)
                 .orElseThrow(() -> new NoSuchElementException("No existe un sector con ID: " + id));
+    }
+
+    /** @throws NoSuchElementException si no existe */
+    public PrototypeType prototypeType(Integer id) {
+        return prototypeTypeRepository
+                .findById(id)
+                .orElseThrow(() -> new NoSuchElementException("No existe un tipo de prototipo con ID: " + id));
+    }
+
+    /** Si MacondoLab ya cargó tipos de prototipo: mientras no, los proyectos de II van sin tipo. */
+    public boolean hasPrototypeTypes() {
+        return prototypeTypeRepository.count() > 0;
     }
 
     /** @throws NoSuchElementException si no existe */

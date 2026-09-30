@@ -280,6 +280,12 @@ export default function ProjectPage() {
                                 <dt className="label-mono text-on-surface-variant">Sector</dt>
                                 <dd className="text-on-surface">{project.sector}</dd>
                             </div>
+                            {project.prototypeType && (
+                                <div>
+                                    <dt className="label-mono text-on-surface-variant">Tipo de prototipo</dt>
+                                    <dd className="text-on-surface">{project.prototypeType}</dd>
+                                </div>
+                            )}
                             <div>
                                 <dt className="label-mono text-on-surface-variant">Profesor del grupo</dt>
                                 <dd className="text-on-surface">{project.teacher}</dd>

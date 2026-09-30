@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import { TEMPLATE_ACCEPT, downloadFile, validateSize } from '@/lib/files';
 import { trackLabel } from '@/lib/tracks';
 import { handleFormError } from '@/lib/validation';
+import { CATALOG_PATHS } from '@/features/catalogs/api';
+import { useCatalogItems } from '@/features/catalogs/queries';
 import { formatDay } from '@/features/editions/status';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,6 +41,9 @@ function TypeForm({ type, editionId, track, onDone, onCancel }) {
         formState: { errors, isSubmitting },
     } = useForm({ resolver: zodResolver(deliverableTypeSchema), defaultValues: toTypeFormValues(type) });
     const isLink = isLinkKind(useWatch({ control, name: 'kind' }));
+    // Solo INNPRENDE II distingue entregables por tipo de prototipo, y solo si el catálogo tiene tipos.
+    const { data: prototypeTypes = [] } = useCatalogItems(CATALOG_PATHS.prototypeTypes);
+    const asksPrototypeType = track === 'INNPRENDE_II' && prototypeTypes.length > 0;
 
     const submit = async (values) => {
         try {
@@ -84,6 +89,22 @@ function TypeForm({ type, editionId, track, onDone, onCancel }) {
                     <Input type="number" min="1" max="10" {...register('maxFiles')} />
                 </Field>
             </div>
+            {asksPrototypeType && (
+                <Field
+                    label="Aplica a"
+                    error={errors.prototypeTypeId?.message}
+                    hint="Un entregable con tipo solo se pide a los proyectos de ese tipo de prototipo."
+                >
+                    <NativeSelect {...register('prototypeTypeId')}>
+                        <option value="">Todos los tipos de prototipo</option>
+                        {prototypeTypes.map((type) => (
+                            <option key={type.id} value={String(type.id)}>
+                                Solo {type.name}
+                            </option>
+                        ))}
+                    </NativeSelect>
+                </Field>
+            )}
             <Field
                 label="Cierre propio"
                 error={errors.closesOn?.message}
@@ -218,6 +239,7 @@ function TypeRow({ type, editionId, track, onEdit, onDelete }) {
                               : `Hasta ${type.maxFiles} archivos`}
                     </Badge>
                     {type.closesOn && <Badge variant="lime">Cierra el {formatDay(type.closesOn)}</Badge>}
+                    {type.prototypeType && <Badge variant="dark">Solo {type.prototypeType}</Badge>}
                 </div>
                 {!isLinkKind(type.kind) && <TemplateControls type={type} editionId={editionId} track={track} />}
             </div>

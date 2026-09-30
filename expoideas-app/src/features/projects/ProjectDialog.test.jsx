@@ -20,15 +20,21 @@ const sectors = [
 
 let save;
 
+let prototypeTypes = [];
+
 const renderDialog = (current = null, editions = [openEdition]) => {
     useEditions.mockReturnValue({ data: editions, isPending: false });
-    useCatalogItems.mockReturnValue({ data: sectors, isPending: false });
+    useCatalogItems.mockImplementation((path) => ({
+        data: path === '/prototype-types' ? prototypeTypes : sectors,
+        isPending: false,
+    }));
     useTeachers.mockReturnValue({ data: teachers, isPending: false });
     renderWithProviders(<ProjectDialog project={current} onClose={vi.fn()} />);
     return within(screen.getByRole('dialog'));
 };
 
 beforeEach(() => {
+    prototypeTypes = [];
     save = { mutateAsync: vi.fn().mockResolvedValue(project), isPending: false };
     useSaveProject.mockReturnValue(save);
 });
@@ -54,6 +60,7 @@ describe('Inscribir un proyecto', () => {
                     title: 'BioSensor',
                     summary: 'Sensores para detectar plagas.',
                     sectorId: 3,
+                    prototypeTypeId: null,
                     teacherId: 7,
                 },
             }),
@@ -109,5 +116,41 @@ describe('Editar un proyecto', () => {
         await userEvent.click(dialog.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(save.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ id: 10 })));
+    });
+});
+
+describe('Tipo de prototipo', () => {
+    it('no se pide en INNPRENDE I ni cuando el catálogo está vacío', async () => {
+        const dialog = renderDialog();
+
+        await userEvent.selectOptions(dialog.getByLabelText(/Cátedra/), 'INNPRENDE_II');
+        expect(dialog.queryByLabelText(/Tipo de prototipo/)).not.toBeInTheDocument();
+    });
+
+    it('en INNPRENDE II con catálogo cargado se elige y viaja como número', async () => {
+        prototypeTypes = [
+            { id: 1, name: 'Digital' },
+            { id: 2, name: 'Físico' },
+        ];
+        const dialog = renderDialog();
+
+        await userEvent.selectOptions(dialog.getByLabelText(/Cátedra/), 'INNPRENDE_I');
+        expect(dialog.queryByLabelText(/Tipo de prototipo/)).not.toBeInTheDocument();
+
+        await userEvent.selectOptions(dialog.getByLabelText(/Edición/), '1');
+        await userEvent.selectOptions(dialog.getByLabelText(/Cátedra/), 'INNPRENDE_II');
+        await userEvent.type(dialog.getByLabelText(/Título/), 'Prototipo BioSensor');
+        await userEvent.type(dialog.getByLabelText(/Propuesta de valor/), 'Un prototipo para validar en campo.');
+        await userEvent.selectOptions(dialog.getByLabelText(/Sector/), '3');
+        await userEvent.selectOptions(dialog.getByLabelText(/Tipo de prototipo/), '2');
+        await userEvent.selectOptions(dialog.getByLabelText(/Profesor/), '7');
+        await userEvent.click(dialog.getByRole('button', { name: 'Inscribir' }));
+
+        await waitFor(() =>
+            expect(save.mutateAsync).toHaveBeenCalledWith({
+                id: undefined,
+                body: expect.objectContaining({ track: 'INNPRENDE_II', prototypeTypeId: 2 }),
+            }),
+        );
     });
 });

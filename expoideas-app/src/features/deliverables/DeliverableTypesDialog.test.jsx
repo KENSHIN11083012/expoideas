@@ -5,6 +5,7 @@ import { openEdition } from '@/test/fixtures';
 import { apiError, renderWithProviders } from '@/test/utils';
 import { DeliverableTypesDialog } from './DeliverableTypesDialog';
 import { downloadFile } from '@/lib/files';
+import { useCatalogItems } from '@/features/catalogs/queries';
 import { useDeliverableTemplate, useDeliverableTypes, useSaveDeliverableType } from './queries';
 
 vi.mock('./queries', () => ({
@@ -13,6 +14,7 @@ vi.mock('./queries', () => ({
     useDeliverableTemplate: vi.fn(),
 }));
 vi.mock('@/lib/files', async (importOriginal) => ({ ...(await importOriginal()), downloadFile: vi.fn() }));
+vi.mock('@/features/catalogs/queries', () => ({ useCatalogItems: vi.fn() }));
 
 const poster = {
     id: 5,
@@ -29,9 +31,16 @@ const poster = {
 let save;
 let template;
 
-const renderDialog = (types = [poster]) => {
+const renderDialog = (types = [poster], track = 'INNPRENDE_I') => {
     useDeliverableTypes.mockReturnValue({ data: types, isPending: false, error: null, refetch: vi.fn() });
-    renderWithProviders(<DeliverableTypesDialog edition={openEdition} track="INNPRENDE_I" onClose={vi.fn()} />);
+    useCatalogItems.mockReturnValue({
+        data: [
+            { id: 1, name: 'Digital' },
+            { id: 2, name: 'Físico' },
+        ],
+        isPending: false,
+    });
+    renderWithProviders(<DeliverableTypesDialog edition={openEdition} track={track} onClose={vi.fn()} />);
     return within(screen.getByRole('dialog'));
 };
 
@@ -83,6 +92,7 @@ describe('Entregables de una cátedra', () => {
                     maxFiles: 3,
                     sortOrder: 0,
                     closesOn: null,
+                    prototypeTypeId: null,
                 },
             }),
         );
@@ -173,5 +183,37 @@ describe('La plantilla de un entregable', () => {
 
         // El aviso sale como toast; lo que importa es que no llegue a la API.
         await waitFor(() => expect(template.mutateAsync).not.toHaveBeenCalled());
+    });
+});
+
+describe('Entregables por tipo de prototipo', () => {
+    it('en INNPRENDE I no se pregunta a qué tipo aplica', async () => {
+        const dialog = renderDialog([]);
+
+        await userEvent.click(dialog.getByRole('button', { name: /Agregar entregable/ }));
+
+        expect(dialog.queryByLabelText(/Aplica a/)).not.toBeInTheDocument();
+    });
+
+    it('en INNPRENDE II se puede pedir solo a un tipo de prototipo', async () => {
+        const dialog = renderDialog([], 'INNPRENDE_II');
+
+        await userEvent.click(dialog.getByRole('button', { name: /Agregar entregable/ }));
+        await userEvent.type(dialog.getByLabelText(/Nombre/), 'Video del prototipo');
+        await userEvent.selectOptions(dialog.getByLabelText(/Aplica a/), '1');
+        await userEvent.click(dialog.getByRole('button', { name: 'Agregar' }));
+
+        await waitFor(() =>
+            expect(save.mutateAsync).toHaveBeenCalledWith({
+                id: undefined,
+                body: expect.objectContaining({ track: 'INNPRENDE_II', prototypeTypeId: 1 }),
+            }),
+        );
+    });
+
+    it('un entregable de un tipo lo dice en su fila', () => {
+        const dialog = renderDialog([{ ...poster, prototypeTypeId: 2, prototypeType: 'Físico' }], 'INNPRENDE_II');
+
+        expect(dialog.getByText('Solo Físico')).toBeInTheDocument();
     });
 });

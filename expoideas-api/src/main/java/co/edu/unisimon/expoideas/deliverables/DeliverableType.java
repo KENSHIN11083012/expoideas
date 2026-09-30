@@ -1,8 +1,10 @@
 package co.edu.unisimon.expoideas.deliverables;
 
+import co.edu.unisimon.expoideas.catalogs.PrototypeType;
 import co.edu.unisimon.expoideas.editions.Edition;
 import co.edu.unisimon.expoideas.editions.Track;
 import co.edu.unisimon.expoideas.files.StoredFile;
+import co.edu.unisimon.expoideas.projects.Project;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -42,6 +44,11 @@ public class DeliverableType {
     @Column(nullable = false, length = 20)
     private Track track;
 
+    /** Si lo tiene, solo se pide a los proyectos de ese tipo de prototipo (INNPRENDE II); si no, a todos. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "prototype_type_id")
+    private PrototypeType prototypeType;
+
     @Column(nullable = false, length = 100)
     private String name;
 
@@ -75,4 +82,13 @@ public class DeliverableType {
      */
     @Column(name = "closes_on")
     private LocalDate closesOn;
+
+    /** Si este entregable se le pide a ese proyecto: los generales, a todos; los de un tipo, solo a los de ese tipo. */
+    public boolean appliesTo(Project project) {
+        if (prototypeType == null) {
+            return true;
+        }
+        return project.getPrototypeType() != null
+                && project.getPrototypeType().getId().equals(prototypeType.getId());
+    }
 }

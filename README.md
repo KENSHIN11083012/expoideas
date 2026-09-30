@@ -49,9 +49,12 @@ entregas, aprobar INNPRENDE I habilita para II, y nadie cursa las dos a la vez. 
 de sustentaciones y los avisos por correo (invitaciones, cuentas creadas por la gestión y
 sustentaciones); el servidor SMTP lo pone TI. Y los jurados por asignación: la gestión asigna
 profesores, jurados externos o cuentas de gestión a cada proyecto, y cada jurado ve los suyos en
-«Evaluar», con sus entregables.
+«Evaluar», con sus entregables. El mecanismo de los tipos de prototipo de INNPRENDE II también
+está: el catálogo (vacío hasta que MacondoLab entregue los tipos), el tipo por proyecto y los
+entregables que se piden solo a un tipo.
 
-- Tipos de prototipo en INNPRENDE II (faltan los tipos).
+- Los tipos de prototipo de INNPRENDE II y qué evidencia pide cada uno (los carga la gestión en
+  Catálogos y en los entregables; falta que MacondoLab los defina).
 - Cambio de marca a Ideario (faltan logos, paleta y nombres).
 - Evaluación con rúbrica y recordatorios a los jurados (la rúbrica está en el SharePoint).
 - Precarga del listado de la cátedra para asignar roles al registrarse (falta el listado).

@@ -46,7 +46,8 @@ public class DeliverableProgressService {
         Map<String, Integer> requiredByTrack = new HashMap<>();
         typeRepository
                 .countRequiredByTrack()
-                .forEach(row -> requiredByTrack.put(key(row.getEditionId(), row.getTrack()), row.getTotal()));
+                .forEach(row -> requiredByTrack.put(
+                        key(row.getEditionId(), row.getTrack(), row.getPrototypeTypeId()), row.getTotal()));
 
         Map<Integer, Integer> deliveredByProject = new HashMap<>();
         List<Integer> ids = projects.stream().map(Project::getId).toList();
@@ -56,14 +57,23 @@ public class DeliverableProgressService {
 
         Map<Integer, Progress> progress = new HashMap<>();
         for (Project project : projects) {
-            int required = requiredByTrack.getOrDefault(key(project.getEdition().getId(), project.getTrack()), 0);
+            // Los generales de la cátedra más los del tipo de prototipo del proyecto, si tiene.
+            int required = requiredByTrack.getOrDefault(key(project.getEdition().getId(), project.getTrack(), null), 0);
+            if (project.getPrototypeType() != null) {
+                required += requiredByTrack.getOrDefault(
+                        key(
+                                project.getEdition().getId(),
+                                project.getTrack(),
+                                project.getPrototypeType().getId()),
+                        0);
+            }
             int delivered = deliveredByProject.getOrDefault(project.getId(), 0);
             progress.put(project.getId(), required == 0 ? NONE : new Progress(required, Math.min(delivered, required)));
         }
         return progress;
     }
 
-    private static String key(Integer editionId, Track track) {
-        return editionId + ":" + track;
+    private static String key(Integer editionId, Track track, Integer prototypeTypeId) {
+        return editionId + ":" + track + ":" + (prototypeTypeId == null ? "todos" : prototypeTypeId);
     }
 }

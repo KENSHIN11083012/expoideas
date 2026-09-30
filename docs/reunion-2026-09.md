@@ -19,7 +19,7 @@ en el repositorio.
 | 5 | Vista del profesor | No encontraba cómo entrar al proyecto. Se pidió un botón más visible | **Hecho (F1):** botón «Ver proyecto» en el listado, en tabla y en móvil |
 | 6 | Externos | Los jurados externos entran por invitación del administrador, sin correo institucional | **Hecho (F5):** la gestión crea la cuenta y la persona recibe por correo su usuario y su contraseña temporal |
 | 7 | Entregables | Plantilla del póster para descargar, diligenciar y subir. Entregable nuevo: **fotos de la sustentación** como evidencia (trazabilidad) | **Hecho (F2):** cada entregable puede llevar plantilla (PDF, DOCX o PPTX), ser un enlace y tener su propio cierre. Las fotos de la sustentación se configuran como un entregable de imágenes con cierre propio |
-| 8 | INNPRENDE II | Enlace externo (video en YouTube o prototipo), fotos y pitch. Lista de **tipo de prototipo** (digital, físico, etc.) y, según el tipo, qué evidencia y qué formato se piden | Faltan los tipos (con la profesora) |
+| 8 | INNPRENDE II | Enlace externo (video en YouTube o prototipo), fotos y pitch. Lista de **tipo de prototipo** (digital, físico, etc.) y, según el tipo, qué evidencia y qué formato se piden | **Mecanismo hecho (F6):** enlaces y fotos ya se piden como entregables (F2); el catálogo de tipos nace vacío y cada entregable puede pedirse solo a un tipo. Faltan los tipos (con la profesora) |
 | 9 | Prerrequisito | No se puede cursar INNPRENDE I y II a la vez. Para inscribirse en II hay que haber aprobado I | **Hecho (F3):** el profesor o la gestión registran el resultado tras el cierre de entregas; la gestión también aprueba a mano a quien cursó I antes de la plataforma |
 | 10 | Precarga | Cargar el listado de estudiantes y profesores de la cátedra para asignar el rol al registrarse. Quien no esté queda como estudiante | Falta el listado |
 | 11 | Sustentaciones | El administrador asigna fecha y hora a cada equipo, y se avisa al correo institucional | **Hecho (F5):** agenda en «Sustentaciones»; el equipo y el profesor reciben el aviso, también al cambiarla |
@@ -49,7 +49,7 @@ Otros puntos de la reunión:
 3. **F3 · Prerrequisito** de INNPRENDE I a II (punto 9). **Hecha** (en `main`).
 4. **F4 · Jurados por asignación** (punto 2; la invitación de externos quedó en la F5). **Hecha** (en `main`).
 5. **F5 · Agenda de sustentaciones** con aviso por correo (punto 11), más los correos de invitación y de cuenta creada (punto 6). **Hecha** (en `main`).
-6. **F6 · Tipos de prototipo** en INNPRENDE II (punto 8), cuando estén definidos.
+6. **F6 · Tipos de prototipo** en INNPRENDE II (punto 8). **Mecanismo hecho** (en `main`); los tipos los carga la gestión cuando estén definidos.
 7. **F7 · Cambio de marca a Ideario** (punto 13), cuando lleguen los recursos.
 8. **F8 · Evaluación con rúbrica** (punto 12).
 

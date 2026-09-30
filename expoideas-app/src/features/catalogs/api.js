@@ -6,6 +6,7 @@ export const CATALOG_PATHS = {
     faculties: '/faculties',
     academicPrograms: '/academic-programs',
     sectors: '/sectors',
+    prototypeTypes: '/prototype-types',
     keywords: '/keywords',
 };
 

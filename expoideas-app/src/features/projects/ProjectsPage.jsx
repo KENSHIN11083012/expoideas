@@ -68,7 +68,10 @@ function ProjectRow({ project }) {
                     {project.edition} · {trackLabel(project.track)}
                 </p>
             </td>
-            <td className="hidden px-5 py-3 text-on-surface-variant lg:table-cell">{project.sector}</td>
+            <td className="hidden px-5 py-3 text-on-surface-variant lg:table-cell">
+                {project.sector}
+                {project.prototypeType && <p className="text-xs">Prototipo: {project.prototypeType}</p>}
+            </td>
             <td className="hidden px-5 py-3 text-on-surface-variant md:table-cell">{project.teacher}</td>
             <td className="px-5 py-3 text-on-surface-variant">
                 {project.leader}
@@ -112,6 +115,12 @@ function ProjectCard({ project }) {
                         <dt className="text-on-surface-variant">Sector:</dt>
                         <dd className="text-on-surface">{project.sector}</dd>
                     </div>
+                    {project.prototypeType && (
+                        <div className="flex gap-2">
+                            <dt className="text-on-surface-variant">Prototipo:</dt>
+                            <dd className="text-on-surface">{project.prototypeType}</dd>
+                        </div>
+                    )}
                     <div className="flex gap-2">
                         <dt className="text-on-surface-variant">Profesor:</dt>
                         <dd className="text-on-surface">{project.teacher}</dd>

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import co.edu.unisimon.expoideas.support.TestData;
 import co.edu.unisimon.expoideas.users.Role;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -305,7 +306,9 @@ class DeliverableIT extends IntegrationTest {
     @Test
     void aDeliverableWithItsOwnDeadlineFollowsItInsteadOfTheEditionOne() {
         String macondolab = loginAs(Role.MACONDOLAB);
-        LocalDate today = LocalDate.now();
+        // La API compara con la fecha de Bogotá (TimeConfig): con la del equipo, de noche en UTC "ayer" aún es hoy
+        // allá.
+        LocalDate today = LocalDate.now(ZoneId.of("America/Bogota"));
         Map<String, Object> closed = typeBody("Fotos cerradas " + System.nanoTime(), "IMAGE", false, 10);
         closed.put("closesOn", today.minusDays(1).toString());
         int closedType = post("/api/v1/deliverable-types", macondolab, closed)

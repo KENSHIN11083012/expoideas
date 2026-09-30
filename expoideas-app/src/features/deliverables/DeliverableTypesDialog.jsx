@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useRef, useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FileText, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Download, FileText, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { TEMPLATE_ACCEPT, downloadFile, validateSize } from '@/lib/files';
 import { trackLabel } from '@/lib/tracks';
 import { handleFormError } from '@/lib/validation';
+import { formatDay } from '@/features/editions/status';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -23,8 +25,8 @@ import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
-import { useDeliverableTypes, useSaveDeliverableType } from './queries';
-import { KINDS, deliverableTypeSchema, kindLabel, toTypeFormValues, toTypeRequest } from './schemas';
+import { useDeliverableTemplate, useDeliverableTypes, useSaveDeliverableType } from './queries';
+import { KINDS, deliverableTypeSchema, isLinkKind, kindLabel, toTypeFormValues, toTypeRequest } from './schemas';
 
 /** Alta y edición de un entregable, dentro del mismo diálogo que la lista. */
 function TypeForm({ type, editionId, track, onDone, onCancel }) {
@@ -36,6 +38,7 @@ function TypeForm({ type, editionId, track, onDone, onCancel }) {
         setError,
         formState: { errors, isSubmitting },
     } = useForm({ resolver: zodResolver(deliverableTypeSchema), defaultValues: toTypeFormValues(type) });
+    const isLink = isLinkKind(useWatch({ control, name: 'kind' }));
 
     const submit = async (values) => {
         try {
@@ -77,10 +80,17 @@ function TypeForm({ type, editionId, track, onDone, onCancel }) {
                         ))}
                     </NativeSelect>
                 </Field>
-                <Field label="Máximo de archivos" error={errors.maxFiles?.message} required>
+                <Field label={isLink ? 'Máximo de enlaces' : 'Máximo de archivos'} error={errors.maxFiles?.message} required>
                     <Input type="number" min="1" max="10" {...register('maxFiles')} />
                 </Field>
             </div>
+            <Field
+                label="Cierre propio"
+                error={errors.closesOn?.message}
+                hint="Déjalo vacío para usar el cierre de entregas de la edición. Sirve para lo que se entrega después de la sustentación, como las fotos."
+            >
+                <Input type="date" {...register('closesOn')} />
+            </Field>
             <Controller
                 control={control}
                 name="required"
@@ -111,19 +121,107 @@ function TypeForm({ type, editionId, track, onDone, onCancel }) {
     );
 }
 
-function TypeRow({ type, onEdit, onDelete }) {
+/**
+ * La plantilla de un entregable ya guardado: el formato oficial (PDF, DOCX o
+ * PPTX) que el equipo descarga y diligencia. Los enlaces no llevan plantilla.
+ */
+function TemplateControls({ type, editionId, track }) {
+    const input = useRef(null);
+    const template = useDeliverableTemplate(editionId, track);
+    const [downloading, setDownloading] = useState(false);
+
+    const pick = async (event) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file) return;
+        const invalid = validateSize(file);
+        if (invalid) {
+            toast.error(invalid);
+            return;
+        }
+        try {
+            await template.mutateAsync({ id: type.id, file });
+            toast.success(`La plantilla de "${type.name}" se guardó`);
+        } catch (error) {
+            toast.error(error.body?.fields?.file ?? error.message);
+        }
+    };
+
+    const remove = async () => {
+        try {
+            await template.mutateAsync({ id: type.id });
+            toast.success(`La plantilla de "${type.name}" se quitó`);
+        } catch (error) {
+            toast.error(error.message);
+        }
+    };
+
+    const download = async () => {
+        setDownloading(true);
+        try {
+            await downloadFile(type.templateFileId, type.templateFileName);
+        } catch (error) {
+            toast.error(error.message);
+        } finally {
+            setDownloading(false);
+        }
+    };
+
+    return (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+            <input
+                ref={input}
+                type="file"
+                accept={TEMPLATE_ACCEPT}
+                className="sr-only"
+                aria-label={`Subir plantilla para ${type.name}`}
+                onChange={pick}
+            />
+            {type.templateFileId ? (
+                <>
+                    <span className="text-on-surface-variant">Plantilla:</span>
+                    <Button variant="ghost" size="sm" onClick={download} loading={downloading}>
+                        <Download /> {type.templateFileName}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => input.current?.click()} loading={template.isPending}>
+                        <Upload /> Reemplazar
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={remove} aria-label={`Quitar plantilla de ${type.name}`}>
+                        <X /> Quitar
+                    </Button>
+                </>
+            ) : (
+                <Button variant="ghost" size="sm" onClick={() => input.current?.click()} loading={template.isPending}>
+                    <Upload /> Subir plantilla
+                </Button>
+            )}
+        </div>
+    );
+}
+
+function TypeRow({ type, editionId, track, onEdit, onDelete }) {
     return (
         <li className="flex items-start justify-between gap-3 rounded border border-outline-variant/60 px-4 py-3">
-            <div className="flex flex-col gap-1">
+            <div className="flex min-w-0 flex-col gap-1">
                 <p className="font-medium text-on-surface">{type.name}</p>
                 {type.description && <p className="text-sm text-on-surface-variant">{type.description}</p>}
                 <div className="flex flex-wrap gap-2">
                     <Badge variant={type.required ? 'primary' : 'outline'}>{type.required ? 'Obligatorio' : 'Opcional'}</Badge>
                     <Badge variant="outline">{kindLabel(type.kind)}</Badge>
-                    <Badge variant="outline">{type.maxFiles === 1 ? 'Un archivo' : `Hasta ${type.maxFiles} archivos`}</Badge>
+                    <Badge variant="outline">
+                        {isLinkKind(type.kind)
+                            ? type.maxFiles === 1
+                                ? 'Un enlace'
+                                : `Hasta ${type.maxFiles} enlaces`
+                            : type.maxFiles === 1
+                              ? 'Un archivo'
+                              : `Hasta ${type.maxFiles} archivos`}
+                    </Badge>
+                    {type.closesOn && <Badge variant="lime">Cierra el {formatDay(type.closesOn)}</Badge>}
                 </div>
+                {!isLinkKind(type.kind) && <TemplateControls type={type} editionId={editionId} track={track} />}
             </div>
-            <div className="flex gap-1">
+            <div className="flex shrink-0 gap-1">
                 <Button variant="ghost" size="icon-sm" onClick={onEdit} aria-label={`Editar ${type.name}`}>
                     <Pencil />
                 </Button>
@@ -137,8 +235,8 @@ function TypeRow({ type, onEdit, onDelete }) {
 
 /**
  * Los entregables que pide una cátedra en una edición: el póster, las fotos del
- * prototipo, las evidencias de validación. Los define MacondoLab y son datos,
- * no código: cambiarlos no necesita un despliegue nuevo.
+ * prototipo, las evidencias de validación, el video del pitch. Los define
+ * MacondoLab y son datos, no código: cambiarlos no necesita un despliegue nuevo.
  */
 export function DeliverableTypesDialog({ edition, track, onClose }) {
     const { data: types = [], isPending, error, refetch } = useDeliverableTypes(edition.id, track);
@@ -181,6 +279,8 @@ export function DeliverableTypesDialog({ edition, track, onClose }) {
                                 <TypeRow
                                     key={type.id}
                                     type={type}
+                                    editionId={edition.id}
+                                    track={track}
                                     onEdit={() => setForm({ type })}
                                     onDelete={() => setConfirm(type)}
                                 />

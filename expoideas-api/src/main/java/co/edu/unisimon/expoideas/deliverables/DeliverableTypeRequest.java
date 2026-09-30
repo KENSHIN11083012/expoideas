@@ -6,10 +6,14 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
 
 /**
  * Alta o edición de un entregable de una cátedra. La edición y la cátedra solo
- * cuentan al crearlo: un entregable no se muda de cátedra.
+ * cuentan al crearlo: un entregable no se muda de cátedra. La plantilla se sube
+ * aparte (PUT /{id}/template).
+ *
+ * @param closesOn cierre propio del entregable; null para usar el de la edición
  */
 public record DeliverableTypeRequest(
         @NotNull(message = "La edición es obligatoria") Integer editionId,
@@ -29,4 +33,6 @@ public record DeliverableTypeRequest(
         @Max(value = 10, message = "Como máximo 10 archivos")
         int maxFiles,
 
-        int sortOrder) {}
+        int sortOrder,
+
+        LocalDate closesOn) {}

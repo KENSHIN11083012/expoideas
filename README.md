@@ -42,9 +42,10 @@ dominio.
 Lo que pidió MacondoLab en la [reunión de septiembre de 2026](docs/reunion-2026-09.md), en el
 orden en que se va a construir. Ya está hecho lo del piloto: registro con solo correo y contraseña
 (el nombre y la facultad se completan en el primer ingreso), el rol se actualiza sin cerrar sesión,
-«profesor» en vez de «docente» y el botón «Ver proyecto» en el listado.
+«profesor» en vez de «docente» y el botón «Ver proyecto» en el listado. También las plantillas
+descargables por entregable, los entregables de tipo enlace y el cierre propio para las fotos de la
+sustentación.
 
-- Plantillas descargables por entregable, entregables de tipo enlace y fotos de la sustentación.
 - Prerrequisito: aprobar INNPRENDE I para inscribirse en II, y no cursar las dos a la vez.
 - Jurados asignados por proyecto e invitación de jurados externos.
 - Correo (invitaciones, cuentas creadas, sustentaciones) y agenda de sustentaciones.

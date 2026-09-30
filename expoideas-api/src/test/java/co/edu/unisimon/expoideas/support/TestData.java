@@ -27,6 +27,13 @@ public final class TestData {
     public static final byte[] JPEG = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0, 16};
     public static final byte[] WEBP = concat(ascii("RIFF"), new byte[] {36, 0, 0, 0}, ascii("WEBPVP8 "));
     public static final byte[] PDF = ascii("%PDF-1.7\n");
+    /** Cabecera local de un ZIP (PK\003\004) seguida del nombre de la entrada que define el formato. */
+    public static final byte[] ZIP = concat(new byte[] {0x50, 0x4B, 0x03, 0x04}, new byte[26], ascii("mimetype"));
+
+    public static final byte[] DOCX =
+            concat(new byte[] {0x50, 0x4B, 0x03, 0x04}, new byte[26], ascii("word/document.xml"));
+    public static final byte[] PPTX =
+            concat(new byte[] {0x50, 0x4B, 0x03, 0x04}, new byte[26], ascii("ppt/presentation.xml"));
 
     private TestData() {}
 

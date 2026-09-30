@@ -4,9 +4,15 @@ import userEvent from '@testing-library/user-event';
 import { openEdition } from '@/test/fixtures';
 import { apiError, renderWithProviders } from '@/test/utils';
 import { DeliverableTypesDialog } from './DeliverableTypesDialog';
-import { useDeliverableTypes, useSaveDeliverableType } from './queries';
+import { downloadFile } from '@/lib/files';
+import { useDeliverableTemplate, useDeliverableTypes, useSaveDeliverableType } from './queries';
 
-vi.mock('./queries', () => ({ useDeliverableTypes: vi.fn(), useSaveDeliverableType: vi.fn() }));
+vi.mock('./queries', () => ({
+    useDeliverableTypes: vi.fn(),
+    useSaveDeliverableType: vi.fn(),
+    useDeliverableTemplate: vi.fn(),
+}));
+vi.mock('@/lib/files', async (importOriginal) => ({ ...(await importOriginal()), downloadFile: vi.fn() }));
 
 const poster = {
     id: 5,
@@ -21,6 +27,7 @@ const poster = {
 };
 
 let save;
+let template;
 
 const renderDialog = (types = [poster]) => {
     useDeliverableTypes.mockReturnValue({ data: types, isPending: false, error: null, refetch: vi.fn() });
@@ -31,6 +38,8 @@ const renderDialog = (types = [poster]) => {
 beforeEach(() => {
     save = { mutateAsync: vi.fn().mockResolvedValue({}), isPending: false };
     useSaveDeliverableType.mockReturnValue(save);
+    template = { mutateAsync: vi.fn().mockResolvedValue({}), isPending: false };
+    useDeliverableTemplate.mockReturnValue(template);
 });
 
 describe('Entregables de una cátedra', () => {
@@ -73,6 +82,7 @@ describe('Entregables de una cátedra', () => {
                     required: true,
                     maxFiles: 3,
                     sortOrder: 0,
+                    closesOn: null,
                 },
             }),
         );
@@ -98,6 +108,26 @@ describe('Entregables de una cátedra', () => {
         expect(dialog.getByLabelText(/Máximo de archivos/)).toHaveValue(1);
     });
 
+    it('un entregable con cierre propio lo muestra y se edita con su fecha', async () => {
+        const dialog = renderDialog([{ ...poster, closesOn: '2026-12-04' }]);
+
+        expect(dialog.getByText(/Cierra el 4 de dic/)).toBeInTheDocument();
+        await userEvent.click(dialog.getByRole('button', { name: 'Editar Póster de investigación' }));
+        expect(dialog.getByLabelText(/Cierre propio/)).toHaveValue('2026-12-04');
+    });
+
+    it('un entregable de tipo enlace habla de enlaces y no lleva plantilla', async () => {
+        const dialog = renderDialog([{ ...poster, kind: 'LINK', name: 'Video del pitch', maxFiles: 2 }]);
+
+        expect(dialog.getByText('Enlace (video, prototipo en línea)')).toBeInTheDocument();
+        expect(dialog.getByText('Hasta 2 enlaces')).toBeInTheDocument();
+        expect(dialog.queryByRole('button', { name: /Subir plantilla/ })).not.toBeInTheDocument();
+
+        await userEvent.click(dialog.getByRole('button', { name: /Agregar entregable/ }));
+        await userEvent.selectOptions(dialog.getByLabelText(/Archivos aceptados/), 'LINK');
+        expect(dialog.getByLabelText(/Máximo de enlaces/)).toBeInTheDocument();
+    });
+
     it('eliminar pide confirmación', async () => {
         const dialog = renderDialog();
 
@@ -106,5 +136,42 @@ describe('Entregables de una cátedra', () => {
         await userEvent.click(confirm.getByRole('button', { name: 'Eliminar' }));
 
         await waitFor(() => expect(save.mutateAsync).toHaveBeenCalledWith({ id: 5, remove: true }));
+    });
+});
+
+describe('La plantilla de un entregable', () => {
+    it('se sube desde su fila', async () => {
+        const dialog = renderDialog();
+
+        await userEvent.upload(
+            dialog.getByLabelText('Subir plantilla para Póster de investigación'),
+            new File(['%PDF-1.7'], 'formato-poster.pdf', { type: 'application/pdf' }),
+        );
+
+        await waitFor(() => expect(template.mutateAsync).toHaveBeenCalledWith({ id: 5, file: expect.any(File) }));
+    });
+
+    it('cuando ya hay una, se descarga, se reemplaza o se quita', async () => {
+        const dialog = renderDialog([
+            { ...poster, templateFileId: '2b2b2b2b-0000-4000-8000-000000000000', templateFileName: 'formato-poster.pptx' },
+        ]);
+
+        expect(dialog.queryByRole('button', { name: /Subir plantilla/ })).not.toBeInTheDocument();
+        await userEvent.click(dialog.getByRole('button', { name: /formato-poster.pptx/ }));
+        expect(downloadFile).toHaveBeenCalledWith('2b2b2b2b-0000-4000-8000-000000000000', 'formato-poster.pptx');
+
+        await userEvent.click(dialog.getByRole('button', { name: 'Quitar plantilla de Póster de investigación' }));
+        await waitFor(() => expect(template.mutateAsync).toHaveBeenCalledWith({ id: 5 }));
+    });
+
+    it('un archivo de más de 5 MB no se envía', async () => {
+        const dialog = renderDialog();
+        const big = new File([new Uint8Array(1)], 'grande.pdf', { type: 'application/pdf' });
+        Object.defineProperty(big, 'size', { value: 6 * 1024 * 1024 });
+
+        await userEvent.upload(dialog.getByLabelText('Subir plantilla para Póster de investigación'), big);
+
+        // El aviso sale como toast; lo que importa es que no llegue a la API.
+        await waitFor(() => expect(template.mutateAsync).not.toHaveBeenCalled());
     });
 });

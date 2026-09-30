@@ -2,6 +2,7 @@ package co.edu.unisimon.expoideas.deliverables;
 
 import co.edu.unisimon.expoideas.editions.Edition;
 import co.edu.unisimon.expoideas.editions.Track;
+import co.edu.unisimon.expoideas.files.StoredFile;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -47,6 +49,11 @@ public class DeliverableType {
     @Column(length = 300)
     private String description;
 
+    /** Formato oficial para descargar y diligenciar (PDF, DOCX o PPTX), si lo hay. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "template_file_id")
+    private StoredFile template;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private DeliverableKind kind;
@@ -61,4 +68,11 @@ public class DeliverableType {
     /** Orden en el que se muestran los entregables de la cátedra. */
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
+
+    /**
+     * Cierre propio, para lo que se entrega después de la sustentación (las fotos
+     * de evidencia). Si es null, vale el cierre de entregas de la edición.
+     */
+    @Column(name = "closes_on")
+    private LocalDate closesOn;
 }

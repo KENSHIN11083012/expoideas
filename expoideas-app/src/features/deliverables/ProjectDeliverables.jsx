@@ -1,26 +1,37 @@
 import { useRef, useState } from 'react';
-import { CircleCheck, CircleDashed, Download, FileText, Trash2, Upload } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { CircleCheck, CircleDashed, Download, FileText, Link2, Plus, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadFile } from '@/lib/files';
+import { handleFormError } from '@/lib/validation';
+import { formatDay, today } from '@/features/editions/status';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback';
+import { Field } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { useProjectDeliverables, useUploadDeliverable } from './queries';
-import { KIND_ACCEPT, kindLabel } from './schemas';
+import { KIND_ACCEPT, isLinkKind, kindLabel, linkSchema } from './schemas';
 
 /** Tamaño legible: la API rechaza cualquier cosa por encima de 5 MB. */
 const fileSize = (bytes) =>
     bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
-function UploadedFile({ file, canEdit, onRemove }) {
+/** Cómo se llama una entrega en los mensajes y las etiquetas: por su nombre de archivo o por su dirección. */
+const entryName = (entry) => entry.fileName ?? entry.url;
+
+/** Un archivo subido o un enlace registrado. */
+function UploadedEntry({ entry, canEdit, onRemove }) {
     const [downloading, setDownloading] = useState(false);
+    const isLink = Boolean(entry.url);
 
     const download = async () => {
         setDownloading(true);
         try {
-            await downloadFile(file.fileId, file.fileName);
+            await downloadFile(entry.fileId, entry.fileName);
         } catch (error) {
             toast.error(error.message);
         } finally {
@@ -31,26 +42,43 @@ function UploadedFile({ file, canEdit, onRemove }) {
     return (
         <li className="flex items-center justify-between gap-3 rounded border border-outline-variant/60 px-4 py-2.5">
             <div className="flex min-w-0 items-center gap-3">
-                <FileText className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                {isLink ? (
+                    <Link2 className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                ) : (
+                    <FileText className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                )}
                 <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-on-surface">{file.fileName}</p>
+                    {isLink ? (
+                        <a
+                            href={entry.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block truncate text-sm font-medium text-primary underline-offset-4 hover:underline"
+                        >
+                            {entry.url}
+                        </a>
+                    ) : (
+                        <p className="truncate text-sm font-medium text-on-surface">{entry.fileName}</p>
+                    )}
                     <p className="text-xs text-on-surface-variant">
-                        {fileSize(file.sizeBytes)} · subido por {file.uploadedBy}
+                        {isLink ? 'registrado' : `${fileSize(entry.sizeBytes)} · subido`} por {entry.uploadedBy}
                     </p>
                 </div>
             </div>
             <div className="flex shrink-0 gap-1">
-                <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={download}
-                    loading={downloading}
-                    aria-label={`Descargar ${file.fileName}`}
-                >
-                    <Download />
-                </Button>
+                {!isLink && (
+                    <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={download}
+                        loading={downloading}
+                        aria-label={`Descargar ${entry.fileName}`}
+                    >
+                        <Download />
+                    </Button>
+                )}
                 {canEdit && (
-                    <Button variant="ghost" size="icon-sm" onClick={onRemove} aria-label={`Quitar ${file.fileName}`}>
+                    <Button variant="ghost" size="icon-sm" onClick={onRemove} aria-label={`Quitar ${entryName(entry)}`}>
                         <Trash2 />
                     </Button>
                 )}
@@ -59,11 +87,73 @@ function UploadedFile({ file, canEdit, onRemove }) {
     );
 }
 
-function DeliverableGroup({ group, projectId, canEdit, onRemove }) {
+/** El formulario de un enlace: la dirección del video o del prototipo en línea. */
+function LinkForm({ type, projectId }) {
+    const upload = useUploadDeliverable(projectId);
+    const {
+        register,
+        handleSubmit,
+        reset,
+        setError,
+        formState: { errors, isSubmitting },
+    } = useForm({ resolver: zodResolver(linkSchema), defaultValues: { url: '' } });
+
+    const submit = async ({ url }) => {
+        try {
+            await upload.mutateAsync({ deliverableTypeId: type.id, url });
+            reset();
+            toast.success('El enlace se registró');
+        } catch (error) {
+            handleFormError(error, setError);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit(submit)} noValidate className="flex flex-col gap-3 sm:flex-row sm:items-start">
+            <Field label={`Enlace para ${type.name}`} error={errors.url?.message ?? errors.root?.message} className="flex-1">
+                <Input type="url" inputMode="url" placeholder="https://" {...register('url')} />
+            </Field>
+            {/* Alineado con el campo, no con su etiqueta. */}
+            <Button type="submit" variant="outline" size="sm" loading={isSubmitting} className="h-11 sm:mt-6 sm:h-8">
+                <Plus /> Agregar enlace
+            </Button>
+        </form>
+    );
+}
+
+/** Descarga el formato oficial del entregable, si MacondoLab lo subió. */
+function TemplateButton({ type }) {
+    const [downloading, setDownloading] = useState(false);
+
+    const download = async () => {
+        setDownloading(true);
+        try {
+            await downloadFile(type.templateFileId, type.templateFileName);
+        } catch (error) {
+            toast.error(error.message);
+        } finally {
+            setDownloading(false);
+        }
+    };
+
+    return (
+        <Button variant="outline" size="sm" onClick={download} loading={downloading} className="h-11 sm:h-8">
+            <Download /> Descargar plantilla
+        </Button>
+    );
+}
+
+/** Si ese entregable admite cambios hoy: con cierre propio manda ese; si no, el de la edición. */
+const isOpenToday = (type, project) => (type.closesOn ? today() <= type.closesOn : project.submissionOpen);
+
+function DeliverableGroup({ group, project, isMember, onRemove }) {
     const { type, files, complete } = group;
     const input = useRef(null);
-    const upload = useUploadDeliverable(projectId);
+    const upload = useUploadDeliverable(project.id);
+    const isLink = isLinkKind(type.kind);
     const full = files.length >= type.maxFiles;
+    const open = isOpenToday(type, project);
+    const canEdit = isMember && open;
 
     const pick = async (event) => {
         const file = event.target.files?.[0];
@@ -94,18 +184,46 @@ function DeliverableGroup({ group, projectId, canEdit, onRemove }) {
                 <div className="flex flex-wrap gap-2">
                     <Badge variant={type.required ? 'primary' : 'outline'}>{type.required ? 'Obligatorio' : 'Opcional'}</Badge>
                     <Badge variant="outline">{kindLabel(type.kind)}</Badge>
+                    {type.closesOn && (
+                        <Badge variant={open ? 'lime' : 'outline'}>
+                            {open ? 'Cierra el' : 'Cerró el'} {formatDay(type.closesOn)}
+                        </Badge>
+                    )}
                 </div>
             </div>
 
+            {type.templateFileId && (
+                <div className="flex flex-wrap items-center gap-3">
+                    <TemplateButton type={type} />
+                    <p className="text-xs text-on-surface-variant">Descárgala, diligénciala y súbela aquí.</p>
+                </div>
+            )}
+
             {files.length > 0 && (
                 <ul className="flex flex-col gap-2">
-                    {files.map((file) => (
-                        <UploadedFile key={file.id} file={file} canEdit={canEdit} onRemove={() => onRemove(file)} />
+                    {files.map((entry) => (
+                        <UploadedEntry key={entry.id} entry={entry} canEdit={canEdit} onRemove={() => onRemove(entry)} />
                     ))}
                 </ul>
             )}
 
-            {canEdit && (
+            {isMember && !open && type.closesOn && (
+                <p className="text-sm text-on-surface-variant">Este entregable cerró el {formatDay(type.closesOn)}.</p>
+            )}
+
+            {canEdit &&
+                isLink &&
+                (full ? (
+                    <p className="text-xs text-on-surface-variant">
+                        {type.maxFiles === 1
+                            ? 'Solo se acepta un enlace: quita el actual para reemplazarlo.'
+                            : `Ya registraron los ${type.maxFiles} enlaces permitidos.`}
+                    </p>
+                ) : (
+                    <LinkForm type={type} projectId={project.id} />
+                ))}
+
+            {canEdit && !isLink && (
                 <div className="flex flex-wrap items-center gap-3">
                     <input
                         ref={input}
@@ -140,22 +258,22 @@ function DeliverableGroup({ group, projectId, canEdit, onRemove }) {
 }
 
 /**
- * Los entregables de la cátedra y lo que el equipo lleva subido. Suben y quitan
- * los integrantes del equipo, hasta el cierre de entregas de la edición; el
- * docente y la gestión solo miran y descargan.
+ * Los entregables de la cátedra y lo que el equipo lleva subido o registrado.
+ * Suben, registran y quitan los integrantes del equipo, hasta el cierre de
+ * entregas de la edición o el propio de cada entregable; el profesor y la
+ * gestión solo miran y descargan.
  */
 export function ProjectDeliverables({ project, isMember }) {
     const { data: groups = [], isPending, error, refetch } = useProjectDeliverables(project.id);
     const remove = useUploadDeliverable(project.id);
     const [confirm, setConfirm] = useState(null);
 
-    const canEdit = isMember && project.submissionOpen;
     const pending = groups.filter((group) => !group.complete).length;
 
-    const removeFile = async () => {
+    const removeEntry = async () => {
         try {
-            await remove.mutateAsync({ deliverableId: confirm.file.id });
-            toast.success('El archivo se quitó');
+            await remove.mutateAsync({ deliverableId: confirm.entry.id });
+            toast.success(confirm.entry.url ? 'El enlace se quitó' : 'El archivo se quitó');
         } catch (error) {
             toast.error(error.message);
         } finally {
@@ -175,7 +293,9 @@ export function ProjectDeliverables({ project, isMember }) {
             </div>
 
             {!project.submissionOpen && (
-                <p className="text-sm text-on-surface-variant">El plazo de entregas de {project.edition} ya cerró.</p>
+                <p className="text-sm text-on-surface-variant">
+                    El plazo de entregas de {project.edition} ya cerró. Solo siguen abiertos los entregables con cierre propio.
+                </p>
             )}
 
             {error ? (
@@ -194,9 +314,9 @@ export function ProjectDeliverables({ project, isMember }) {
                         <DeliverableGroup
                             key={group.type.id}
                             group={group}
-                            projectId={project.id}
-                            canEdit={canEdit}
-                            onRemove={(file) => setConfirm({ file })}
+                            project={project}
+                            isMember={isMember}
+                            onRemove={(entry) => setConfirm({ entry })}
                         />
                     ))}
                 </div>
@@ -204,10 +324,10 @@ export function ProjectDeliverables({ project, isMember }) {
 
             <ConfirmDialog
                 open={Boolean(confirm)}
-                title="¿Quitar el archivo?"
-                description={`"${confirm?.file?.fileName ?? ''}" se elimina de la plataforma.`}
+                title={confirm?.entry?.url ? '¿Quitar el enlace?' : '¿Quitar el archivo?'}
+                description={`"${confirm ? entryName(confirm.entry) : ''}" se elimina de la plataforma.`}
                 confirmLabel="Quitar"
-                onConfirm={removeFile}
+                onConfirm={removeEntry}
                 onClose={() => setConfirm(null)}
             />
         </section>

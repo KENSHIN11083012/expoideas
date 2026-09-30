@@ -19,6 +19,16 @@ class FileFormatTest {
     }
 
     @Test
+    void recognizesOfficeTemplatesByTheirZipEntryNotByAnyZip() {
+        assertThat(FileFormat.detect(TestData.DOCX)).contains(FileFormat.DOCX);
+        assertThat(FileFormat.detect(TestData.PPTX)).contains(FileFormat.PPTX);
+        // Un ZIP cualquiera (o un .docx que no lo es) no pasa.
+        assertThat(FileFormat.detect(TestData.ZIP)).isEmpty();
+        // Y la entrada sola, sin la firma ZIP, tampoco.
+        assertThat(FileFormat.detect(ascii("word/document.xml"))).isEmpty();
+    }
+
+    @Test
     void doesNotTrustExtensionsNorAcceptDangerousFormats() {
         assertThat(FileFormat.detect(
                         ascii("<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>")))
@@ -48,5 +58,6 @@ class FileFormatTest {
         assertThat(FileFormat.describe(EnumSet.of(FileFormat.PDF))).isEqualTo("PDF");
         assertThat(FileFormat.describe(EnumSet.of(FileFormat.PDF, FileFormat.PNG)))
                 .isEqualTo("PNG o PDF");
+        assertThat(FileFormat.describe(FileFormat.TEMPLATES)).isEqualTo("PDF, DOCX o PPTX");
     }
 }

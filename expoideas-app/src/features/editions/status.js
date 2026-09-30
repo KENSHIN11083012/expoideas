@@ -1,7 +1,7 @@
 /** Estado y fechas de una edición, tal como se muestran. */
 
-/** Hoy en la zona del equipo, en el mismo formato que las fechas de la API. */
-const today = () => new Date().toLocaleDateString('en-CA');
+/** Hoy en la zona del equipo, en el mismo formato que las fechas de la API ("2026-11-03"). */
+export const today = () => new Date().toLocaleDateString('en-CA');
 
 /**
  * En qué punto está la edición. La API ya dice qué se puede hacer hoy

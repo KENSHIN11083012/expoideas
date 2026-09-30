@@ -24,6 +24,19 @@ const poster = {
 
 const photos = { ...poster, id: 6, name: 'Fotos del prototipo', description: null, kind: 'IMAGE', maxFiles: 3 };
 
+const video = { ...poster, id: 7, name: 'Video del pitch', description: null, kind: 'LINK', maxFiles: 1 };
+
+const registeredVideo = {
+    id: 9,
+    fileId: null,
+    fileName: null,
+    contentType: null,
+    sizeBytes: null,
+    url: 'https://youtu.be/abc',
+    uploadedBy: 'Ana María Pérez',
+    uploadedAt: '2026-11-10T10:00:00',
+};
+
 const uploadedPoster = {
     id: 3,
     fileId: '8a5f1f2e-0000-4000-8000-000000000000',
@@ -128,6 +141,81 @@ describe('El equipo sube y quita archivos', () => {
         await userEvent.click(screen.getByRole('button', { name: 'Descargar poster.pdf' }));
 
         expect(downloadFile).toHaveBeenCalledWith(uploadedPoster.fileId, 'poster.pdf');
+    });
+});
+
+describe('Plantillas, enlaces y cierres propios', () => {
+    it('ofrece descargar la plantilla del entregable', async () => {
+        renderSection({
+            groups: [
+                {
+                    type: { ...poster, templateFileId: '2b2b2b2b-0000-4000-8000-000000000000', templateFileName: 'formato.pptx' },
+                    files: [],
+                    complete: false,
+                },
+            ],
+        });
+
+        await userEvent.click(screen.getByRole('button', { name: /Descargar plantilla/ }));
+
+        expect(downloadFile).toHaveBeenCalledWith('2b2b2b2b-0000-4000-8000-000000000000', 'formato.pptx');
+    });
+
+    it('un entregable de tipo enlace pide una dirección en vez de un archivo', async () => {
+        renderSection({ groups: [{ type: video, files: [], complete: false }] });
+
+        expect(screen.queryByRole('button', { name: /Subir archivo/ })).not.toBeInTheDocument();
+        await userEvent.type(screen.getByLabelText(/Enlace para Video del pitch/), 'youtu.be/abc');
+        await userEvent.click(screen.getByRole('button', { name: /Agregar enlace/ }));
+        expect(await screen.findByText(/empiece por http:\/\//)).toBeInTheDocument();
+        expect(upload.mutateAsync).not.toHaveBeenCalled();
+
+        await userEvent.clear(screen.getByLabelText(/Enlace para Video del pitch/));
+        await userEvent.type(screen.getByLabelText(/Enlace para Video del pitch/), 'https://youtu.be/abc');
+        await userEvent.click(screen.getByRole('button', { name: /Agregar enlace/ }));
+
+        await waitFor(() =>
+            expect(upload.mutateAsync).toHaveBeenCalledWith({ deliverableTypeId: 7, url: 'https://youtu.be/abc' }),
+        );
+    });
+
+    it('un enlace registrado se abre en otra pestaña y se puede quitar', async () => {
+        renderSection({ groups: [{ type: video, files: [registeredVideo], complete: true }] });
+
+        expect(screen.getByRole('link', { name: 'https://youtu.be/abc' })).toHaveAttribute('target', '_blank');
+        expect(screen.queryByLabelText(/Enlace para Video del pitch/)).not.toBeInTheDocument();
+        expect(screen.getByText(/quita el actual para reemplazarlo/)).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole('button', { name: 'Quitar https://youtu.be/abc' }));
+        const dialog = within(await screen.findByRole('alertdialog'));
+        expect(dialog.getByText('¿Quitar el enlace?')).toBeInTheDocument();
+        await userEvent.click(dialog.getByRole('button', { name: 'Quitar' }));
+
+        await waitFor(() => expect(upload.mutateAsync).toHaveBeenCalledWith({ deliverableId: 9 }));
+    });
+
+    it('con cierre propio pasado, ese entregable no admite cambios aunque la edición siga abierta', () => {
+        renderSection({
+            groups: [
+                { type: { ...photos, closesOn: '2000-01-01' }, files: [], complete: true },
+                { type: poster, files: [], complete: false },
+            ],
+        });
+
+        expect(screen.getByText(/Cerró el 1 de ene/)).toBeInTheDocument();
+        expect(screen.getByText(/Este entregable cerró el 1 de ene/)).toBeInTheDocument();
+        expect(screen.queryByLabelText('Subir archivo para Fotos del prototipo')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('Subir archivo para Póster de investigación')).toBeInTheDocument();
+    });
+
+    it('con cierre propio futuro, sigue abierto aunque la edición haya cerrado', () => {
+        renderSection({
+            groups: [{ type: { ...photos, closesOn: '2999-12-31' }, files: [], complete: true }],
+            current: { ...project, submissionOpen: false },
+        });
+
+        expect(screen.getByText(/Cierra el 31 de dic/)).toBeInTheDocument();
+        expect(screen.getByLabelText('Subir archivo para Fotos del prototipo')).toBeInTheDocument();
     });
 });
 

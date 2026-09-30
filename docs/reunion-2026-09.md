@@ -18,7 +18,7 @@ en el repositorio.
 | 4 | Textos | En la interfaz, «docente» pasa a ser «profesor» | **Hecho (F1)** |
 | 5 | Vista del profesor | No encontraba cómo entrar al proyecto. Se pidió un botón más visible | **Hecho (F1):** botón «Ver proyecto» en el listado, en tabla y en móvil |
 | 6 | Externos | Los jurados externos entran por invitación del administrador, sin correo institucional | Listo para construir |
-| 7 | Entregables | Plantilla del póster para descargar, diligenciar y subir. Entregable nuevo: **fotos de la sustentación** como evidencia (trazabilidad) | Listo para construir |
+| 7 | Entregables | Plantilla del póster para descargar, diligenciar y subir. Entregable nuevo: **fotos de la sustentación** como evidencia (trazabilidad) | **Hecho (F2):** cada entregable puede llevar plantilla (PDF, DOCX o PPTX), ser un enlace y tener su propio cierre. Las fotos de la sustentación se configuran como un entregable de imágenes con cierre propio |
 | 8 | INNPRENDE II | Enlace externo (video en YouTube o prototipo), fotos y pitch. Lista de **tipo de prototipo** (digital, físico, etc.) y, según el tipo, qué evidencia y qué formato se piden | Faltan los tipos (con la profesora) |
 | 9 | Prerrequisito | No se puede cursar INNPRENDE I y II a la vez. Para inscribirse en II hay que haber aprobado I | Listo para construir |
 | 10 | Precarga | Cargar el listado de estudiantes y profesores de la cátedra para asignar el rol al registrarse. Quien no esté queda como estudiante | Falta el listado |
@@ -45,7 +45,7 @@ Otros puntos de la reunión:
 ## Plan de fases propuesto
 
 1. **F1 · UX para el piloto:** puntos 1, 3, 4 y 5. **Hecha** (rama `feat/piloto-ux`).
-2. **F2 · Entregables:** plantillas por tipo y fotos de evidencia (punto 7).
+2. **F2 · Entregables:** plantillas por tipo, enlaces y fotos de evidencia (punto 7). **Hecha** (rama `feat/entregables-plantillas`).
 3. **F3 · Prerrequisito** de INNPRENDE I a II (punto 9).
 4. **F4 · Roles:** varios roles por persona e invitación de externos (puntos 2 y 6).
 5. **F5 · Agenda de sustentaciones** con aviso por correo (punto 11).

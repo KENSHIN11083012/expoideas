@@ -18,7 +18,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Un archivo que un equipo subió para uno de los entregables de su cátedra. */
+/**
+ * Un archivo que un equipo subió, o un enlace que registró, para uno de los
+ * entregables de su cátedra. Es una cosa o la otra; la base lo comprueba.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -38,9 +41,18 @@ public class Deliverable {
     @JoinColumn(name = "deliverable_type_id", nullable = false)
     private DeliverableType type;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "file_id", nullable = false)
+    /** Null cuando el entregable es un enlace. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "file_id")
     private StoredFile file;
+
+    /** Null cuando el entregable es un archivo. */
+    @Column(length = 500)
+    private String url;
+
+    public boolean isLink() {
+        return url != null;
+    }
 
     /** Quién del equipo lo subió, por si hay que preguntar. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

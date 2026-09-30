@@ -15,8 +15,19 @@ export const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
 export const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
+/** Plantillas de entregables: lo que el selector de archivos ofrece. La API decide por el contenido. */
+export const TEMPLATE_ACCEPT = '.pdf,.docx,.pptx';
+
 /** URL para mostrar o descargar un archivo por su identificador; null si no hay. */
 export const fileUrl = (id) => (id ? `${API_BASE_URL}/files/${encodeURIComponent(id)}` : null);
+
+/** Mensaje de error si el archivo está vacío o pasa del límite, o null si cabe. */
+export const validateSize = (file) => {
+    if (!file) return 'Elige un archivo.';
+    if (file.size === 0) return 'El archivo está vacío.';
+    if (file.size > MAX_FILE_BYTES) return 'El archivo supera el tamaño máximo permitido de 5 MB.';
+    return null;
+};
 
 /** Mensaje de error si la imagen no se puede subir, o null si parece válida. */
 export const validateImage = (file) => {

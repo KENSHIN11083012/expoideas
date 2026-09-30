@@ -24,6 +24,15 @@ export const useSaveDeliverableType = (editionId, track) => {
     });
 };
 
+/** Sube (con file) o quita (sin file) la plantilla de un entregable y recarga la lista. */
+export const useDeliverableTemplate = (editionId, track) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, file }) => (file ? deliverableApi.uploadTemplate(id, file) : deliverableApi.removeTemplate(id)),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: typesKey(editionId, track) }),
+    });
+};
+
 /** Lo que pide la cátedra junto con lo que el proyecto lleva subido. */
 export const useProjectDeliverables = (projectId) =>
     useQuery({
@@ -33,16 +42,18 @@ export const useProjectDeliverables = (projectId) =>
     });
 
 /**
- * Sube o quita un archivo. La API devuelve la lista completa ya actualizada, así
- * que se guarda en la caché sin pedirla otra vez.
+ * Sube un archivo, registra un enlace (con url) o quita uno u otro (con
+ * deliverableId). La API devuelve la lista completa ya actualizada, así que se
+ * guarda en la caché sin pedirla otra vez.
  */
 export const useUploadDeliverable = (projectId) => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ deliverableTypeId, file, deliverableId }) =>
-            deliverableId
-                ? deliverableApi.remove(projectId, deliverableId)
-                : deliverableApi.upload(projectId, deliverableTypeId, file),
+        mutationFn: ({ deliverableTypeId, file, url, deliverableId }) => {
+            if (deliverableId) return deliverableApi.remove(projectId, deliverableId);
+            if (url) return deliverableApi.submitLink(projectId, { deliverableTypeId, url });
+            return deliverableApi.upload(projectId, deliverableTypeId, file);
+        },
         onSuccess: (groups) => queryClient.setQueryData(projectKey(projectId), groups),
     });
 };

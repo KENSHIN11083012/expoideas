@@ -8,10 +8,13 @@ import co.edu.unisimon.expoideas.projects.Project;
 import co.edu.unisimon.expoideas.projects.ProjectDeletedEvent;
 import co.edu.unisimon.expoideas.projects.ProjectPolicy;
 import co.edu.unisimon.expoideas.users.User;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,11 +25,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Los archivos que un equipo sube para los entregables de su cátedra.
+ * Los archivos que un equipo sube, y los enlaces que registra, para los
+ * entregables de su cátedra.
  *
- * <p>Sube el equipo, no el docente, y solo hasta el cierre de entregas. Los
- * archivos son privados: los abren el equipo, su docente y la gestión (ver
- * {@link DeliverableAccessRule}).
+ * <p>Sube el equipo, no el profesor, y solo hasta el cierre de entregas (el de la
+ * edición o el propio del entregable, si lo tiene). Los archivos son privados:
+ * los abren el equipo, su profesor y la gestión (ver {@link DeliverableAccessRule}).
  */
 @Slf4j
 @Service
@@ -59,15 +63,57 @@ public class DeliverableService {
      * Sube un archivo para un entregable.
      *
      * @throws ConflictException      si el plazo cerró o el entregable ya llegó a su tope de archivos
-     * @throws InvalidFieldsException si el archivo no cumple el formato o el tamaño
+     * @throws InvalidFieldsException si el archivo no cumple el formato o el tamaño, o el entregable es un enlace
      */
     @Transactional
     public List<DeliverableGroupResponse> upload(Integer projectId, Integer typeId, MultipartFile file, String email) {
         User uploader = policy.account(email);
         Project project = policy.findVisible(projectId, uploader);
-        policy.requireTeamMember(project, uploader);
-        policy.requireSubmissionOpen(project.getEdition());
+        DeliverableType type = requireOpenSlot(project, typeId, uploader);
+        if (type.getKind().isLink()) {
+            throw new InvalidFieldsException(
+                    FileService.FIELD, "\"" + type.getName() + "\" se entrega como enlace, no como archivo");
+        }
 
+        Deliverable deliverable = newDeliverable(project, type, uploader);
+        deliverable.setFile(fileService.store(file, type.getKind().formats(), FileVisibility.PRIVATE, uploader));
+        deliverableRepository.save(deliverable);
+        log.info("Proyecto {}: archivo subido para el entregable {}", projectId, type.getName());
+
+        return list(projectId, email);
+    }
+
+    /**
+     * Registra un enlace para un entregable de tipo LINK.
+     *
+     * @throws ConflictException      si el plazo cerró o el entregable ya llegó a su tope
+     * @throws InvalidFieldsException si la dirección no es http(s) o el entregable es un archivo
+     */
+    @Transactional
+    public List<DeliverableGroupResponse> submitLink(Integer projectId, DeliverableLinkRequest request, String email) {
+        User author = policy.account(email);
+        Project project = policy.findVisible(projectId, author);
+        DeliverableType type = requireOpenSlot(project, request.deliverableTypeId(), author);
+        if (!type.getKind().isLink()) {
+            throw new InvalidFieldsException(
+                    "url", "\"" + type.getName() + "\" se entrega como archivo, no como enlace");
+        }
+
+        Deliverable deliverable = newDeliverable(project, type, author);
+        deliverable.setUrl(validUrl(request.url()));
+        deliverableRepository.save(deliverable);
+        log.info("Proyecto {}: enlace registrado para el entregable {}", projectId, type.getName());
+
+        return list(projectId, email);
+    }
+
+    /**
+     * El entregable de la cátedra del proyecto, si esa cuenta está en el equipo,
+     * el plazo (el propio del entregable o el de la edición) sigue abierto y aún
+     * cabe uno más.
+     */
+    private DeliverableType requireOpenSlot(Project project, Integer typeId, User member) {
+        policy.requireTeamMember(project, member);
         DeliverableType type = typeRepository
                 .findById(typeId)
                 .filter(candidate -> candidate
@@ -76,42 +122,59 @@ public class DeliverableService {
                                 .equals(project.getEdition().getId())
                         && candidate.getTrack() == project.getTrack())
                 .orElseThrow(() -> new NoSuchElementException("No existe un entregable con ID: " + typeId));
+        policy.requireSubmissionOpen(project.getEdition(), type.getClosesOn());
 
-        int uploaded = deliverableRepository.countByProjectIdAndTypeId(projectId, typeId);
+        int uploaded = deliverableRepository.countByProjectIdAndTypeId(project.getId(), typeId);
         if (uploaded >= type.getMaxFiles()) {
+            String what = type.getKind().isLink() ? "enlace" : "archivo";
             throw new ConflictException(
                     type.getMaxFiles() == 1
-                            ? "\"" + type.getName()
-                                    + "\" admite un solo archivo. Quita el que subiste para reemplazarlo"
-                            : "\"" + type.getName() + "\" admite hasta " + type.getMaxFiles() + " archivos");
+                            ? "\"" + type.getName() + "\" admite un solo " + what
+                                    + ". Quita el que subiste para reemplazarlo"
+                            : "\"" + type.getName() + "\" admite hasta " + type.getMaxFiles() + " " + what + "s");
         }
+        return type;
+    }
 
+    private static Deliverable newDeliverable(Project project, DeliverableType type, User author) {
         Deliverable deliverable = new Deliverable();
         deliverable.setProject(project);
         deliverable.setType(type);
-        deliverable.setUploadedBy(uploader);
-        deliverable.setFile(fileService.store(file, type.getKind().formats(), FileVisibility.PRIVATE, uploader));
-        deliverableRepository.save(deliverable);
-        log.info("Proyecto {}: archivo subido para el entregable {}", projectId, type.getName());
-
-        return list(projectId, email);
+        deliverable.setUploadedBy(author);
+        return deliverable;
     }
 
-    /** Quita un archivo subido. Lo puede hacer cualquiera del equipo, no solo quien lo subió. */
+    /** La anotación ya exige http(s); aquí se comprueba que además sea una URL bien formada. */
+    private static String validUrl(String url) {
+        String trimmed = url.strip();
+        try {
+            URI uri = new URI(trimmed);
+            if (uri.getHost() == null || !Set.of("http", "https").contains(uri.getScheme())) {
+                throw new URISyntaxException(trimmed, "sin host o sin esquema");
+            }
+        } catch (URISyntaxException e) {
+            throw new InvalidFieldsException("url", "Ingresa una dirección válida, como https://youtu.be/...");
+        }
+        return trimmed;
+    }
+
+    /** Quita un archivo o un enlace. Lo puede hacer cualquiera del equipo, no solo quien lo subió. */
     @Transactional
     public List<DeliverableGroupResponse> delete(Integer projectId, Integer deliverableId, String email) {
         User actor = policy.account(email);
         Project project = policy.findVisible(projectId, actor);
         policy.requireTeamMember(project, actor);
-        policy.requireSubmissionOpen(project.getEdition());
 
         Deliverable deliverable = deliverableRepository
                 .findWithProjectById(deliverableId)
                 .filter(candidate -> candidate.getProject().getId().equals(projectId))
                 .orElseThrow(() -> new NoSuchElementException("No existe un archivo con ID: " + deliverableId));
+        policy.requireSubmissionOpen(project.getEdition(), deliverable.getType().getClosesOn());
 
         deliverableRepository.delete(deliverable);
-        fileService.delete(deliverable.getFile());
+        if (!deliverable.isLink()) {
+            fileService.delete(deliverable.getFile());
+        }
         return list(projectId, email);
     }
 
@@ -125,6 +188,8 @@ public class DeliverableService {
         List<Deliverable> deliverables = deliverableRepository.findByProjectIdOrderByUploadedAtAsc(event.projectId());
         deliverableRepository.deleteAll(deliverables);
         deliverableRepository.flush();
-        deliverables.forEach(deliverable -> fileService.delete(deliverable.getFile()));
+        deliverables.stream()
+                .filter(deliverable -> !deliverable.isLink())
+                .forEach(deliverable -> fileService.delete(deliverable.getFile()));
     }
 }

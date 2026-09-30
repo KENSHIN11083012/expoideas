@@ -17,7 +17,8 @@ public interface DeliverableRepository extends JpaRepository<Deliverable, Intege
     /** Si ya hay archivos subidos para ese entregable: entonces no se puede borrar. */
     boolean existsByTypeId(Integer typeId);
 
-    @EntityGraph(attributePaths = {"project", "project.members", "project.members.user", "project.teacher", "file"})
+    @EntityGraph(
+            attributePaths = {"project", "project.members", "project.members.user", "project.teacher", "file", "type"})
     Optional<Deliverable> findWithProjectById(Integer id);
 
     /** Cuántos entregables obligatorios distintos tiene con archivos cada proyecto. */

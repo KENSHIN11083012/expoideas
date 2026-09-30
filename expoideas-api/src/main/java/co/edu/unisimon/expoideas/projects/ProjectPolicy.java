@@ -100,6 +100,22 @@ public class ProjectPolicy {
         }
     }
 
+    /**
+     * Igual, pero un entregable puede tener su propio cierre (las fotos de la
+     * sustentación se suben después del cierre general). Si {@code closesOn} es
+     * null, vale el de la edición.
+     */
+    public void requireSubmissionOpen(Edition edition, LocalDate closesOn) {
+        if (closesOn == null) {
+            requireSubmissionOpen(edition);
+            return;
+        }
+        LocalDate today = today();
+        if (today.isBefore(edition.getRegistrationOpensOn()) || today.isAfter(closesOn)) {
+            throw new ConflictException("El plazo de este entregable cerró el " + closesOn);
+        }
+    }
+
     /** Cada estudiante está en un solo proyecto por cátedra en cada edición. */
     public void requireNotOnAnotherTeam(Edition edition, Track track, User user, String message) {
         if (projectRepository.isAlreadyOnATeam(edition.getId(), track, user.getId())) {

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import co.edu.unisimon.expoideas.support.TestData;
 import co.edu.unisimon.expoideas.users.Role;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -158,6 +159,173 @@ class DeliverableIT extends IntegrationTest {
         get("/api/v1/files/" + fileId, team.leaderToken()).expect(404);
         get("/api/v1/projects/" + projectId + "/deliverables", team.leaderToken())
                 .expect(404);
+    }
+
+    // ── Plantillas ──────────────────────────────────────────────────────────
+
+    @Test
+    void managementUploadsATemplateThatAnySessionDownloads() {
+        String macondolab = loginAs(Role.MACONDOLAB);
+        int typeId = createType(macondolab, "Póster " + System.nanoTime(), "DOCUMENT", true, 1);
+        Team team = newTeam();
+        int projectId = createProject(team);
+
+        // Una imagen no es una plantilla; un PPTX sí (por su contenido, no por el nombre).
+        Response rejected = putFile(
+                        "/api/v1/deliverable-types/" + typeId + "/template",
+                        macondolab,
+                        "file",
+                        "poster.pptx",
+                        MediaType.APPLICATION_OCTET_STREAM,
+                        TestData.JPEG)
+                .expect(400);
+        assertThat(rejected.json("$.fields.file").toString()).contains("PDF, DOCX o PPTX");
+
+        Response withTemplate = putFile(
+                        "/api/v1/deliverable-types/" + typeId + "/template",
+                        macondolab,
+                        "file",
+                        "formato-poster.pptx",
+                        MediaType.APPLICATION_OCTET_STREAM,
+                        TestData.PPTX)
+                .expect(200);
+        String templateId = withTemplate.json("$.templateFileId");
+        assertThat(withTemplate.<String>json("$.templateFileName")).isEqualTo("formato-poster.pptx");
+
+        // El equipo la ve junto a su entregable y la descarga; también alguien de otro equipo. Sin sesión, no.
+        Response groups = get("/api/v1/projects/" + projectId + "/deliverables", team.leaderToken())
+                .expect(200);
+        List<String> templates = groups.json("$[?(@.type.id == " + typeId + ")].type.templateFileId");
+        assertThat(templates).containsExactly(templateId);
+        get("/api/v1/files/" + templateId, team.leaderToken()).expect(200);
+        get("/api/v1/files/" + templateId, loginAs(Role.STUDENT)).expect(200);
+        get("/api/v1/files/" + templateId, login(team.teacherEmail(), PASSWORD)).expect(200);
+        get("/api/v1/files/" + templateId, null).expect(404);
+
+        // Reemplazarla borra la anterior; quitarla, la actual.
+        String replaced = putFile(
+                        "/api/v1/deliverable-types/" + typeId + "/template",
+                        macondolab,
+                        "file",
+                        "formato.docx",
+                        MediaType.APPLICATION_OCTET_STREAM,
+                        TestData.DOCX)
+                .expect(200)
+                .json("$.templateFileId");
+        get("/api/v1/files/" + templateId, team.leaderToken()).expect(404);
+        get("/api/v1/files/" + replaced, team.leaderToken()).expect(200);
+
+        Response without = delete("/api/v1/deliverable-types/" + typeId + "/template", macondolab)
+                .expect(200);
+        assertThat(without.<String>json("$.templateFileId")).isNull();
+        get("/api/v1/files/" + replaced, team.leaderToken()).expect(404);
+    }
+
+    @Test
+    void anAccountWithTemplatesIsNotDeletedAndDeletingTheTypeTakesTheTemplate() {
+        String admin = loginAs(Role.ADMIN);
+        String uploaderEmail = createAccount(Role.MACONDOLAB);
+        String uploader = login(uploaderEmail, PASSWORD);
+        int typeId = createType(uploader, "Carta " + System.nanoTime(), "DOCUMENT", false, 1);
+        String templateId = putFile(
+                        "/api/v1/deliverable-types/" + typeId + "/template",
+                        uploader,
+                        "file",
+                        "carta.pdf",
+                        MediaType.APPLICATION_PDF,
+                        TestData.PDF)
+                .expect(200)
+                .json("$.templateFileId");
+
+        Response kept =
+                delete("/api/v1/admin/users/" + idOf(uploaderEmail), admin).expect(409);
+        assertThat(kept.json("$.detail").toString()).contains("plantillas");
+
+        delete("/api/v1/deliverable-types/" + typeId, uploader).expect(204);
+        get("/api/v1/files/" + templateId, uploader).expect(404);
+        delete("/api/v1/admin/users/" + idOf(uploaderEmail), admin).expect(204);
+    }
+
+    // ── Enlaces ─────────────────────────────────────────────────────────────
+
+    @Test
+    void aLinkDeliverableTakesAnAddressNotAFile() {
+        String macondolab = loginAs(Role.MACONDOLAB);
+        int linkType = createType(macondolab, "Video " + System.nanoTime(), "LINK", true, 1);
+        int fileType = createType(macondolab, "Póster " + System.nanoTime(), "DOCUMENT", true, 1);
+        Team team = newTeam();
+        int projectId = createProject(team);
+        String links = "/api/v1/projects/" + projectId + "/deliverables/links";
+
+        Response notAnAddress = post(
+                        links, team.leaderToken(), Map.of("deliverableTypeId", linkType, "url", "youtu.be/abc"))
+                .expect(400);
+        assertThat(notAnAddress.<String>json("$.fields.url")).isNotBlank();
+        Response noHost = post(links, team.leaderToken(), Map.of("deliverableTypeId", linkType, "url", "https://"))
+                .expect(400);
+        assertThat(noHost.<String>json("$.fields.url")).isNotBlank();
+
+        Response wrongKind = post(
+                        links, team.leaderToken(), Map.of("deliverableTypeId", fileType, "url", "https://youtu.be/abc"))
+                .expect(400);
+        assertThat(wrongKind.json("$.fields.url").toString()).contains("como archivo");
+        Response wrongKindFile =
+                uploadPdf(projectId, linkType, team.leaderToken()).expect(400);
+        assertThat(wrongKindFile.json("$.fields.file").toString()).contains("como enlace");
+
+        Response registered = post(
+                        links,
+                        team.leaderToken(),
+                        Map.of("deliverableTypeId", linkType, "url", " https://youtu.be/abc "))
+                .expect(200);
+        List<String> urls = registered.json("$[?(@.type.id == " + linkType + ")].files[*].url");
+        assertThat(urls).containsExactly("https://youtu.be/abc");
+        List<Boolean> complete = registered.json("$[?(@.type.id == " + linkType + ")].complete");
+        assertThat(complete).containsExactly(true);
+
+        Response second = post(
+                        links, team.leaderToken(), Map.of("deliverableTypeId", linkType, "url", "https://otro.link"))
+                .expect(409);
+        assertThat(second.json("$.detail").toString()).contains("un solo enlace");
+
+        // El profesor no registra por el equipo; el equipo puede quitarlo.
+        post(links, login(team.teacherEmail(), PASSWORD), Map.of("deliverableTypeId", linkType, "url", "https://x.y"))
+                .expect(403);
+        int deliverableId =
+                ((List<Integer>) registered.json("$[?(@.type.id == " + linkType + ")].files[*].id")).getFirst();
+        Response removed = delete(
+                        "/api/v1/projects/" + projectId + "/deliverables/" + deliverableId, team.leaderToken())
+                .expect(200);
+        List<Boolean> pending = removed.json("$[?(@.type.id == " + linkType + ")].complete");
+        assertThat(pending).containsExactly(false);
+    }
+
+    // ── Cierre propio del entregable ────────────────────────────────────────
+
+    @Test
+    void aDeliverableWithItsOwnDeadlineFollowsItInsteadOfTheEditionOne() {
+        String macondolab = loginAs(Role.MACONDOLAB);
+        LocalDate today = LocalDate.now();
+        Map<String, Object> closed = typeBody("Fotos cerradas " + System.nanoTime(), "IMAGE", false, 10);
+        closed.put("closesOn", today.minusDays(1).toString());
+        int closedType = post("/api/v1/deliverable-types", macondolab, closed)
+                .expect(201)
+                .json("$.id");
+        Map<String, Object> open = typeBody("Fotos abiertas " + System.nanoTime(), "IMAGE", false, 10);
+        open.put("closesOn", today.toString());
+        Response created = post("/api/v1/deliverable-types", macondolab, open).expect(201);
+        assertThat(created.<String>json("$.closesOn")).isEqualTo(today.toString());
+        int openType = created.json("$.id");
+        Team team = newTeam();
+        int projectId = createProject(team);
+
+        // La edición sigue abierta, pero ese entregable ya cerró.
+        Response late = putOrPostFile(
+                        projectId, closedType, team.leaderToken(), "foto.jpg", MediaType.IMAGE_JPEG, TestData.JPEG)
+                .expect(409);
+        assertThat(late.json("$.detail").toString()).contains(today.minusDays(1).toString());
+        putOrPostFile(projectId, openType, team.leaderToken(), "foto.jpg", MediaType.IMAGE_JPEG, TestData.JPEG)
+                .expect(200);
     }
 
     // ── Datos de apoyo ──────────────────────────────────────────────────────

@@ -11,13 +11,16 @@ import java.util.Set;
 public enum DeliverableKind {
 
     /** Documento: el póster de investigación, una carta de validación. */
-    DOCUMENT(Set.of(FileFormat.PDF)),
+    DOCUMENT(FileFormat.DOCUMENTS),
 
     /** Imagen: fotos del prototipo o de la sustentación. */
     IMAGE(FileFormat.IMAGES),
 
     /** Cualquiera de los dos, cuando la evidencia puede venir de varias formas. */
-    ANY(EnumSet.allOf(FileFormat.class));
+    ANY(union(FileFormat.DOCUMENTS, FileFormat.IMAGES)),
+
+    /** Un enlace (video, prototipo en línea): no se sube archivo. */
+    LINK(Set.of());
 
     private final Set<FileFormat> formats;
 
@@ -28,5 +31,16 @@ public enum DeliverableKind {
     /** Formatos que el módulo de archivos debe aceptar para este entregable. */
     public Set<FileFormat> formats() {
         return formats;
+    }
+
+    /** Si el entregable es una dirección en vez de un archivo. */
+    public boolean isLink() {
+        return this == LINK;
+    }
+
+    private static Set<FileFormat> union(Set<FileFormat> a, Set<FileFormat> b) {
+        EnumSet<FileFormat> all = EnumSet.copyOf(a);
+        all.addAll(b);
+        return all;
     }
 }

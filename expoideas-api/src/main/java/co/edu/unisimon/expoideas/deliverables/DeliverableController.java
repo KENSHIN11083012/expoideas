@@ -1,6 +1,7 @@
 package co.edu.unisimon.expoideas.deliverables;
 
 import co.edu.unisimon.expoideas.files.FileService;
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -41,6 +43,15 @@ public class DeliverableController {
             @RequestPart(FileService.FIELD) MultipartFile file,
             Authentication authentication) {
         return deliverableService.upload(projectId, deliverableTypeId, file, authentication.getName());
+    }
+
+    /** Registra un enlace para un entregable de tipo LINK (video, prototipo en línea). */
+    @PostMapping("/links")
+    public List<DeliverableGroupResponse> submitLink(
+            @PathVariable Integer projectId,
+            @Valid @RequestBody DeliverableLinkRequest request,
+            Authentication authentication) {
+        return deliverableService.submitLink(projectId, request, authentication.getName());
     }
 
     @DeleteMapping("/{deliverableId}")

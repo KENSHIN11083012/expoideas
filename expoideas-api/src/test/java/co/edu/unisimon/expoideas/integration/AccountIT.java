@@ -8,28 +8,50 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-/** Registro, inicio de sesión, perfil propio y cambio de contraseña. */
+/** Registro, primer ingreso de una cuenta registrada, perfil propio y cambio de contraseña. */
 class AccountIT extends IntegrationTest {
 
     @Test
-    void studentRegistersLogsInAndSeesAffiliation() {
+    void studentRegistersWithEmailAndPasswordAndCompletesTheProfileOnFirstLogin() {
         String admin = loginAs(Role.ADMIN);
         int campus = campusId();
         int faculty = createFaculty(admin);
         int program = createProgram(admin, faculty);
         String email = uniqueEmail("registro");
 
-        Response created = register(email, campus, faculty, program).expect(201);
+        Response created = register(email).expect(201);
         assertThat(created.<String>json("$.role")).isEqualTo("STUDENT");
-        assertThat(created.<List<String>>json("$.pendingSteps")).isEmpty();
+        assertThat(created.<String>json("$.firstName")).isNull();
+        assertThat(created.<List<String>>json("$.pendingSteps")).containsExactly("COMPLETE_PROFILE");
 
         Response login = post("/api/v1/auth/login", null, Map.of("email", email, "password", PASSWORD))
                 .expect(200);
-        assertThat(login.<String>json("$.role")).isEqualTo("STUDENT");
-        assertThat(login.<String>json("$.firstName")).isEqualTo("Estudiante");
-        assertThat(login.<List<String>>json("$.pendingSteps")).isEmpty();
+        assertThat(login.<List<String>>json("$.pendingSteps")).containsExactly("COMPLETE_PROFILE");
+        String token = login.json("$.token");
 
-        Response me = get("/api/v1/users/me", login.json("$.token")).expect(200);
+        // Hasta completar el perfil solo puede verlo y completarlo.
+        get("/api/v1/users/me", token).expect(200);
+        Response blocked = delete("/api/v1/users/me/photo", token).expect(403);
+        assertThat(blocked.<List<String>>json("$.pendingSteps")).containsExactly("COMPLETE_PROFILE");
+
+        // El nombre solo no basta: un estudiante declara sede y facultad.
+        Response missing = put("/api/v1/users/me", token, Map.of("firstName", "Ana", "lastName", "Pérez"))
+                .expect(400);
+        assertThat(missing.<String>json("$.fields.campusId")).isNotBlank();
+        assertThat(missing.<String>json("$.fields.facultyId")).isNotBlank();
+
+        Response completed = completeProfile(token, campus, faculty, program).expect(200);
+        assertThat(completed.<List<String>>json("$.pendingSteps")).isEmpty();
+
+        // Con el mismo token, la cuenta ya usa la plataforma.
+        delete("/api/v1/users/me/photo", token).expect(204);
+
+        Response again = post("/api/v1/auth/login", null, Map.of("email", email, "password", PASSWORD))
+                .expect(200);
+        assertThat(again.<String>json("$.firstName")).isEqualTo("Estudiante");
+        assertThat(again.<List<String>>json("$.pendingSteps")).isEmpty();
+
+        Response me = get("/api/v1/users/me", token).expect(200);
         assertThat(me.<String>json("$.email")).isEqualTo(email);
         assertThat(me.<Integer>json("$.campusId")).isEqualTo(campus);
         assertThat(me.<Integer>json("$.facultyId")).isEqualTo(faculty);
@@ -40,34 +62,24 @@ class AccountIT extends IntegrationTest {
     }
 
     @Test
-    void registrationRejectsDuplicatesForeignEmailsAndMismatchedProgram() {
-        String admin = loginAs(Role.ADMIN);
-        int campus = campusId();
-        int faculty = createFaculty(admin);
-        int otherFaculty = createFaculty(admin);
-        int otherProgram = createProgram(admin, otherFaculty);
+    void registrationRejectsDuplicatesAndForeignEmailsButNotUpperCaseDomains() {
         String email = uniqueEmail("duplicado");
 
-        register(email, campus, faculty, null).expect(201);
-        register(email, campus, faculty, null).expect(409);
+        register(email).expect(201);
+        register(email).expect(409);
 
-        Response foreign = register("alguien@gmail.com", campus, faculty, null).expect(400);
+        Response foreign = register("alguien@gmail.com").expect(400);
         assertThat(foreign.<String>json("$.fields.email")).isNotBlank();
 
-        register(uniqueEmail("cruzado"), campus, faculty, otherProgram).expect(400);
-        register(uniqueEmail("sinfacultad"), campus, 999_999, null).expect(404);
+        // Un correo escrito con el dominio en mayúsculas sigue siendo institucional.
+        register("Mayusculas" + System.nanoTime() + "@UNISIMON.EDU.CO").expect(201);
     }
 
     @Test
     void registrationRequiresDataConsent() {
-        String admin = loginAs(Role.ADMIN);
         Map<String, Object> body = new HashMap<>();
-        body.put("firstName", "Sin");
-        body.put("lastName", "Consentimiento");
         body.put("email", uniqueEmail("consentimiento"));
         body.put("password", PASSWORD);
-        body.put("campusId", campusId());
-        body.put("facultyId", createFaculty(admin));
         body.put("dataConsent", false);
 
         Response response = post("/api/v1/auth/register", null, body).expect(400);
@@ -89,8 +101,9 @@ class AccountIT extends IntegrationTest {
         int campus = campusId();
         int faculty = createFaculty(admin);
         String email = uniqueEmail("perfil");
-        register(email, campus, faculty, null).expect(201);
+        register(email).expect(201);
         String token = login(email, PASSWORD);
+        completeProfile(token, campus, faculty, null).expect(200);
 
         Map<String, Object> body = new HashMap<>();
         body.put("firstName", "  Ana María ");
@@ -140,7 +153,8 @@ class AccountIT extends IntegrationTest {
         get("/api/v1/admin/users", token).expect(200);
 
         var admin = userRepository.findByEmail(email).orElseThrow();
-        admin.setRole(Role.STUDENT);
+        // Jurado y no estudiante: sin adscripción, un estudiante tendría el perfil pendiente y el 403 sería por eso.
+        admin.setRole(Role.JUDGE);
         userRepository.save(admin);
 
         // El mismo token, sin volver a iniciar sesión: el rol se lee de la BD.

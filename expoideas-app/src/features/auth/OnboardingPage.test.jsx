@@ -1,9 +1,11 @@
 import { createContext, useContext, useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ROUTES } from '@/lib/routes';
+import { useAffiliationCatalogs } from '@/features/catalogs/queries';
+import { useUpdateProfile } from '@/features/profile/queries';
 import { apiError } from '@/test/utils';
 import OnboardingPage from './OnboardingPage';
 import { accountApi } from './api';
@@ -11,6 +13,8 @@ import { useAuth } from './useAuth';
 
 vi.mock('./useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('./api', () => ({ accountApi: { changePassword: vi.fn(), giveDataConsent: vi.fn() } }));
+vi.mock('@/features/profile/queries', () => ({ useUpdateProfile: vi.fn() }));
+vi.mock('@/features/catalogs/queries', () => ({ useAffiliationCatalogs: vi.fn() }));
 
 const TestSession = createContext(null);
 
@@ -50,6 +54,20 @@ async function changePassword(user, { current = 'Temporal#2026', next = 'Propia#
     await user.type(screen.getByLabelText(/^Confirmar nueva contraseña/), next);
     await user.click(screen.getByRole('button', { name: /Guardar y continuar/ }));
 }
+
+const updateProfile = { mutateAsync: vi.fn() };
+
+beforeEach(() => {
+    updateProfile.mutateAsync.mockReset();
+    useUpdateProfile.mockReturnValue(updateProfile);
+    useAffiliationCatalogs.mockReturnValue({
+        campuses: [{ id: 1, name: 'Barranquilla' }],
+        faculties: [{ id: 2, name: 'Ingeniería' }],
+        programs: [{ id: 5, name: 'Ingeniería de Sistemas', facultyId: 2 }],
+        isPending: false,
+        error: null,
+    });
+});
 
 describe('Primer ingreso', () => {
     it('una cuenta nueva cambia la contraseña, autoriza sus datos y llega al inicio', async () => {
@@ -130,5 +148,88 @@ describe('Primer ingreso', () => {
         renderOnboarding([]);
 
         expect(screen.getByText('Inicio')).toBeInTheDocument();
+    });
+});
+
+/** El registro solo pidió correo y contraseña: el nombre y la adscripción se completan aquí. */
+describe('Paso «Completa tu perfil»', () => {
+    it('un estudiante recién registrado indica nombre, sede, facultad y programa, y llega al inicio', async () => {
+        const user = userEvent.setup();
+        updateProfile.mutateAsync.mockResolvedValue({ firstName: 'Ana María', lastName: 'Pérez', pendingSteps: [] });
+        renderOnboarding(['COMPLETE_PROFILE'], 'STUDENT');
+
+        expect(screen.getByText('Primer ingreso · Paso 1 de 1')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Completa tu perfil' })).toBeInTheDocument();
+
+        await user.type(screen.getByLabelText(/^Nombres/), 'Ana María');
+        await user.type(screen.getByLabelText(/^Apellidos/), 'Pérez');
+        await user.selectOptions(screen.getByLabelText(/^Sede/), '1');
+        await user.selectOptions(screen.getByLabelText(/^Facultad/), '2');
+        await user.selectOptions(screen.getByLabelText(/^Programa académico/), '5');
+        await user.click(screen.getByRole('button', { name: /Guardar y continuar/ }));
+
+        expect(updateProfile.mutateAsync).toHaveBeenCalledWith({
+            firstName: 'Ana María',
+            lastName: 'Pérez',
+            campusId: 1,
+            facultyId: 2,
+            academicProgramId: 5,
+        });
+        expect(await screen.findByText('Inicio')).toBeInTheDocument();
+    });
+
+    it('a un estudiante le exige sede y facultad antes de enviar', async () => {
+        const user = userEvent.setup();
+        renderOnboarding(['COMPLETE_PROFILE'], 'STUDENT');
+
+        await user.type(screen.getByLabelText(/^Nombres/), 'Ana');
+        await user.type(screen.getByLabelText(/^Apellidos/), 'Pérez');
+        await user.click(screen.getByRole('button', { name: /Guardar y continuar/ }));
+
+        // Por rol: "Selecciona la sede" también es el texto de una opción del select.
+        await screen.findAllByRole('alert');
+        const errors = screen.getAllByRole('alert').map((error) => error.textContent);
+        expect(errors).toEqual(expect.arrayContaining(['Selecciona la sede', 'Selecciona la facultad']));
+        expect(updateProfile.mutateAsync).not.toHaveBeenCalled();
+    });
+
+    it('a un jurado solo le pide el nombre', async () => {
+        const user = userEvent.setup();
+        updateProfile.mutateAsync.mockResolvedValue({ firstName: 'Marta', lastName: 'Ríos', pendingSteps: [] });
+        renderOnboarding(['COMPLETE_PROFILE'], 'JUDGE');
+
+        expect(screen.queryByLabelText(/^Sede/)).not.toBeInTheDocument();
+        await user.type(screen.getByLabelText(/^Nombres/), 'Marta');
+        await user.type(screen.getByLabelText(/^Apellidos/), 'Ríos');
+        await user.click(screen.getByRole('button', { name: /Guardar y continuar/ }));
+
+        expect(updateProfile.mutateAsync).toHaveBeenCalledWith({ firstName: 'Marta', lastName: 'Ríos' });
+        expect(await screen.findByText('Inicio')).toBeInTheDocument();
+    });
+
+    it('los errores por campo de la API se muestran en su campo', async () => {
+        const user = userEvent.setup();
+        updateProfile.mutateAsync.mockRejectedValue(
+            apiError('Datos inválidos', 400, {
+                fields: { academicProgramId: 'El programa académico no pertenece a la facultad seleccionada.' },
+            }),
+        );
+        renderOnboarding(['COMPLETE_PROFILE'], 'STUDENT');
+
+        await user.type(screen.getByLabelText(/^Nombres/), 'Ana');
+        await user.type(screen.getByLabelText(/^Apellidos/), 'Pérez');
+        await user.selectOptions(screen.getByLabelText(/^Sede/), '1');
+        await user.selectOptions(screen.getByLabelText(/^Facultad/), '2');
+        await user.click(screen.getByRole('button', { name: /Guardar y continuar/ }));
+
+        expect(await screen.findByText('El programa académico no pertenece a la facultad seleccionada.')).toBeInTheDocument();
+        expect(screen.getByText('Primer ingreso · Paso 1 de 1')).toBeInTheDocument();
+    });
+
+    it('viene después de la contraseña y la autorización', () => {
+        renderOnboarding(['CHANGE_PASSWORD', 'DATA_CONSENT', 'COMPLETE_PROFILE'], 'STUDENT');
+
+        expect(screen.getByText('Primer ingreso · Paso 1 de 3')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Crea tu contraseña' })).toBeInTheDocument();
     });
 });

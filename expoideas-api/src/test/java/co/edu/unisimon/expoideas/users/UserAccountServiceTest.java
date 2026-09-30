@@ -27,7 +27,6 @@ import co.edu.unisimon.expoideas.files.FileVisibility;
 import co.edu.unisimon.expoideas.files.StoredFile;
 import co.edu.unisimon.expoideas.support.TestData;
 import java.time.LocalDateTime;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -96,57 +95,29 @@ class UserAccountServiceTest {
     class Registration {
 
         @Test
-        void storesAffiliationAsAStudentWithConsent() {
-            UserResponse created = service.register(registration(" ana@unisimon.edu.co ", 1, 10, 100));
+        void createsAStudentWithConsentAndTheProfilePending() {
+            UserResponse created = service.register(registration(" ana@unisimon.edu.co "));
 
             assertThat(created.email()).isEqualTo(EMAIL);
-            assertThat(created.firstName()).isEqualTo("Ana");
             assertThat(created.role()).isEqualTo(Role.STUDENT);
-            assertThat(created.campusId()).isEqualTo(1);
-            assertThat(created.faculty()).isEqualTo("Ingeniería");
-            assertThat(created.academicProgram()).isEqualTo("Ingeniería de Sistemas");
-            assertThat(created.pendingSteps()).isEmpty();
-        }
-
-        @Test
-        void programIsOptional() {
-            UserResponse created = service.register(registration(EMAIL, 1, 20, null));
-
-            assertThat(created.facultyId()).isEqualTo(20);
-            assertThat(created.academicProgramId()).isNull();
-        }
-
-        @Test
-        void programFromAnotherFacultyIsAFieldError() {
-            assertThatThrownBy(() -> service.register(registration(EMAIL, 1, 20, 100)))
-                    .isInstanceOfSatisfying(
-                            InvalidFieldsException.class,
-                            ex -> assertThat(ex.getFields())
-                                    .containsEntry(
-                                            "academicProgramId",
-                                            "El programa académico no pertenece a la facultad seleccionada."));
-            verify(userRepository, never()).save(any());
-        }
-
-        @Test
-        void missingFacultyIsNotFound() {
-            when(facultyRepository.findById(99)).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> service.register(registration(EMAIL, 1, 99, null)))
-                    .isInstanceOf(NoSuchElementException.class);
+            assertThat(created.firstName()).isNull();
+            assertThat(created.lastName()).isNull();
+            assertThat(created.campusId()).isNull();
+            assertThat(created.facultyId()).isNull();
+            assertThat(created.pendingSteps()).containsExactly(OnboardingStep.COMPLETE_PROFILE);
+            verifyNoInteractions(campusRepository, facultyRepository, academicProgramRepository);
         }
 
         @Test
         void takenEmailIsAConflict() {
             when(userRepository.existsByEmail(EMAIL)).thenReturn(true);
 
-            assertThatThrownBy(() -> service.register(registration(EMAIL, 1, 10, null)))
-                    .isInstanceOf(ConflictException.class);
+            assertThatThrownBy(() -> service.register(registration(EMAIL))).isInstanceOf(ConflictException.class);
+            verify(userRepository, never()).save(any());
         }
 
-        private static RegistrationRequest registration(
-                String email, Integer campus, Integer faculty, Integer program) {
-            return new RegistrationRequest(" Ana ", "Pérez", email, TestData.PASSWORD, campus, faculty, program, true);
+        private static RegistrationRequest registration(String email) {
+            return new RegistrationRequest(email, TestData.PASSWORD, true);
         }
     }
 
@@ -177,7 +148,10 @@ class UserAccountServiceTest {
 
         @Test
         void adminProfileIgnoresAffiliation() {
+            // Una cuenta de gestión no lleva adscripción.
             ana.setRole(Role.ADMIN);
+            ana.setCampus(null);
+            ana.setFaculty(null);
 
             UserResponse updated = service.updateProfile(EMAIL, new ProfileUpdateRequest("Luis", "Gómez", 1, 10, 100));
 

@@ -22,4 +22,4 @@ public record ProjectRequest(
         String summary,
 
         @NotNull(message = "El sector es obligatorio") Integer sectorId,
-        @NotNull(message = "El docente es obligatorio") Integer teacherId) {}
+        @NotNull(message = "El profesor es obligatorio") Integer teacherId) {}

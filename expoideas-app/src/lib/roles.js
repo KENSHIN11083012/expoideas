@@ -17,7 +17,7 @@ export const ROLES = {
 
 export const ROLE_LABELS = {
     [ROLES.STUDENT]: 'Estudiante',
-    [ROLES.TEACHER]: 'Docente',
+    [ROLES.TEACHER]: 'Profesor',
     [ROLES.JUDGE]: 'Jurado',
     [ROLES.MACONDOLAB]: 'MacondoLab',
     [ROLES.ADMIN]: 'Administrador',

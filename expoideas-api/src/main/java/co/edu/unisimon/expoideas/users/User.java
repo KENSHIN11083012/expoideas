@@ -60,11 +60,12 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false, length = 100)
+    /** Nulo hasta que la persona completa su perfil en el primer ingreso. */
+    @Column(length = 100)
     private String firstName;
 
-    /** Ambos apellidos. */
-    @Column(nullable = false, length = 100)
+    /** Ambos apellidos. Nulo hasta completar el perfil. */
+    @Column(length = 100)
     private String lastName;
 
     /** Institucional (@unisimon.edu.co), salvo los jurados externos. Es el usuario del login. */
@@ -111,8 +112,15 @@ public class User {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    /** Nombre para mostrar: "Ana María Pérez Gómez". */
+    /**
+     * Nombre para mostrar: "Ana María Pérez Gómez". Si aún no completó su perfil,
+     * la parte local del correo ("ana.perez"), para que nunca salga en blanco.
+     */
     public String fullName() {
+        if (!hasName()) {
+            int at = email.indexOf('@');
+            return at < 0 ? email : email.substring(0, at);
+        }
         return firstName + " " + lastName;
     }
 
@@ -125,7 +133,15 @@ public class User {
         if (!dataConsent) {
             steps.add(OnboardingStep.DATA_CONSENT);
         }
+        // Sin tocar la facultad: basta con saber si está, para no disparar la carga lazy.
+        if (!hasName() || (role.requiresAffiliation() && faculty == null)) {
+            steps.add(OnboardingStep.COMPLETE_PROFILE);
+        }
         return steps;
+    }
+
+    private boolean hasName() {
+        return firstName != null && !firstName.isBlank() && lastName != null && !lastName.isBlank();
     }
 
     /** Deja constancia de la autorización de datos; si ya estaba, conserva la fecha original. */

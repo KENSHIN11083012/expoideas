@@ -54,7 +54,7 @@ public class ProjectDirectoryService {
             // Un docente ve los suyos, pida lo que pida.
             teacherId = viewer.getId();
         } else if (!viewer.getRole().isManagement()) {
-            throw new ForbiddenActionException("Esta vista es de la gestión y de los docentes");
+            throw new ForbiddenActionException("Esta vista es de la gestión y de los profesores");
         }
 
         return projectRepository.search(

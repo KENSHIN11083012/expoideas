@@ -8,7 +8,7 @@ export const projectSchema = z.object({
     title: z.string().trim().min(1, 'Ingresa el título del proyecto').max(150, 'Máximo 150 caracteres'),
     summary: z.string().trim().min(1, 'Describe tu propuesta de valor').max(500, 'Máximo 500 caracteres'),
     sectorId: z.string().min(1, 'Selecciona el sector'),
-    teacherId: z.string().min(1, 'Selecciona el docente del grupo'),
+    teacherId: z.string().min(1, 'Selecciona el profesor del grupo'),
 });
 
 /** Invitación a un compañero: la API exige que la cuenta exista. */

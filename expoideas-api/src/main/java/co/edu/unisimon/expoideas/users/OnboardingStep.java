@@ -8,5 +8,7 @@ public enum OnboardingStep {
     /** La contraseña actual la puso la gestión y es temporal. */
     CHANGE_PASSWORD,
     /** Falta la autorización de tratamiento de datos personales (Ley 1581 de 2012). */
-    DATA_CONSENT
+    DATA_CONSENT,
+    /** Falta el nombre o, en los roles que la llevan, la adscripción académica (sede y facultad). */
+    COMPLETE_PROFILE
 }

@@ -55,13 +55,17 @@ sustentaciones); el servidor SMTP lo pone TI. Y los jurados por asignación: la 
 profesores, jurados externos o cuentas de gestión a cada proyecto, y cada jurado ve los suyos en
 «Evaluar», con sus entregables. El mecanismo de los tipos de prototipo de INNPRENDE II también
 está: el catálogo (vacío hasta que MacondoLab entregue los tipos), el tipo por proyecto y los
-entregables que se piden solo a un tipo.
+entregables que se piden solo a un tipo. Y la API de la evaluación: las dos
+[rúbricas](docs/rubricas.md) cargadas como datos, la evaluación de cada jurado asignado (con
+«no asistió» y observación obligatoria por debajo de 3.0) y la nota del proyecto para el
+profesor del grupo y la gestión.
 
 - Los tipos de prototipo de INNPRENDE II y qué evidencia pide cada uno (los carga la gestión en
   Catálogos y en los entregables; falta que MacondoLab los defina).
 - Identidad visual de Idearium: los nombres ya están puestos; faltan los logos y la paleta (el
   monograma y los colores de ahora son provisionales).
-- Evaluación con rúbrica y recordatorios a los jurados (la rúbrica está en el SharePoint).
+- Evaluación con rúbrica: falta el tablero donde el jurado califica, mostrar las notas en la
+  ficha, el listado y el CSV, y el recordatorio por correo a los jurados con pendientes.
 - Precarga del listado de la cátedra para asignar roles al registrarse (falta el listado).
 
 Sin definir por MacondoLab, y por eso fuera del piloto: ranking y premios por sector, y la vitrina
@@ -97,6 +101,10 @@ expoideas-api/src/main/java/co/edu/unisimon/expoideas/
   editions/     Ediciones de la Expo, sus plazos y la configuración de cada cátedra
   projects/     Proyectos inscritos, equipo, líder e invitaciones
   deliverables/ Qué pide cada cátedra y qué subió cada equipo
+  presentations/ Agenda de sustentaciones
+  jury/         Jurados asignados a cada proyecto
+  evaluations/  Rúbricas, evaluación de cada jurado y nota del proyecto
+  notifications/ Avisos por correo
   reports/      Directorio de proyectos y exportación a CSV
   files/        Almacenamiento y metadatos de archivos subidos
   common/       Manejo de errores y configuración centralizada (ExpoideasProperties)

@@ -23,7 +23,7 @@ en el repositorio.
 | 9 | Prerrequisito | No se puede cursar INNPRENDE I y II a la vez. Para inscribirse en II hay que haber aprobado I | **Hecho (F3):** el profesor o la gestión registran el resultado tras el cierre de entregas; la gestión también aprueba a mano a quien cursó I antes de la plataforma |
 | 10 | Precarga | Cargar el listado de estudiantes y profesores de la cátedra para asignar el rol al registrarse. Quien no esté queda como estudiante | Falta el listado |
 | 11 | Sustentaciones | El administrador asigna fecha y hora a cada equipo, y se avisa al correo institucional | **Hecho (F5):** agenda en «Sustentaciones»; el equipo y el profesor reciben el aviso, también al cambiarla |
-| 12 | Evaluación | Rúbrica que se llena con clics, criterio por criterio. La nota final se calcula sola con los pesos. Observaciones opcionales (quizá obligatorias con nota baja). Recordatorio por correo al jurado con calificaciones pendientes. **WhatsApp se descartó** porque exige una sesión de WhatsApp Business siempre abierta | La rúbrica está en el SharePoint |
+| 12 | Evaluación | Rúbrica que se llena con clics, criterio por criterio. La nota final se calcula sola con los pesos. Observaciones opcionales (quizá obligatorias con nota baja). Recordatorio por correo al jurado con calificaciones pendientes. **WhatsApp se descartó** porque exige una sesión de WhatsApp Business siempre abierta | **API hecha (F8a):** las dos [rúbricas](rubricas.md) están cargadas, cada jurado asignado guarda y corrige su evaluación, y la nota es el promedio simple de criterios y de jurados. La observación es obligatoria por debajo de 3.0 y hay marca de «no asistió». Faltan el tablero (F8b) y los resultados con el recordatorio (F8c) |
 | 13 | Marca | La plataforma pasa a llamarse **«Idearium»** (en la reunión se entendió «Ideario»). Expoideas 1 pasa a llamarse **«Despegue»** y Expoideas 2, **«Aterrizaje»**. La vitrina aún no tiene nombre. Se usarán los colores de la identidad rediseñada de la cátedra | **Nombres hechos (F7a):** MacondoLab los confirmó el 30 de septiembre. Faltan logos y paleta |
 | 14 | Fuera del piloto | Ranking, parte social y vista pública sin cuenta (para directivos: se habló, no se decidió) | Aplazado |
 
@@ -51,9 +51,14 @@ Otros puntos de la reunión:
 5. **F5 · Agenda de sustentaciones** con aviso por correo (punto 11), más los correos de invitación y de cuenta creada (punto 6). **Hecha** (en `main`).
 6. **F6 · Tipos de prototipo** en INNPRENDE II (punto 8). **Mecanismo hecho** (en `main`); los tipos los carga la gestión cuando estén definidos.
 7. **F7 · Cambio de marca a Idearium** (punto 13). **Nombres hechos** (en `main`); logos y paleta, cuando lleguen los recursos.
-8. **F8 · Evaluación con rúbrica** (punto 12).
+8. **F8 · Evaluación con rúbrica** (punto 12). **F8a (API y rúbricas) hecha** (en `main`); siguen el tablero del jurado (F8b) y los resultados con el recordatorio por correo (F8c).
 
 ## Por confirmar
+
+- Rúbrica del póster: los valores de la tabla no coinciden con los que anuncia el encabezado del
+  documento, ni los nombres de los niveles con la escala. Se cargó lo que dice la tabla (detalle en
+  [rubricas.md](rubricas.md)).
+- Si los estudiantes ven su nota y las observaciones. Por ahora solo el profesor del grupo y la gestión.
 
 - Invitaciones al equipo: ¿la persona invitada sigue teniendo que aceptar, o queda asociada al
   proyecto automáticamente? En la reunión se dijeron las dos cosas.

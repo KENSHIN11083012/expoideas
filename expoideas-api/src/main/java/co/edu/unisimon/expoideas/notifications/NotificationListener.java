@@ -38,7 +38,7 @@ public class NotificationListener {
 
                 %s te invitó a hacer parte del equipo del proyecto "%s" en %s.
 
-                Entra a Expoideas y, en Mis proyectos, acepta o rechaza la invitación.%s
+                Entra a Idearium y, en Mis proyectos, acepta o rechaza la invitación.%s
 
                 Cátedra UNISIMÓN INNPRENDE · MacondoLab
                 """.formatted(
@@ -53,11 +53,11 @@ public class NotificationListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onAccountCreated(AccountCreatedEvent event) {
-        String subject = "Tu cuenta en Expoideas";
+        String subject = "Tu cuenta en Idearium";
         String body = """
                 Hola, %s.
 
-                Te creamos una cuenta en Expoideas con el rol de %s.
+                Te creamos una cuenta en Idearium con el rol de %s.
 
                 Usuario: %s
                 Contraseña temporal: %s

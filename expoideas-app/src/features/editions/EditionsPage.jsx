@@ -95,7 +95,7 @@ export default function EditionsPage() {
             <PageHeader
                 eyebrow="Gestión"
                 title="Ediciones"
-                description="Cada edición es una vuelta de la Expo con sus plazos: hasta cuándo se inscriben los proyectos y hasta cuándo se suben los entregables de cada cátedra."
+                description="Cada edición es una vuelta de Idearium con sus plazos: hasta cuándo se inscriben los proyectos y hasta cuándo se suben los entregables de cada cátedra."
                 actions={
                     <Button onClick={openNew}>
                         <CalendarPlus /> Nueva edición

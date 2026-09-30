@@ -40,7 +40,7 @@ final class ProjectCsv {
             csv.append('\n')
                     .append(row(
                             project.edition(),
-                            label(project.track()),
+                            project.track().label(),
                             project.title(),
                             project.sector(),
                             project.prototypeType() == null ? "" : project.prototypeType(),
@@ -60,11 +60,6 @@ final class ProjectCsv {
     private static String resultLabel(ProjectResult result) {
         if (result == null) return "";
         return result == ProjectResult.APPROVED ? "Aprobado" : "No aprobado";
-    }
-
-    /** "INNPRENDE_I" se lee mejor como "INNPRENDE I". */
-    private static String label(Enum<?> track) {
-        return track.name().replace('_', ' ');
     }
 
     private static String row(String... values) {

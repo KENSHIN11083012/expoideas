@@ -13,7 +13,7 @@ export function PageHeader({ eyebrow, title, description, actions, className }) 
                 className,
             )}
         >
-            <title>{`${title} · Expoideas`}</title>
+            <title>{`${title} · Idearium`}</title>
             <div className="flex flex-col gap-2">
                 {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
                 <h1 className="font-heading text-3xl font-bold tracking-tight text-on-surface sm:text-4xl">{title}</h1>

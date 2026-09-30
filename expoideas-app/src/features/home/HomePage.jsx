@@ -19,7 +19,7 @@ import heroPhoto from '@/assets/brand/login-hero.webp';
 const PHASES = [
     {
         phase: 'INNPRENDE I',
-        name: 'Investigación',
+        name: 'Despegue',
         accent: 'primary',
         icon: Lightbulb,
         title: 'Esboza tu idea de emprendimiento',
@@ -32,7 +32,7 @@ const PHASES = [
     },
     {
         phase: 'INNPRENDE II',
-        name: 'Prototipado',
+        name: 'Aterrizaje',
         accent: 'lime',
         icon: Rocket,
         title: 'Convierte la idea en un prototipo',
@@ -92,7 +92,8 @@ function PhaseCard({ phase, name, accent, icon: Icon, title, text, points, conne
     return (
         <>
             <Card accent={accent} className="flex flex-col gap-5 p-6 sm:p-8">
-                <div className="flex items-start justify-between gap-4">
+                {/* Las dos etiquetas no caben juntas en un celular: la segunda baja de línea. */}
+                <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
                     <Badge variant={lime ? 'lime' : 'primary'} mono>
                         {phase} · {name}
                     </Badge>
@@ -144,7 +145,7 @@ export default function HomePage() {
 
     return (
         <>
-            <title>Expoideas · Universidad Simón Bolívar</title>
+            <title>Idearium · Universidad Simón Bolívar</title>
 
             {/* Portada */}
             <section className="relative overflow-hidden border-b border-outline-variant/60 bg-surface-container-lowest">
@@ -167,7 +168,7 @@ export default function HomePage() {
                             </span>
                         </h1>
                         <p className="max-w-xl text-lg leading-relaxed text-on-surface-variant">
-                            Expoideas reúne los proyectos de la Cátedra INNPRENDE: los equipos los inscriben con sus entregables,
+                            Idearium reúne los proyectos de la Cátedra INNPRENDE: los equipos los inscriben con sus entregables,
                             los jurados los evalúan y los resultados quedan a la vista de la comunidad.
                         </p>
                         <MainActions signedIn={signedIn} management={isManagement} />

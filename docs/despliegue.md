@@ -1,4 +1,4 @@
-# Despliegue de Expoideas
+# Despliegue de Idearium (antes Expoideas)
 
 Guía para el equipo de TI de la Universidad Simón Bolívar. Describe qué hay que instalar, cómo
 configurarlo y cómo operarlo (actualizaciones, copias de seguridad y monitoreo).

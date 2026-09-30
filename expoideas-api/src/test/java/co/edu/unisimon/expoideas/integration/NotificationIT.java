@@ -33,7 +33,8 @@ class NotificationIT extends IntegrationTest {
         assertThat(mail.getSubject()).contains("Te invitaron al proyecto").contains("Riego inteligente");
         assertThat(body(mail))
                 .contains("Prueba STUDENT")
-                .contains("INNPRENDE I")
+                .contains("INNPRENDE I · Despegue")
+                .contains("Entra a Idearium")
                 .contains("Mis proyectos");
         assertThat(mail.getFrom()[0].toString()).isEqualTo("expoideas@pruebas.local");
     }
@@ -58,7 +59,7 @@ class NotificationIT extends IntegrationTest {
                 .expect(201);
 
         MimeMessage mail = awaitMailTo(email, 1).getFirst();
-        assertThat(mail.getSubject()).isEqualTo("Tu cuenta en Expoideas");
+        assertThat(mail.getSubject()).isEqualTo("Tu cuenta en Idearium");
         assertThat(body(mail))
                 .contains("Marta Ríos")
                 .contains("Jurado")

@@ -71,7 +71,7 @@ public class ProjectTeamService {
                 invitee.fullName(),
                 actor.fullName(),
                 project.getTitle(),
-                project.getTrack().name().replace('_', ' ')));
+                project.getTrack().label()));
         return response;
     }
 

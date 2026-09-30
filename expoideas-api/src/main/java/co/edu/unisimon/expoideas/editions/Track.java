@@ -11,5 +11,17 @@ public enum Track {
     INNPRENDE_I,
 
     /** Emprendimiento y prototipado: prototipo y pitch comercial ante jurados. */
-    INNPRENDE_II
+    INNPRENDE_II;
+
+    /**
+     * La cátedra con el nombre de su muestra, para los correos y el CSV: Despegue
+     * (antes Expoideas 1) y Aterrizaje (antes Expoideas 2). La app tiene el suyo en
+     * lib/tracks.js.
+     */
+    public String label() {
+        return switch (this) {
+            case INNPRENDE_I -> "INNPRENDE I · Despegue";
+            case INNPRENDE_II -> "INNPRENDE II · Aterrizaje";
+        };
+    }
 }

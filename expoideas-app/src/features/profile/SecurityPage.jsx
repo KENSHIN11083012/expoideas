@@ -50,7 +50,7 @@ export default function SecurityPage() {
             <PageHeader
                 eyebrow="Mi cuenta"
                 title="Seguridad"
-                description="Actualiza la contraseña con la que ingresas a Expoideas."
+                description="Actualiza la contraseña con la que ingresas a Idearium."
             />
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">

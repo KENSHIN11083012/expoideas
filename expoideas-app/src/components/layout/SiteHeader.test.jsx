@@ -31,6 +31,16 @@ const menuLinks = () =>
         .getAllByRole('link')
         .map((link) => link.textContent);
 
+describe('Marca', () => {
+    it('el enlace al inicio lleva el nombre de la plataforma', () => {
+        sessionAs(ROLES.STUDENT);
+        render(<SiteHeader />, { wrapper: MemoryRouter });
+
+        const home = screen.getByRole('link', { name: 'Idearium, ir al inicio' });
+        expect(home).toHaveTextContent('Idearium');
+    });
+});
+
 describe('Menú principal por rol', () => {
     it('el jurado ve Evaluar', () => {
         sessionAs(ROLES.JUDGE);

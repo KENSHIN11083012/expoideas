@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TRACK_LABELS, TRACK_LIST } from '@/lib/tracks';
+import { TRACK_COURSES, TRACK_LIST } from '@/lib/tracks';
 
 /**
  * Edición de la Expo (EditionRequest en la API). Los inputs entregan texto: las
@@ -48,7 +48,7 @@ export const editionSchema = z
             if (maxMembers < minMembers) {
                 context.addIssue({
                     code: 'custom',
-                    message: `En ${TRACK_LABELS[track]}, el máximo no puede ser menor que el mínimo`,
+                    message: `En ${TRACK_COURSES[track]}, el máximo no puede ser menor que el mínimo`,
                     path: ['tracks', track, 'maxMembers'],
                 });
             }

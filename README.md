@@ -1,8 +1,12 @@
-# Expoideas
+# Idearium
 
 Repositorio académico y sistema de evaluación de los proyectos de la Cátedra INNPRENDE de la
 Universidad Simón Bolívar, con MacondoLab: inscripción de proyectos de INNPRENDE I (investigación) e
 INNPRENDE II (prototipado), evaluación por jurados y ranking.
+
+La plataforma se llamó **Expoideas** hasta septiembre de 2026; el repositorio, los paquetes y la ruta
+de despliegue conservan ese nombre. Las muestras también tienen nombre propio: **Despegue** la de
+INNPRENDE I (antes Expoideas 1) y **Aterrizaje** la de INNPRENDE II (antes Expoideas 2).
 
 Construido sobre la arquitectura del proyecto semilla **Dattapro** (sistema de convocatorias de investigación cedido por TI), del que se reutiliza
 la infraestructura técnica — auth JWT, separación en capas, catálogos maestros, layout — pero no el
@@ -55,7 +59,8 @@ entregables que se piden solo a un tipo.
 
 - Los tipos de prototipo de INNPRENDE II y qué evidencia pide cada uno (los carga la gestión en
   Catálogos y en los entregables; falta que MacondoLab los defina).
-- Cambio de marca a Ideario (faltan logos, paleta y nombres).
+- Identidad visual de Idearium: los nombres ya están puestos; faltan los logos y la paleta (el
+  monograma y los colores de ahora son provisionales).
 - Evaluación con rúbrica y recordatorios a los jurados (la rúbrica está en el SharePoint).
 - Precarga del listado de la cátedra para asignar roles al registrarse (falta el listado).
 

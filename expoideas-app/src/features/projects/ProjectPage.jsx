@@ -56,7 +56,7 @@ function InviteForm({ projectId, disabled }) {
             <Field
                 label="Invitar a un compañero"
                 error={errors.email?.message ?? errors.root?.message}
-                hint="Debe tener cuenta en Expoideas."
+                hint="Debe tener cuenta en Idearium."
                 className="flex-1"
             >
                 <Input type="email" autoComplete="off" placeholder="nombre@unisimon.edu.co" {...register('email')} />

@@ -1,6 +1,6 @@
-# Preguntas para TI: despliegue de Expoideas
+# Preguntas para TI: despliegue de Idearium (antes Expoideas)
 
-Expoideas debe estar en producción para abrir las inscripciones de INNPRENDE I y II alrededor
+Idearium debe estar en producción para abrir las inscripciones de INNPRENDE I y II alrededor
 del **3 de noviembre de 2026**. Para preparar el despliegue a tiempo necesitamos confirmar lo
 siguiente. La arquitectura propuesta está en [despliegue.md](despliegue.md).
 

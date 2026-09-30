@@ -48,7 +48,7 @@ describe('Mis proyectos', () => {
         renderPage();
 
         expect(screen.getByRole('heading', { level: 2, name: 'BioSensor' })).toBeInTheDocument();
-        expect(screen.getByText('INNPRENDE I')).toBeInTheDocument();
+        expect(screen.getByText('INNPRENDE I · Despegue')).toBeInTheDocument();
         expect(screen.getByText('Carlos Mendoza')).toBeInTheDocument();
         expect(screen.getByText('1 de 5 integrantes')).toBeInTheDocument();
     });
@@ -90,7 +90,7 @@ describe('Invitaciones', () => {
 
         const card = screen.getByText('Agua limpia').closest('div[data-slot="card"]');
         expect(within(card).getByText(/Camilo Montes te invitó/)).toBeInTheDocument();
-        expect(within(card).getByText(/INNPRENDE II/)).toBeInTheDocument();
+        expect(within(card).getByText(/INNPRENDE II · Aterrizaje/)).toBeInTheDocument();
     });
 
     it('con una invitación sin responder no dice que no hay nada ni repite el botón', () => {

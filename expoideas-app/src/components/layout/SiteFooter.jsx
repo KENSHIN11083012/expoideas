@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 import { useAuth } from '@/features/auth/useAuth';
 import { ROUTES } from '@/lib/routes';
-import { ExpoideasLogo } from '@/components/brand/ExpoideasLogo';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { InstitutionalLogos } from '@/components/brand/InstitutionalLogos';
 
 /**
@@ -17,7 +17,7 @@ export function SiteFooter() {
         <footer className="mt-auto border-t border-outline-variant/70 bg-surface-container-lowest">
             <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.5fr_1fr_1fr] lg:px-8">
                 <div className="flex flex-col gap-4">
-                    <ExpoideasLogo size="sm" />
+                    <BrandLogo size="sm" />
                     <p className="max-w-sm text-sm leading-relaxed text-on-surface-variant">
                         Los proyectos de la Cátedra UNISIMÓN INNPRENDE de la Universidad Simón Bolívar, con el acompañamiento de
                         MacondoLab.

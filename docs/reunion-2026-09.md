@@ -24,7 +24,7 @@ en el repositorio.
 | 10 | Precarga | Cargar el listado de estudiantes y profesores de la cátedra para asignar el rol al registrarse. Quien no esté queda como estudiante | Falta el listado |
 | 11 | Sustentaciones | El administrador asigna fecha y hora a cada equipo, y se avisa al correo institucional | **Hecho (F5):** agenda en «Sustentaciones»; el equipo y el profesor reciben el aviso, también al cambiarla |
 | 12 | Evaluación | Rúbrica que se llena con clics, criterio por criterio. La nota final se calcula sola con los pesos. Observaciones opcionales (quizá obligatorias con nota baja). Recordatorio por correo al jurado con calificaciones pendientes. **WhatsApp se descartó** porque exige una sesión de WhatsApp Business siempre abierta | La rúbrica está en el SharePoint |
-| 13 | Marca | La plataforma pasa a llamarse **«Ideario»**. Expoideas 1 pasa a llamarse **«Despegue»** y Expoideas 2, **«Atea» (?)**. La vitrina aún no tiene nombre. Se usarán los colores de la identidad rediseñada de la cátedra | Faltan logos y paleta |
+| 13 | Marca | La plataforma pasa a llamarse **«Idearium»** (en la reunión se entendió «Ideario»). Expoideas 1 pasa a llamarse **«Despegue»** y Expoideas 2, **«Aterrizaje»**. La vitrina aún no tiene nombre. Se usarán los colores de la identidad rediseñada de la cátedra | **Nombres hechos (F7a):** MacondoLab los confirmó el 30 de septiembre. Faltan logos y paleta |
 | 14 | Fuera del piloto | Ranking, parte social y vista pública sin cuenta (para directivos: se habló, no se decidió) | Aplazado |
 
 Otros puntos de la reunión:
@@ -50,11 +50,10 @@ Otros puntos de la reunión:
 4. **F4 · Jurados por asignación** (punto 2; la invitación de externos quedó en la F5). **Hecha** (en `main`).
 5. **F5 · Agenda de sustentaciones** con aviso por correo (punto 11), más los correos de invitación y de cuenta creada (punto 6). **Hecha** (en `main`).
 6. **F6 · Tipos de prototipo** en INNPRENDE II (punto 8). **Mecanismo hecho** (en `main`); los tipos los carga la gestión cuando estén definidos.
-7. **F7 · Cambio de marca a Ideario** (punto 13), cuando lleguen los recursos.
+7. **F7 · Cambio de marca a Idearium** (punto 13). **Nombres hechos** (en `main`); logos y paleta, cuando lleguen los recursos.
 8. **F8 · Evaluación con rúbrica** (punto 12).
 
 ## Por confirmar
 
 - Invitaciones al equipo: ¿la persona invitada sigue teniendo que aceptar, o queda asociada al
   proyecto automáticamente? En la reunión se dijeron las dos cosas.
-- El nombre definitivo de Expoideas 2.

@@ -159,7 +159,7 @@ const ONBOARDING_STEPS = {
     DATA_CONSENT: {
         title: 'Autoriza el tratamiento de tus datos',
         description:
-            'Para usar Expoideas, la Universidad Simón Bolívar necesita tu autorización para tratar tus datos personales.',
+            'Para usar Idearium, la Universidad Simón Bolívar necesita tu autorización para tratar tus datos personales.',
         Step: DataConsentStep,
     },
     COMPLETE_PROFILE: {
@@ -191,7 +191,7 @@ export default function OnboardingPage() {
     const current = total - steps.length + 1;
 
     const complete = () => {
-        if (steps.length === 1) toast.success('Todo listo. Ya puedes usar Expoideas.');
+        if (steps.length === 1) toast.success('Todo listo. Ya puedes usar Idearium.');
         completeStep(step);
     };
 
@@ -203,7 +203,7 @@ export default function OnboardingPage() {
     return (
         <AuthLayout
             title="Primer ingreso"
-            panelTitle="Te damos la bienvenida a Expoideas"
+            panelTitle="Te damos la bienvenida a Idearium"
             panelText="Antes de empezar, completa tu cuenta. Solo se hace una vez."
         >
             <div className="flex flex-col gap-3">

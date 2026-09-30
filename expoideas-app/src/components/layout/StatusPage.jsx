@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 export function StatusPage({ code, icon: Icon, title, description }) {
     return (
         <section className="tech-grid flex min-h-[70vh] items-center justify-center px-4 py-16">
-            <title>{`${title} · Expoideas`}</title>
+            <title>{`${title} · Idearium`}</title>
             <div className="flex max-w-md flex-col items-center gap-5 text-center">
                 <span className="flex size-16 items-center justify-center rounded-lg border border-outline-variant bg-surface-container-lowest text-primary shadow-hard">
                     <Icon className="size-8" aria-hidden="true" />

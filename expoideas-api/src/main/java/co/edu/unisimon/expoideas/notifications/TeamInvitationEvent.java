@@ -8,7 +8,7 @@ package co.edu.unisimon.expoideas.notifications;
  * @param inviteeName  su nombre, o la parte local del correo si aún no lo puso
  * @param leaderName   quién invita
  * @param projectTitle proyecto al que la invitan
- * @param trackLabel   "INNPRENDE I" o "INNPRENDE II"
+ * @param trackLabel   la cátedra con su muestra: "INNPRENDE I · Despegue"
  */
 public record TeamInvitationEvent(
         String inviteeEmail, String inviteeName, String leaderName, String projectTitle, String trackLabel) {}

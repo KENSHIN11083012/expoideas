@@ -43,7 +43,7 @@ function AssignForm({ projectId }) {
             <Field
                 label="Asignar jurado"
                 error={errors.email?.message ?? errors.root?.message}
-                hint="Un profesor, un jurado externo o alguien de la gestión, con cuenta en Expoideas."
+                hint="Un profesor, un jurado externo o alguien de la gestión, con cuenta en Idearium."
                 className="flex-1"
             >
                 <Input type="email" autoComplete="off" placeholder="correo@dominio.com" {...register('email')} />

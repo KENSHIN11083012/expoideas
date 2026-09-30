@@ -76,7 +76,7 @@ export function EditionDialog({ edition, onClose }) {
             submitting={isSubmitting}
             submitDisabled={editing && !isDirty}
         >
-            <Field label="Nombre" error={errors.name?.message} hint="Por ejemplo, Expoideas 2026-2." required>
+            <Field label="Nombre" error={errors.name?.message} hint="Por ejemplo, Idearium 2026-2." required>
                 <Input autoComplete="off" autoFocus {...register('name')} />
             </Field>
 

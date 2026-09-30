@@ -54,7 +54,7 @@ describe('Listado para la gestión', () => {
         const table = within(screen.getByRole('table'));
 
         expect(table.getByRole('link', { name: 'BioSensor IoT' })).toHaveAttribute('href', '/proyectos/10');
-        expect(table.getByText(/Expoideas 2026-2 · INNPRENDE I/)).toBeInTheDocument();
+        expect(table.getByText(/Expoideas 2026-2 · INNPRENDE I · Despegue/)).toBeInTheDocument();
         expect(table.getByText('Carlos Mendoza')).toBeInTheDocument();
         expect(table.getByText('Faltan 1')).toBeInTheDocument();
         expect(screen.getByText('1 proyecto')).toBeInTheDocument();

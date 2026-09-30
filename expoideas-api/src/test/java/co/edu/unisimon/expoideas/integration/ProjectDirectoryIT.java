@@ -89,7 +89,7 @@ class ProjectDirectoryIT extends IntegrationTest {
         assertThat(csv.headers().getFirst(HttpHeaders.CONTENT_DISPOSITION)).contains("attachment");
         // Con BOM, para que Excel en español muestre bien las tildes.
         assertThat(body).startsWith("﻿Edición;Cátedra;Proyecto");
-        assertThat(body).contains(project.title()).contains("INNPRENDE I");
+        assertThat(body).contains(project.title()).contains("INNPRENDE I · Despegue");
 
         get("/api/v1/projects/export", loginAs(Role.STUDENT)).expect(403);
     }

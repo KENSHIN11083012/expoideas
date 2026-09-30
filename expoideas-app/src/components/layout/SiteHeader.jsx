@@ -22,7 +22,7 @@ import { fileUrl } from '@/lib/files';
 import { ROLES, roleLabel } from '@/lib/roles';
 import { ROUTES } from '@/lib/routes';
 import { cn } from '@/lib/utils';
-import { ExpoideasLogo } from '@/components/brand/ExpoideasLogo';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { InstitutionalLogos } from '@/components/brand/InstitutionalLogos';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
@@ -140,7 +140,7 @@ function SideMenu({ links, signedIn, user, role, onLogout }) {
                 <div className="border-b border-outline-variant/60 px-5 py-5">
                     <SheetTitle asChild>
                         <span>
-                            <ExpoideasLogo size="sm" />
+                            <BrandLogo size="sm" />
                         </span>
                     </SheetTitle>
                     <SheetDescription className="sr-only">Menú de navegación</SheetDescription>
@@ -222,9 +222,9 @@ export function SiteHeader() {
     return (
         <header className="glass sticky top-0 z-40 border-b border-outline-variant/60">
             <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:h-20 lg:px-8">
-                <Link to={ROUTES.HOME} className="flex shrink-0 items-center rounded" aria-label="Expoideas, ir al inicio">
-                    <ExpoideasLogo size="sm" className="lg:hidden" />
-                    <ExpoideasLogo className="hidden lg:inline-flex" />
+                <Link to={ROUTES.HOME} className="flex shrink-0 items-center rounded" aria-label="Idearium, ir al inicio">
+                    <BrandLogo size="sm" className="lg:hidden" />
+                    <BrandLogo className="hidden lg:inline-flex" />
                 </Link>
 
                 <span className="hidden h-8 w-px bg-outline-variant xl:block" aria-hidden="true" />

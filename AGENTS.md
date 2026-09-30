@@ -9,7 +9,8 @@ archivo en lo de proceso; y si algo no está en ninguno, se pregunta antes de in
 
 ## Lo mínimo que hay que saber
 
-Expoideas es la plataforma de la Cátedra INNPRENDE de la Universidad Simón Bolívar, con MacondoLab:
+Idearium (antes Expoideas; el repositorio y los paquetes conservan ese nombre) es la plataforma de
+la Cátedra INNPRENDE de la Universidad Simón Bolívar, con MacondoLab:
 inscripción de proyectos, entregables y —cuando MacondoLab defina las rúbricas— evaluación por
 jurados. Son dos aplicaciones en un mismo repositorio:
 

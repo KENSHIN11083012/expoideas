@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { affiliationFromUser, affiliationToApi } from '@/lib/affiliation';
 import { ROLES, ROLE_LABELS, assignableRoles, requiresAffiliation } from '@/lib/roles';
-import { TRACK_LIST, trackLabel } from '@/lib/tracks';
+import { TRACK_LIST, trackCourse } from '@/lib/tracks';
 import { INSTITUTIONAL_DOMAIN, handleFormError } from '@/lib/validation';
 import { FormDialog } from '@/components/forms/FormDialog';
 import { Badge } from '@/components/ui/badge';
@@ -220,7 +220,7 @@ export function TrackApprovalsDialog({ user, onClose }) {
     const approve = async (track) => {
         try {
             await save.mutateAsync({ track });
-            toast.success(`${trackLabel(track)} aprobada para ${name}`);
+            toast.success(`${trackCourse(track)} aprobada para ${name}`);
         } catch (saveError) {
             toast.error(saveError.message);
         }
@@ -229,7 +229,7 @@ export function TrackApprovalsDialog({ user, onClose }) {
     const revoke = async (approval) => {
         try {
             await save.mutateAsync({ id: approval.id });
-            toast.success(`Se quitó la aprobación de ${trackLabel(approval.track)}`);
+            toast.success(`Se quitó la aprobación de ${trackCourse(approval.track)}`);
         } catch (saveError) {
             toast.error(saveError.message);
         }
@@ -259,7 +259,7 @@ export function TrackApprovalsDialog({ user, onClose }) {
                                         className="flex flex-wrap items-center justify-between gap-3 rounded border border-outline-variant/60 px-4 py-3"
                                     >
                                         <div className="flex flex-col gap-1">
-                                            <p className="font-medium text-on-surface">{trackLabel(track)}</p>
+                                            <p className="font-medium text-on-surface">{trackCourse(track)}</p>
                                             {approval ? (
                                                 <p className="text-xs text-on-surface-variant">
                                                     {approval.projectTitle
@@ -279,7 +279,7 @@ export function TrackApprovalsDialog({ user, onClose }) {
                                                     size="sm"
                                                     onClick={() => revoke(approval)}
                                                     loading={save.isPending}
-                                                    aria-label={`Quitar la aprobación de ${trackLabel(track)}`}
+                                                    aria-label={`Quitar la aprobación de ${trackCourse(track)}`}
                                                 >
                                                     <X /> Quitar
                                                 </Button>

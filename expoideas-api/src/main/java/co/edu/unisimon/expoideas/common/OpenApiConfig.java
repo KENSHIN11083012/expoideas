@@ -16,10 +16,10 @@ import org.springframework.context.annotation.Configuration;
 @OpenAPIDefinition(
         info =
                 @Info(
-                        title = "Expoideas API",
+                        title = "Idearium API",
                         version = "v1",
                         description =
-                                "Cuentas, perfiles, catálogos y archivos de Expoideas, la plataforma de la Cátedra INNPRENDE"),
+                                "Cuentas, perfiles, catálogos y archivos de Idearium, la plataforma de la Cátedra INNPRENDE"),
         security = @SecurityRequirement(name = OpenApiConfig.BEARER))
 @SecurityScheme(name = OpenApiConfig.BEARER, type = SecuritySchemeType.HTTP, scheme = "bearer", bearerFormat = "JWT")
 public class OpenApiConfig {

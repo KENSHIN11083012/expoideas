@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/lib/routes';
-import { ExpoideasLogo } from '@/components/brand/ExpoideasLogo';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { InstitutionalLogos } from '@/components/brand/InstitutionalLogos';
 import heroPhoto from '@/assets/brand/login-hero.webp';
 
@@ -16,11 +16,11 @@ import heroPhoto from '@/assets/brand/login-hero.webp';
 export function AuthLayout({ title, panelTitle, panelText, children }) {
     return (
         <div className="grid min-h-dvh bg-surface-container-lowest lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
-            <title>{`${title} · Expoideas`}</title>
+            <title>{`${title} · Idearium`}</title>
 
             <div className="flex flex-col px-4 py-6 sm:px-10 lg:px-16 xl:px-24">
-                <Link to={ROUTES.HOME} className="self-start rounded" aria-label="Expoideas, ir al inicio">
-                    <ExpoideasLogo />
+                <Link to={ROUTES.HOME} className="self-start rounded" aria-label="Idearium, ir al inicio">
+                    <BrandLogo />
                 </Link>
 
                 <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10">{children}</main>
@@ -31,7 +31,7 @@ export function AuthLayout({ title, panelTitle, panelText, children }) {
                 </footer>
             </div>
 
-            <aside className="relative hidden overflow-hidden bg-primary lg:block" aria-label="Expoideas">
+            <aside className="relative hidden overflow-hidden bg-primary lg:block" aria-label="Idearium">
                 <div className="tech-grid-light absolute inset-0" aria-hidden="true" />
                 <div
                     className="absolute -right-32 -top-32 size-[28rem] rounded-full bg-secondary-container/25 blur-3xl"

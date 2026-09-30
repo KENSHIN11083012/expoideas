@@ -19,7 +19,7 @@ class ProjectCsvTest {
         assertThat(lines).hasSize(2);
         assertThat(lines[0]).startsWith(ProjectCsv.BOM + "Edición;Cátedra;Proyecto");
         assertThat(lines[1])
-                .isEqualTo("Expoideas 2026-2;INNPRENDE I;BioSensor IoT;Agroindustria y alimentos;"
+                .isEqualTo("Expoideas 2026-2;INNPRENDE I · Despegue;BioSensor IoT;Agroindustria y alimentos;"
                         + "Prototipo digital;Carlos Mendoza;Ana Pérez;3;2;2;1;Aprobado;2026-11-04");
     }
 

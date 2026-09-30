@@ -1,5 +1,5 @@
 /**
- * Roles de Expoideas. Los valores son los mismos que usa la API (enum Role) en el
+ * Roles de Idearium. Los valores son los mismos que usa la API (enum Role) en el
  * JSON y en el claim "role" del token.
  *
  * Las reglas de permisos son espejo de Role en la API, que es quien decide de

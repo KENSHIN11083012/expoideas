@@ -55,7 +55,7 @@ describe('Entregables de una cátedra', () => {
     it('lista lo configurado con sus condiciones', () => {
         const dialog = renderDialog();
 
-        expect(dialog.getByText('Entregables de INNPRENDE I')).toBeInTheDocument();
+        expect(dialog.getByText('Entregables de INNPRENDE I · Despegue')).toBeInTheDocument();
         expect(dialog.getByText('Póster de investigación')).toBeInTheDocument();
         expect(dialog.getByText('Obligatorio')).toBeInTheDocument();
         expect(dialog.getByText('PDF')).toBeInTheDocument();

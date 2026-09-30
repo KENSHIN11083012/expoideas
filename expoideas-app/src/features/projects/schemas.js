@@ -35,3 +35,16 @@ export const toFormValues = (project) => ({
     sectorId: project ? String(project.sectorId) : '',
     teacherId: project ? String(project.teacherId) : '',
 });
+
+/** Resultado del proyecto al cerrar la cátedra. Espejo de ProjectResult en la API. */
+export const RESULTS = {
+    APPROVED: 'APPROVED',
+    NOT_APPROVED: 'NOT_APPROVED',
+};
+
+export const RESULT_LABELS = {
+    [RESULTS.APPROVED]: 'Aprobado',
+    [RESULTS.NOT_APPROVED]: 'No aprobado',
+};
+
+export const resultLabel = (result) => RESULT_LABELS[result] ?? 'Sin resultado';

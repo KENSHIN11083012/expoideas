@@ -38,5 +38,17 @@ export const useInviteMember = (projectId) => useTeamMutation((email) => project
 
 export const useRemoveMember = (projectId) => useTeamMutation((userId) => projectApi.removeMember(projectId, userId));
 
+/** Guarda el resultado y deja el proyecto devuelto en la caché; el listado de la gestión se recarga. */
+export const useSetResult = (projectId) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (result) => projectApi.setResult(projectId, result),
+        onSuccess: (project) => {
+            queryClient.setQueryData(projectKey(projectId), project);
+            queryClient.invalidateQueries({ queryKey: ['project-directory'] });
+        },
+    });
+};
+
 export const useAnswerInvitation = () =>
     useTeamMutation(({ id, accept }) => (accept ? projectApi.acceptInvitation(id) : projectApi.declineInvitation(id)));

@@ -12,6 +12,8 @@ export const projectApi = {
     remove: (id) => del(`${PROJECTS}/${id}`),
     invite: (id, email) => post(`${PROJECTS}/${id}/invitations`, { email }),
     removeMember: (id, userId) => del(`${PROJECTS}/${id}/members/${userId}`),
+    /** El resultado, por el profesor del grupo o la gestión tras el cierre de entregas. */
+    setResult: (id, result) => put(`${PROJECTS}/${id}/result`, { result }),
     listInvitations: () => get(INVITATIONS),
     acceptInvitation: (id) => post(`${INVITATIONS}/${id}/acceptance`),
     declineInvitation: (id) => post(`${INVITATIONS}/${id}/rejection`),

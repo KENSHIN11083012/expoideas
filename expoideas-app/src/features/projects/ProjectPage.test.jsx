@@ -5,7 +5,7 @@ import { useAuth } from '@/features/auth/useAuth';
 import { apiError, renderWithProviders, sessionFor } from '@/test/utils';
 import { project } from '@/test/fixtures';
 import ProjectPage from './ProjectPage';
-import { useDeleteProject, useInviteMember, useProject, useRemoveMember } from './queries';
+import { useDeleteProject, useInviteMember, useProject, useRemoveMember, useSetResult } from './queries';
 
 vi.mock('@/features/auth/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('./queries', () => ({
@@ -15,6 +15,7 @@ vi.mock('./queries', () => ({
     useDeleteProject: vi.fn(),
     useSaveProject: vi.fn(),
     useTeachers: vi.fn(),
+    useSetResult: vi.fn(),
 }));
 
 const navigate = vi.fn();
@@ -37,6 +38,7 @@ const withTeam = { ...project, members: [...project.members, camilo] };
 let invite;
 let removeMember;
 let deleteProject;
+let setResult;
 
 const renderPage = (data = project, { role = 'STUDENT', userId = 1 } = {}) => {
     useAuth.mockReturnValue(sessionFor({ role, user: { id: userId } }));
@@ -48,9 +50,11 @@ beforeEach(() => {
     invite = { mutateAsync: vi.fn().mockResolvedValue({}), isPending: false };
     removeMember = { mutateAsync: vi.fn().mockResolvedValue({}), isPending: false };
     deleteProject = { mutateAsync: vi.fn().mockResolvedValue({}), isPending: false };
+    setResult = { mutateAsync: vi.fn().mockResolvedValue({}), isPending: false };
     useInviteMember.mockReturnValue(invite);
     useRemoveMember.mockReturnValue(removeMember);
     useDeleteProject.mockReturnValue(deleteProject);
+    useSetResult.mockReturnValue(setResult);
 });
 
 describe('El proyecto y su equipo', () => {
@@ -154,5 +158,49 @@ describe('Un integrante que no es líder', () => {
 
         await waitFor(() => expect(removeMember.mutateAsync).toHaveBeenCalledWith(2));
         expect(navigate).toHaveBeenCalledWith('/mis-proyectos');
+    });
+});
+
+describe('El resultado del proyecto', () => {
+    const closed = { ...project, registrationOpen: false, submissionOpen: false };
+
+    it('con las entregas abiertas nadie lo registra todavía', () => {
+        renderPage(project, { role: 'TEACHER', userId: 7 });
+
+        expect(screen.queryByLabelText('Resultado del proyecto')).not.toBeInTheDocument();
+        expect(screen.queryByText('Resultado')).not.toBeInTheDocument();
+    });
+
+    it('el profesor del grupo lo registra cuando cierran las entregas', async () => {
+        const user = userEvent.setup();
+        renderPage(closed, { role: 'TEACHER', userId: 7 });
+
+        expect(screen.getByText('Todavía sin registrar.')).toBeInTheDocument();
+        await user.selectOptions(screen.getByLabelText('Resultado del proyecto'), 'APPROVED');
+        await user.click(screen.getByRole('button', { name: 'Guardar resultado' }));
+
+        await waitFor(() => expect(setResult.mutateAsync).toHaveBeenCalledWith('APPROVED'));
+    });
+
+    it('otro profesor solo lo ve', () => {
+        renderPage({ ...closed, result: 'NOT_APPROVED' }, { role: 'TEACHER', userId: 8 });
+
+        expect(screen.getByText('No aprobado')).toBeInTheDocument();
+        expect(screen.queryByLabelText('Resultado del proyecto')).not.toBeInTheDocument();
+    });
+
+    it('la gestión puede cambiarlo, y el equipo lo ve como insignia', () => {
+        renderPage({ ...closed, result: 'APPROVED' }, { role: 'MACONDOLAB', userId: 9 });
+        // «Aprobado» está en la insignia y en la opción del select.
+        expect(screen.getAllByText('Aprobado')).toHaveLength(2);
+        expect(screen.getByLabelText('Resultado del proyecto')).toHaveValue('APPROVED');
+        expect(screen.getByRole('button', { name: 'Guardar resultado' })).toBeDisabled();
+    });
+
+    it('el equipo ve el resultado sin poder tocarlo', () => {
+        renderPage({ ...closed, result: 'APPROVED' });
+
+        expect(screen.getByText('Aprobado')).toBeInTheDocument();
+        expect(screen.queryByLabelText('Resultado del proyecto')).not.toBeInTheDocument();
     });
 });

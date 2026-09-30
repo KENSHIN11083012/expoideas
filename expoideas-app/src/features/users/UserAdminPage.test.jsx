@@ -6,7 +6,15 @@ import { useAffiliationCatalogs } from '@/features/catalogs/queries';
 import { ana, carla, luis, marta } from '@/test/fixtures';
 import { apiError } from '@/test/utils';
 import UserAdminPage from './UserAdminPage';
-import { useCreateUser, useDeleteUser, useResetPassword, useUpdateUser, useUsers } from './queries';
+import {
+    useCreateUser,
+    useDeleteUser,
+    useResetPassword,
+    useSaveTrackApproval,
+    useTrackApprovals,
+    useUpdateUser,
+    useUsers,
+} from './queries';
 
 vi.mock('@/features/auth/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('@/features/catalogs/queries', () => ({ useAffiliationCatalogs: vi.fn() }));
@@ -16,6 +24,8 @@ vi.mock('./queries', () => ({
     useUpdateUser: vi.fn(),
     useResetPassword: vi.fn(),
     useDeleteUser: vi.fn(),
+    useTrackApprovals: vi.fn(),
+    useSaveTrackApproval: vi.fn(),
 }));
 
 const mutation = (overrides = {}) => ({
@@ -52,15 +62,19 @@ const options = (select) =>
 let updateUser;
 let deleteUser;
 let createUser;
+let saveApproval;
 
 beforeEach(() => {
     updateUser = mutation();
     deleteUser = mutation();
     createUser = mutation();
+    saveApproval = mutation({ mutateAsync: vi.fn().mockResolvedValue({}) });
     useUpdateUser.mockReturnValue(updateUser);
     useDeleteUser.mockReturnValue(deleteUser);
     useCreateUser.mockReturnValue(createUser);
     useResetPassword.mockReturnValue(mutation());
+    useTrackApprovals.mockReturnValue({ data: [], isPending: false, error: null, refetch: vi.fn() });
+    useSaveTrackApproval.mockReturnValue(saveApproval);
 });
 
 describe('Usuarios como administrador', () => {
@@ -245,5 +259,59 @@ describe('Nueva cuenta', () => {
 
         expect(await dialog.findByText('El correo marta@empresa.com ya pertenece a otro usuario.')).toBeInTheDocument();
         expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+});
+
+describe('Cátedras aprobadas', () => {
+    const openApprovals = async (table) => {
+        await userEvent.click(
+            within(row(table, 'Ana María Pérez')).getByRole('button', { name: 'Acciones para Ana María Pérez' }),
+        );
+        await userEvent.click(await screen.findByRole('menuitem', { name: 'Cátedras aprobadas' }));
+        return within(await screen.findByRole('dialog'));
+    };
+
+    it('la gestión marca INNPRENDE I como aprobada a mano', async () => {
+        const table = renderAs(carla, 'MACONDOLAB');
+        const dialog = await openApprovals(table);
+
+        expect(dialog.getAllByText('Sin aprobar')).toHaveLength(2);
+        await userEvent.click(dialog.getAllByRole('button', { name: /Marcar como aprobada/ })[0]);
+
+        await waitFor(() => expect(saveApproval.mutateAsync).toHaveBeenCalledWith({ track: 'INNPRENDE_I' }));
+        expect(useTrackApprovals).toHaveBeenCalledWith(ana.id);
+    });
+
+    it('una aprobación existente dice de dónde viene y se puede quitar', async () => {
+        useTrackApprovals.mockReturnValue({
+            data: [
+                {
+                    id: 3,
+                    userId: 1,
+                    track: 'INNPRENDE_I',
+                    projectId: 10,
+                    projectTitle: 'BioSensor',
+                    approvedBy: 'Carlos Mendoza',
+                },
+            ],
+            isPending: false,
+            error: null,
+            refetch: vi.fn(),
+        });
+        const table = renderAs(carla, 'MACONDOLAB');
+        const dialog = await openApprovals(table);
+
+        expect(dialog.getByText(/Por el proyecto "BioSensor" · Carlos Mendoza/)).toBeInTheDocument();
+        await userEvent.click(dialog.getByRole('button', { name: 'Quitar la aprobación de INNPRENDE I' }));
+
+        await waitFor(() => expect(saveApproval.mutateAsync).toHaveBeenCalledWith({ id: 3 }));
+    });
+
+    it('solo los estudiantes tienen cátedras que aprobar', async () => {
+        const table = renderAs(luis, 'ADMIN');
+
+        await userEvent.click(within(row(table, 'Carla Díaz')).getByRole('button', { name: 'Acciones para Carla Díaz' }));
+
+        expect(screen.queryByRole('menuitem', { name: 'Cátedras aprobadas' })).not.toBeInTheDocument();
     });
 });

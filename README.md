@@ -44,9 +44,9 @@ orden en que se va a construir. Ya está hecho lo del piloto: registro con solo 
 (el nombre y la facultad se completan en el primer ingreso), el rol se actualiza sin cerrar sesión,
 «profesor» en vez de «docente» y el botón «Ver proyecto» en el listado. También las plantillas
 descargables por entregable, los entregables de tipo enlace y el cierre propio para las fotos de la
-sustentación.
+sustentación. Y el prerrequisito: el profesor registra el resultado del proyecto al cerrar las
+entregas, aprobar INNPRENDE I habilita para II, y nadie cursa las dos a la vez.
 
-- Prerrequisito: aprobar INNPRENDE I para inscribirse en II, y no cursar las dos a la vez.
 - Jurados asignados por proyecto e invitación de jurados externos.
 - Correo (invitaciones, cuentas creadas, sustentaciones) y agenda de sustentaciones.
 - Tipos de prototipo en INNPRENDE II (faltan los tipos).

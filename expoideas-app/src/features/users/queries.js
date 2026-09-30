@@ -29,6 +29,21 @@ export const useUpdateUser = () => {
 
 export const useResetPassword = () => useMutation({ mutationFn: ({ id, passwords }) => usersApi.resetPassword(id, passwords) });
 
+const approvalsKey = (userId) => ['track-approvals', String(userId)];
+
+/** Aprobaciones de cátedra de una persona. */
+export const useTrackApprovals = (userId) =>
+    useQuery({ queryKey: approvalsKey(userId), queryFn: () => usersApi.listApprovals(userId), enabled: Boolean(userId) });
+
+/** Registra (con track) o quita (con id) una aprobación y recarga las de esa persona. */
+export const useSaveTrackApproval = (userId) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, track }) => (id ? usersApi.removeApproval(id) : usersApi.createApproval({ userId, track })),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: approvalsKey(userId) }),
+    });
+};
+
 export const useDeleteUser = () => {
     const queryClient = useQueryClient();
     return useMutation({

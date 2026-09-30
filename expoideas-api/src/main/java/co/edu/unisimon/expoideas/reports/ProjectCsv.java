@@ -1,5 +1,6 @@
 package co.edu.unisimon.expoideas.reports;
 
+import co.edu.unisimon.expoideas.projects.ProjectResult;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -27,6 +28,7 @@ final class ProjectCsv {
             "Mínimo de integrantes",
             "Entregables obligatorios",
             "Entregados",
+            "Resultado",
             "Inscrito el");
 
     private ProjectCsv() {}
@@ -46,9 +48,16 @@ final class ProjectCsv {
                             String.valueOf(project.minMembers()),
                             String.valueOf(project.requiredDeliverables()),
                             String.valueOf(project.deliveredDeliverables()),
+                            resultLabel(project.result()),
                             project.createdAt() == null ? "" : DATE.format(project.createdAt())));
         }
         return csv.toString();
+    }
+
+    /** Sin resultado, la celda va vacía. */
+    private static String resultLabel(ProjectResult result) {
+        if (result == null) return "";
+        return result == ProjectResult.APPROVED ? "Aprobado" : "No aprobado";
     }
 
     /** "INNPRENDE_I" se lee mejor como "INNPRENDE I". */

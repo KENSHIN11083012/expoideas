@@ -7,6 +7,7 @@ import co.edu.unisimon.expoideas.editions.Track;
 import co.edu.unisimon.expoideas.projects.Project;
 import co.edu.unisimon.expoideas.projects.ProjectPolicy;
 import co.edu.unisimon.expoideas.projects.ProjectRepository;
+import co.edu.unisimon.expoideas.projects.ProjectResult;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
 import java.util.List;
@@ -58,7 +59,12 @@ public class ProjectDirectoryService {
         }
 
         return projectRepository.search(
-                filter.editionId(), filter.track(), teacherId, filter.sectorId(), blankToNull(filter.search()));
+                filter.editionId(),
+                filter.track(),
+                teacherId,
+                filter.sectorId(),
+                filter.result(),
+                blankToNull(filter.search()));
     }
 
     private static String blankToNull(String value) {
@@ -66,5 +72,6 @@ public class ProjectDirectoryService {
     }
 
     /** Filtros del listado; cualquiera puede venir vacío. */
-    public record ProjectFilter(Integer editionId, Track track, Integer teacherId, Integer sectorId, String search) {}
+    public record ProjectFilter(
+            Integer editionId, Track track, Integer teacherId, Integer sectorId, ProjectResult result, String search) {}
 }

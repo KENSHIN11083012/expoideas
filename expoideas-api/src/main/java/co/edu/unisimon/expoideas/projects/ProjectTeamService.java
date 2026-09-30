@@ -53,6 +53,12 @@ public class ProjectTeamService {
         if (projectRepository.isAlreadyOnATeam(project.getEdition().getId(), project.getTrack(), invitee.getId())) {
             throw new InvalidFieldsException(EMAIL, "Esa persona ya tiene un proyecto en esta cátedra");
         }
+        try {
+            policy.requireEligibleFor(invitee, project.getEdition(), project.getTrack());
+        } catch (ConflictException | ForbiddenActionException notEligible) {
+            // Para el líder es un problema con el correo que escribió: se muestra en ese campo.
+            throw new InvalidFieldsException(EMAIL, notEligible.getMessage());
+        }
 
         project.addMember(invitee, MemberRole.MEMBER, MembershipStatus.INVITED);
         return ProjectResponse.from(projectRepository.save(project), policy.today());
@@ -80,6 +86,7 @@ public class ProjectTeamService {
                 project.getTrack(),
                 invitation.getUser(),
                 "Ya tienes un proyecto inscrito en esta cátedra");
+        policy.requireEligibleFor(invitation.getUser(), project.getEdition(), project.getTrack());
 
         invitation.accept();
         memberRepository.save(invitation);

@@ -58,6 +58,13 @@ public class ProjectController {
         projectService.delete(id, authentication.getName());
     }
 
+    /** El resultado del proyecto: lo pone su profesor o la gestión tras el cierre de entregas. */
+    @PutMapping("/{id}/result")
+    public ProjectResponse setResult(
+            @PathVariable Integer id, Authentication authentication, @Valid @RequestBody ProjectResultRequest request) {
+        return projectService.setResult(id, authentication.getName(), request);
+    }
+
     /** Invita a un compañero por su correo. */
     @PostMapping("/{id}/invitations")
     @ResponseStatus(HttpStatus.CREATED)

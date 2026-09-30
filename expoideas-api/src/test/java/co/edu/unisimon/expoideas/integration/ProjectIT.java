@@ -2,12 +2,20 @@ package co.edu.unisimon.expoideas.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import co.edu.unisimon.expoideas.catalogs.SectorRepository;
+import co.edu.unisimon.expoideas.editions.EditionRepository;
+import co.edu.unisimon.expoideas.editions.Track;
+import co.edu.unisimon.expoideas.projects.MemberRole;
+import co.edu.unisimon.expoideas.projects.MembershipStatus;
+import co.edu.unisimon.expoideas.projects.Project;
+import co.edu.unisimon.expoideas.projects.ProjectRepository;
 import co.edu.unisimon.expoideas.users.Role;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Inscripción de proyectos y equipo contra MySQL: quién inscribe, quién invita,
@@ -19,6 +27,136 @@ class ProjectIT extends IntegrationTest {
     private static Integer closedEditionId;
 
     private static final String TRACK = "INNPRENDE_I";
+
+    @Autowired
+    private ProjectRepository projectRepository;
+
+    @Autowired
+    private EditionRepository editionRepository;
+
+    @Autowired
+    private SectorRepository sectorRepository;
+
+    // ── Prerrequisito de INNPRENDE I a II ───────────────────────────────────
+
+    @Test
+    void trackTwoRequiresAnApprovedTrackOne() {
+        Team team = newTeam();
+        Map<String, Object> body = projectBody(team);
+        body.put("track", "INNPRENDE_II");
+
+        Response refused = post("/api/v1/projects", team.leaderToken(), body).expect(403);
+        assertThat(refused.json("$.detail").toString()).contains("aprobado INNPRENDE I");
+
+        // La gestión registra la aprobación a mano (cursó INNPRENDE I antes de la plataforma).
+        String macondolab = loginAs(Role.MACONDOLAB);
+        Response approval = post(
+                        "/api/v1/admin/track-approvals",
+                        macondolab,
+                        Map.of("userId", idOf(team.leaderEmail()), "track", "INNPRENDE_I"))
+                .expect(201);
+        assertThat(approval.<Integer>json("$.projectId")).isNull();
+        post(
+                        "/api/v1/admin/track-approvals",
+                        macondolab,
+                        Map.of("userId", idOf(team.leaderEmail()), "track", "INNPRENDE_I"))
+                .expect(409);
+        List<String> tracks = get("/api/v1/admin/track-approvals?userId=" + idOf(team.leaderEmail()), macondolab)
+                .expect(200)
+                .json("$[*].track");
+        assertThat(tracks).containsExactly("INNPRENDE_I");
+
+        int projectId =
+                post("/api/v1/projects", team.leaderToken(), body).expect(201).json("$.id");
+
+        // Invitar a alguien sin la aprobación se rechaza en el campo del correo.
+        Response invited = post(
+                        "/api/v1/projects/" + projectId + "/invitations",
+                        team.leaderToken(),
+                        Map.of("email", team.memberEmail()))
+                .expect(400);
+        assertThat(invited.json("$.fields.email").toString()).contains("aprobado INNPRENDE I");
+
+        delete("/api/v1/admin/track-approvals/" + approval.<Integer>json("$.id"), macondolab)
+                .expect(204);
+        get("/api/v1/admin/track-approvals?userId=" + idOf(team.leaderEmail()), loginAs(Role.TEACHER))
+                .expect(403);
+    }
+
+    @Test
+    void nobodyIsOnBothTracksOfTheSameEdition() {
+        Team team = newTeam();
+        approveManually(team.leaderEmail());
+        approveManually(team.memberEmail());
+        createProject(team);
+
+        Map<String, Object> second = projectBody(team);
+        second.put("track", "INNPRENDE_II");
+        Response refused = post("/api/v1/projects", team.leaderToken(), second).expect(409);
+        assertThat(refused.json("$.detail").toString()).contains("misma edición");
+
+        // El compañero, que sí puede entrar en II, inscribe ahí e intenta invitar al líder de I.
+        int trackTwo =
+                post("/api/v1/projects", team.memberToken(), second).expect(201).json("$.id");
+        Response invited = post(
+                        "/api/v1/projects/" + trackTwo + "/invitations",
+                        team.memberToken(),
+                        Map.of("email", team.leaderEmail()))
+                .expect(400);
+        assertThat(invited.json("$.fields.email").toString()).contains("misma edición");
+    }
+
+    @Test
+    void theTeacherSetsTheResultAfterTheDeadlineAndItOpensTrackTwo() {
+        Team team = newTeam();
+        String teacher = login(team.teacherEmail(), PASSWORD);
+        Map<String, Object> approved = Map.of("result", "APPROVED");
+
+        // Con las entregas abiertas todavía no hay resultado.
+        int open = createProject(team);
+        Response early =
+                put("/api/v1/projects/" + open + "/result", teacher, approved).expect(409);
+        assertThat(early.json("$.detail").toString()).contains("después del cierre");
+
+        // Un proyecto de una edición que ya terminó, con el líder, el compañero y un tercero aceptados.
+        String third = createAccount(Role.STUDENT);
+        int finished = finishedProject(team, third, "Proyecto terminado " + System.nanoTime());
+        put("/api/v1/projects/" + finished + "/result", loginAs(Role.TEACHER), approved)
+                .expect(404);
+        put("/api/v1/projects/" + finished + "/result", team.leaderToken(), approved)
+                .expect(403);
+        Response result = put("/api/v1/projects/" + finished + "/result", teacher, approved)
+                .expect(200);
+        assertThat(result.<String>json("$.result")).isEqualTo("APPROVED");
+
+        // Cada integrante aceptado queda con INNPRENDE I aprobada, y ya puede inscribirse en II
+        // (el líder no: sigue en el proyecto de I de la edición abierta).
+        String macondolab = loginAs(Role.MACONDOLAB);
+        List<Integer> projects = get("/api/v1/admin/track-approvals?userId=" + idOf(team.memberEmail()), macondolab)
+                .expect(200)
+                .json("$[*].projectId");
+        assertThat(projects).containsExactly(finished);
+        Map<String, Object> trackTwo = projectBody(team);
+        trackTwo.put("track", "INNPRENDE_II");
+        post("/api/v1/projects", team.memberToken(), trackTwo).expect(201);
+        post("/api/v1/projects", team.leaderToken(), trackTwo).expect(409);
+
+        // El listado de la gestión filtra por resultado.
+        List<Integer> approvedIds =
+                get("/api/v1/projects?result=APPROVED", macondolab).expect(200).json("$[*].id");
+        assertThat(approvedIds).contains(finished).doesNotContain(open);
+
+        // La gestión lo cambia a no aprobado: se retiran las aprobaciones que vinieron de ese proyecto.
+        Response reverted = put(
+                        "/api/v1/projects/" + finished + "/result", macondolab, Map.of("result", "NOT_APPROVED"))
+                .expect(200);
+        assertThat(reverted.<String>json("$.result")).isEqualTo("NOT_APPROVED");
+        List<Integer> left = get("/api/v1/admin/track-approvals?userId=" + idOf(third), macondolab)
+                .expect(200)
+                .json("$[*].id");
+        assertThat(left).isEmpty();
+        post("/api/v1/projects", login(third, PASSWORD), trackTwo).expect(403);
+    }
 
     // ── Inscripción y equipo ────────────────────────────────────────────────
 
@@ -311,6 +449,39 @@ class ProjectIT extends IntegrationTest {
     private void invite(int projectId, Team team, String email) {
         post("/api/v1/projects/" + projectId + "/invitations", team.leaderToken(), Map.of("email", email))
                 .expect(201);
+    }
+
+    private void approveManually(String email) {
+        post(
+                        "/api/v1/admin/track-approvals",
+                        loginAs(Role.MACONDOLAB),
+                        Map.of("userId", idOf(email), "track", "INNPRENDE_I"))
+                .expect(201);
+    }
+
+    /**
+     * Un proyecto de la edición cerrada, escrito directamente en la base: por la
+     * API ya no se puede inscribir nada ahí, que es justo lo que se quiere probar.
+     */
+    private int finishedProject(Team team, String thirdEmail, String title) {
+        Project project = new Project();
+        project.setEdition(editionRepository.findWithTracksById(closedEdition()).orElseThrow());
+        project.setTrack(Track.INNPRENDE_I);
+        project.setTitle(title);
+        project.setSummary("Un proyecto que ya terminó.");
+        project.setSector(sectorRepository.findAll().getFirst());
+        project.setTeacher(userRepository.findByEmail(team.teacherEmail()).orElseThrow());
+        project.addMember(
+                userRepository.findByEmail(team.leaderEmail()).orElseThrow(),
+                MemberRole.LEADER,
+                MembershipStatus.ACCEPTED);
+        project.addMember(
+                userRepository.findByEmail(team.memberEmail()).orElseThrow(),
+                MemberRole.MEMBER,
+                MembershipStatus.ACCEPTED);
+        project.addMember(
+                userRepository.findByEmail(thirdEmail).orElseThrow(), MemberRole.MEMBER, MembershipStatus.ACCEPTED);
+        return projectRepository.save(project).getId();
     }
 
     private int firstSectorId() {

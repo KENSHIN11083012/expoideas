@@ -17,9 +17,10 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ErrorState, Skeleton } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { ProjectDeliverables } from '@/features/deliverables/ProjectDeliverables';
-import { useDeleteProject, useInviteMember, useProject, useRemoveMember } from './queries';
-import { invitationSchema } from './schemas';
+import { useDeleteProject, useInviteMember, useProject, useRemoveMember, useSetResult } from './queries';
+import { RESULTS, RESULT_LABELS, invitationSchema, resultLabel } from './schemas';
 import { ProjectDialog } from './ProjectDialog';
 
 /** Formulario para invitar por correo. Solo lo ve el líder. */
@@ -64,6 +65,63 @@ function InviteForm({ projectId, disabled }) {
     );
 }
 
+/**
+ * El resultado del proyecto. Lo ve todo el mundo; lo cambian el profesor del
+ * grupo y la gestión, y solo cuando ya cerraron las entregas. Aprobarlo deja a
+ * cada integrante habilitado para la siguiente cátedra.
+ */
+function ProjectResult({ project, canSet }) {
+    const setResult = useSetResult(project.id);
+    const [value, setValue] = useState(project.result ?? '');
+
+    const save = async () => {
+        try {
+            await setResult.mutateAsync(value);
+            toast.success(`Resultado guardado: ${RESULT_LABELS[value]}`);
+        } catch (error) {
+            toast.error(error.message);
+        }
+    };
+
+    return (
+        <div className="flex flex-col gap-2">
+            <p className="label-mono text-on-surface-variant">Resultado</p>
+            {project.result ? (
+                <Badge variant={project.result === RESULTS.APPROVED ? 'primary' : 'outline'} className="self-start">
+                    {resultLabel(project.result)}
+                </Badge>
+            ) : (
+                <p className="text-sm text-on-surface-variant">
+                    {canSet ? 'Todavía sin registrar.' : 'Se registra cuando cierren las entregas.'}
+                </p>
+            )}
+            {canSet && (
+                <div className="flex flex-col gap-2">
+                    <NativeSelect
+                        aria-label="Resultado del proyecto"
+                        value={value}
+                        onChange={(event) => setValue(event.target.value)}
+                        className="h-9 text-sm"
+                    >
+                        <option value="">Elige el resultado</option>
+                        {Object.values(RESULTS).map((result) => (
+                            <option key={result} value={result}>
+                                {RESULT_LABELS[result]}
+                            </option>
+                        ))}
+                    </NativeSelect>
+                    <Button size="sm" onClick={save} loading={setResult.isPending} disabled={!value || value === project.result}>
+                        Guardar resultado
+                    </Button>
+                    <p className="text-xs text-on-surface-variant">
+                        Aprobado habilita a cada integrante para inscribirse en la siguiente cátedra.
+                    </p>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function TeamMember({ member, canRemove, isMe, onRemove }) {
     return (
         <li className="flex items-center justify-between gap-3 rounded border border-outline-variant/60 px-4 py-3">
@@ -101,7 +159,7 @@ function TeamMember({ member, canRemove, isMe, onRemove }) {
 export default function ProjectPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, isManagement } = useAuth();
     const { data: project, isPending, error, refetch } = useProject(id);
     const removeMember = useRemoveMember(id);
     const deleteProject = useDeleteProject();
@@ -130,6 +188,8 @@ export default function ProjectPage() {
     const open = project.registrationOpen;
     const accepted = project.members.filter((member) => member.status === 'ACCEPTED').length;
     const full = project.members.length >= project.maxMembers;
+    // El resultado se pone tras el cierre de entregas, por el profesor del grupo o la gestión.
+    const canSetResult = !project.submissionOpen && (project.teacherId === user?.id || isManagement);
 
     const removeFromTeam = async (member) => {
         try {
@@ -208,6 +268,7 @@ export default function ProjectPage() {
                                 Las inscripciones de {project.edition} ya cerraron: el equipo y los datos quedaron fijos.
                             </p>
                         )}
+                        {(project.result || !project.submissionOpen) && <ProjectResult project={project} canSet={canSetResult} />}
                     </Card>
                 </aside>
 

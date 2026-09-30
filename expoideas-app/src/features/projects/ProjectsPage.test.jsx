@@ -93,6 +93,22 @@ describe('Listado para la gestión', () => {
         await waitFor(() => expect(lastFilters()).toMatchObject({ track: 'INNPRENDE_II', sectorId: '3' }));
     });
 
+    it('muestra el resultado y filtra por él', async () => {
+        renderPage({
+            projects: [
+                { ...summary, result: 'APPROVED' },
+                { ...summary, id: 11, title: 'Riego', result: null },
+            ],
+        });
+        const table = within(screen.getByRole('table'));
+
+        expect(table.getByText('Aprobado')).toBeInTheDocument();
+        expect(table.getAllByText('—')).toHaveLength(1);
+
+        await userEvent.selectOptions(screen.getByLabelText('Resultado'), 'NOT_APPROVED');
+        await waitFor(() => expect(lastFilters()).toMatchObject({ result: 'NOT_APPROVED' }));
+    });
+
     it('descarga el CSV con los filtros puestos', async () => {
         renderPage();
 

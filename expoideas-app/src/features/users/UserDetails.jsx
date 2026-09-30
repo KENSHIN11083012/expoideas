@@ -1,4 +1,4 @@
-import { Ellipsis, GraduationCap, KeyRound, Trash2 } from 'lucide-react';
+import { Award, Ellipsis, GraduationCap, KeyRound, Trash2 } from 'lucide-react';
 import { ROLES, ROLE_LABELS, assignableRoles, canManage, isManagement, requiresAffiliation, roleLabel } from '@/lib/roles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -68,7 +68,7 @@ export function AffiliationSummary({ user }) {
 }
 
 /** Menú de acciones sobre una cuenta que el rol de la sesión puede gestionar. */
-export function UserActions({ user, actor, isOwn, onEditAffiliation, onResetPassword, onDelete }) {
+export function UserActions({ user, actor, isOwn, onEditAffiliation, onTrackApprovals, onResetPassword, onDelete }) {
     if (!canManage(actor, user.role)) return null;
 
     return (
@@ -82,6 +82,11 @@ export function UserActions({ user, actor, isOwn, onEditAffiliation, onResetPass
                 {requiresAffiliation(user.role) && (
                     <DropdownMenuItem onSelect={() => onEditAffiliation(user)}>
                         <GraduationCap /> Editar adscripción
+                    </DropdownMenuItem>
+                )}
+                {user.role === ROLES.STUDENT && (
+                    <DropdownMenuItem onSelect={() => onTrackApprovals(user)}>
+                        <Award /> Cátedras aprobadas
                     </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onSelect={() => onResetPassword(user)} disabled={isOwn}>

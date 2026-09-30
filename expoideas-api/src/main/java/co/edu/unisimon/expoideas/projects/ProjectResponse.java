@@ -27,6 +27,7 @@ public record ProjectResponse(
         int minMembers,
         int maxMembers,
         List<MemberResponse> members,
+        ProjectResult result,
         LocalDateTime createdAt) {
 
     public static ProjectResponse from(Project project, LocalDate today) {
@@ -47,6 +48,7 @@ public record ProjectResponse(
                 settings.getMinMembers(),
                 settings.getMaxMembers(),
                 project.getMembers().stream().map(MemberResponse::from).toList(),
+                project.getResult(),
                 project.getCreatedAt());
     }
 }

@@ -1,6 +1,7 @@
 package co.edu.unisimon.expoideas.reports;
 
 import co.edu.unisimon.expoideas.editions.Track;
+import co.edu.unisimon.expoideas.projects.ProjectResult;
 import co.edu.unisimon.expoideas.reports.ProjectDirectoryService.ProjectFilter;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -35,9 +36,10 @@ public class ProjectDirectoryController {
             @RequestParam(required = false) Track track,
             @RequestParam(required = false) Integer teacherId,
             @RequestParam(required = false) Integer sectorId,
+            @RequestParam(required = false) ProjectResult result,
             @RequestParam(required = false) String search) {
         return directoryService.list(
-                authentication.getName(), new ProjectFilter(editionId, track, teacherId, sectorId, search));
+                authentication.getName(), new ProjectFilter(editionId, track, teacherId, sectorId, result, search));
     }
 
     /** El mismo listado en CSV, con los filtros que estén puestos. */
@@ -48,9 +50,10 @@ public class ProjectDirectoryController {
             @RequestParam(required = false) Track track,
             @RequestParam(required = false) Integer teacherId,
             @RequestParam(required = false) Integer sectorId,
+            @RequestParam(required = false) ProjectResult result,
             @RequestParam(required = false) String search) {
         String csv = directoryService.export(
-                authentication.getName(), new ProjectFilter(editionId, track, teacherId, sectorId, search));
+                authentication.getName(), new ProjectFilter(editionId, track, teacherId, sectorId, result, search));
         String filename = "proyectos-" + LocalDate.now() + ".csv";
 
         return ResponseEntity.ok()

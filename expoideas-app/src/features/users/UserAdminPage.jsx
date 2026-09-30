@@ -12,7 +12,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback';
 import { NativeSelect } from '@/components/ui/native-select';
 import { SearchInput } from '@/components/ui/search-input';
-import { AffiliationDialog, NewUserDialog, PasswordResetDialog } from './UserDialogs';
+import { AffiliationDialog, NewUserDialog, PasswordResetDialog, TrackApprovalsDialog } from './UserDialogs';
 import { UserList } from './UserList';
 import { useDeleteUser, useUpdateUser, useUsers } from './queries';
 
@@ -161,6 +161,7 @@ export default function UserAdminPage() {
                     handlers={{
                         onRoleChange,
                         onEditAffiliation: (user) => setDialog({ type: 'affiliation', user }),
+                        onTrackApprovals: (user) => setDialog({ type: 'approvals', user }),
                         onResetPassword: (user) => setDialog({ type: 'password', user }),
                         onDelete: setToDelete,
                     }}
@@ -170,6 +171,7 @@ export default function UserAdminPage() {
             {dialog?.type === 'new' && <NewUserDialog actor={actor} onClose={closeDialog} />}
             {dialog?.type === 'affiliation' && <AffiliationDialog user={dialog.user} onClose={closeDialog} />}
             {dialog?.type === 'password' && <PasswordResetDialog user={dialog.user} onClose={closeDialog} />}
+            {dialog?.type === 'approvals' && <TrackApprovalsDialog user={dialog.user} onClose={closeDialog} />}
 
             <ConfirmDialog
                 open={Boolean(roleGrant)}

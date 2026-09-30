@@ -20,7 +20,7 @@ en el repositorio.
 | 6 | Externos | Los jurados externos entran por invitación del administrador, sin correo institucional | Listo para construir |
 | 7 | Entregables | Plantilla del póster para descargar, diligenciar y subir. Entregable nuevo: **fotos de la sustentación** como evidencia (trazabilidad) | **Hecho (F2):** cada entregable puede llevar plantilla (PDF, DOCX o PPTX), ser un enlace y tener su propio cierre. Las fotos de la sustentación se configuran como un entregable de imágenes con cierre propio |
 | 8 | INNPRENDE II | Enlace externo (video en YouTube o prototipo), fotos y pitch. Lista de **tipo de prototipo** (digital, físico, etc.) y, según el tipo, qué evidencia y qué formato se piden | Faltan los tipos (con la profesora) |
-| 9 | Prerrequisito | No se puede cursar INNPRENDE I y II a la vez. Para inscribirse en II hay que haber aprobado I | Listo para construir |
+| 9 | Prerrequisito | No se puede cursar INNPRENDE I y II a la vez. Para inscribirse en II hay que haber aprobado I | **Hecho (F3):** el profesor o la gestión registran el resultado tras el cierre de entregas; la gestión también aprueba a mano a quien cursó I antes de la plataforma |
 | 10 | Precarga | Cargar el listado de estudiantes y profesores de la cátedra para asignar el rol al registrarse. Quien no esté queda como estudiante | Falta el listado |
 | 11 | Sustentaciones | El administrador asigna fecha y hora a cada equipo, y se avisa al correo institucional | Listo para construir |
 | 12 | Evaluación | Rúbrica que se llena con clics, criterio por criterio. La nota final se calcula sola con los pesos. Observaciones opcionales (quizá obligatorias con nota baja). Recordatorio por correo al jurado con calificaciones pendientes. **WhatsApp se descartó** porque exige una sesión de WhatsApp Business siempre abierta | La rúbrica está en el SharePoint |
@@ -46,7 +46,7 @@ Otros puntos de la reunión:
 
 1. **F1 · UX para el piloto:** puntos 1, 3, 4 y 5. **Hecha** (rama `feat/piloto-ux`).
 2. **F2 · Entregables:** plantillas por tipo, enlaces y fotos de evidencia (punto 7). **Hecha** (rama `feat/entregables-plantillas`).
-3. **F3 · Prerrequisito** de INNPRENDE I a II (punto 9).
+3. **F3 · Prerrequisito** de INNPRENDE I a II (punto 9). **Hecha** (en `main`).
 4. **F4 · Roles:** varios roles por persona e invitación de externos (puntos 2 y 6).
 5. **F5 · Agenda de sustentaciones** con aviso por correo (punto 11).
 6. **F6 · Tipos de prototipo** en INNPRENDE II (punto 8), cuando estén definidos.

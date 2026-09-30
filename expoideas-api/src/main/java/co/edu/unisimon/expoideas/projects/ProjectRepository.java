@@ -34,6 +34,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
               and (:track is null or p.track = :track)
               and (:teacherId is null or p.teacher.id = :teacherId)
               and (:sectorId is null or p.sector.id = :sectorId)
+              and (:result is null or p.result = :result)
               and (:search is null or lower(p.title) like lower(concat('%', :search, '%')))
             order by p.createdAt desc
             """)
@@ -42,6 +43,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             @Param("track") Track track,
             @Param("teacherId") Integer teacherId,
             @Param("sectorId") Integer sectorId,
+            @Param("result") ProjectResult result,
             @Param("search") String search);
 
     /** Si esa cuenta es el docente de algún proyecto. */
@@ -62,5 +64,14 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
               and m.user.id = :userId and m.status = co.edu.unisimon.expoideas.projects.MembershipStatus.ACCEPTED
             """)
     boolean isAlreadyOnATeam(
+            @Param("editionId") Integer editionId, @Param("track") Track track, @Param("userId") Integer userId);
+
+    /** Si esa cuenta está aceptada en un proyecto de la otra cátedra de la misma edición. */
+    @Query("""
+            select count(p) > 0 from Project p join p.members m
+            where p.edition.id = :editionId and p.track <> :track
+              and m.user.id = :userId and m.status = co.edu.unisimon.expoideas.projects.MembershipStatus.ACCEPTED
+            """)
+    boolean isOnATeamOfAnotherTrack(
             @Param("editionId") Integer editionId, @Param("track") Track track, @Param("userId") Integer userId);
 }

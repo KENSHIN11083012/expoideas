@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>Inscribe un estudiante, que queda como líder del proyecto, y solo mientras
  * la inscripción de esa edición está abierta.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
@@ -31,6 +33,7 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final CatalogLookup catalogLookup;
     private final ProjectPolicy policy;
+    private final TrackApprovalRepository approvalRepository;
     private final ApplicationEventPublisher events;
 
     /** Los proyectos de esa cuenta, incluidos aquellos a los que la invitaron. */
@@ -68,6 +71,7 @@ public class ProjectService {
         policy.requireRegistrationOpen(edition);
         policy.requireNotOnAnotherTeam(
                 edition, request.track(), leader, "Ya tienes un proyecto inscrito en esta cátedra");
+        policy.requireEligibleFor(leader, edition, request.track());
 
         Project project = new Project();
         project.setEdition(edition);
@@ -79,6 +83,36 @@ public class ProjectService {
     }
 
     /** Solo el líder, y solo mientras la inscripción sigue abierta. La cátedra no cambia. */
+    /**
+     * El resultado del proyecto, por su profesor o la gestión, después del cierre
+     * de entregas. Aprobarlo deja a cada integrante aceptado con la cátedra
+     * aprobada; volverlo a no aprobado retira esas aprobaciones (no las manuales
+     * ni las de otro proyecto).
+     *
+     * @throws ForbiddenActionException si no es el profesor del grupo ni de la gestión
+     * @throws ConflictException        si las entregas siguen abiertas
+     */
+    @Transactional
+    public ProjectResponse setResult(Integer id, String email, ProjectResultRequest request) {
+        User actor = policy.account(email);
+        Project project = policy.findVisible(id, actor);
+        policy.requireTeacherOrManagement(project, actor);
+        policy.requireSubmissionClosed(project.getEdition());
+
+        project.setResult(request.result(), actor);
+        if (request.result() == ProjectResult.APPROVED) {
+            for (User member : project.acceptedMembers()) {
+                if (!approvalRepository.existsByUserIdAndTrack(member.getId(), project.getTrack())) {
+                    approvalRepository.save(TrackApproval.of(member, project.getTrack(), project, actor));
+                }
+            }
+        } else {
+            approvalRepository.deleteAll(approvalRepository.findByProjectId(project.getId()));
+        }
+        log.info("Proyecto {}: resultado {} por el usuario ID {}", id, request.result(), actor.getId());
+        return ProjectResponse.from(projectRepository.save(project), policy.today());
+    }
+
     @Transactional
     public ProjectResponse update(Integer id, String email, ProjectRequest request) {
         User actor = policy.account(email);

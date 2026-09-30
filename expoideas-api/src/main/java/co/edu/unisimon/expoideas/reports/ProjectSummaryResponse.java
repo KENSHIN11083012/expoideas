@@ -4,6 +4,7 @@ import co.edu.unisimon.expoideas.deliverables.DeliverableProgressService.Progres
 import co.edu.unisimon.expoideas.editions.Track;
 import co.edu.unisimon.expoideas.projects.MembershipStatus;
 import co.edu.unisimon.expoideas.projects.Project;
+import co.edu.unisimon.expoideas.projects.ProjectResult;
 import java.time.LocalDateTime;
 
 /**
@@ -23,6 +24,7 @@ public record ProjectSummaryResponse(
         int minMembers,
         int requiredDeliverables,
         int deliveredDeliverables,
+        ProjectResult result,
         LocalDateTime createdAt) {
 
     public static ProjectSummaryResponse of(Project project, Progress progress) {
@@ -41,6 +43,7 @@ public record ProjectSummaryResponse(
                 project.trackSettings().getMinMembers(),
                 progress.required(),
                 progress.delivered(),
+                project.getResult(),
                 project.getCreatedAt());
     }
 }

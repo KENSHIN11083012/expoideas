@@ -26,6 +26,7 @@ public class ProjectPolicy {
 
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
+    private final TrackApprovalRepository approvalRepository;
     private final Clock clock;
 
     public LocalDate today() {
@@ -120,6 +121,40 @@ public class ProjectPolicy {
     public void requireNotOnAnotherTeam(Edition edition, Track track, User user, String message) {
         if (projectRepository.isAlreadyOnATeam(edition.getId(), track, user.getId())) {
             throw new ConflictException(message);
+        }
+    }
+
+    /**
+     * Si esa persona puede entrar en un proyecto de esa cátedra en esa edición:
+     * nadie cursa INNPRENDE I y II a la vez, y en II hay que haber aprobado I.
+     *
+     * @throws ConflictException        si ya está aceptada en un proyecto de la otra cátedra
+     * @throws ForbiddenActionException si le falta la aprobación de la cátedra anterior
+     */
+    public void requireEligibleFor(User user, Edition edition, Track track) {
+        if (projectRepository.isOnATeamOfAnotherTrack(edition.getId(), track, user.getId())) {
+            throw new ConflictException("No se puede estar en INNPRENDE I y en INNPRENDE II en la misma edición");
+        }
+        if (track == Track.INNPRENDE_II
+                && !approvalRepository.existsByUserIdAndTrack(user.getId(), Track.INNPRENDE_I)) {
+            throw new ForbiddenActionException("Para inscribirse en INNPRENDE II hay que haber aprobado INNPRENDE I");
+        }
+    }
+
+    /** El resultado se pone cuando ya no entran más entregas. */
+    public void requireSubmissionClosed(Edition edition) {
+        if (!today().isAfter(edition.getSubmissionClosesOn())) {
+            throw new ConflictException("El resultado se registra después del cierre de entregas ("
+                    + edition.getSubmissionClosesOn() + ")");
+        }
+    }
+
+    /** @throws ForbiddenActionException si no es el profesor del grupo ni de la gestión */
+    public void requireTeacherOrManagement(Project project, User user) {
+        boolean allowed = project.getTeacher().getId().equals(user.getId())
+                || user.getRole().isManagement();
+        if (!allowed) {
+            throw new ForbiddenActionException("Solo el profesor del grupo o la gestión registran el resultado");
         }
     }
 

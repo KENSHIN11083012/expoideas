@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -26,7 +27,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /** Proyectos e invitaciones: todo pide sesión, y cada error sale en su formato. */
-@SecuredWebMvcTest({ProjectController.class, InvitationController.class})
+@SecuredWebMvcTest({ProjectController.class, InvitationController.class, TrackApprovalController.class})
 class ProjectControllerTest {
 
     private static final String BODY = """
@@ -48,6 +49,65 @@ class ProjectControllerTest {
 
     @MockitoBean
     private ProjectTeamService teamService;
+
+    @MockitoBean
+    private TrackApprovalService approvalService;
+
+    @Test
+    @WithMockUser(username = "carlos@unisimon.edu.co", roles = "TEACHER")
+    void theTeacherSetsTheResult() throws Exception {
+        when(projectService.setResult(eq(10), eq("carlos@unisimon.edu.co"), any()))
+                .thenReturn(response(ProjectResult.APPROVED));
+
+        mockMvc.perform(put("/api/v1/projects/10/result")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"result\":\"APPROVED\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value("APPROVED"));
+        mockMvc.perform(put("/api/v1/projects/10/result")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.result").exists());
+    }
+
+    @Test
+    @WithMockUser(username = "coordinacion@unisimon.edu.co", roles = "MACONDOLAB")
+    void managementRegistersAndRemovesManualApprovals() throws Exception {
+        TrackApprovalResponse approval =
+                new TrackApprovalResponse(3, 1, Track.INNPRENDE_I, null, null, "Carla Díaz", LocalDateTime.now());
+        when(approvalService.create(eq("coordinacion@unisimon.edu.co"), any())).thenReturn(approval);
+        when(approvalService.list(1)).thenReturn(List.of(approval));
+
+        mockMvc.perform(post("/api/v1/admin/track-approvals")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":1,\"track\":\"INNPRENDE_I\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.track").value("INNPRENDE_I"))
+                .andExpect(jsonPath("$.projectId").isEmpty());
+        mockMvc.perform(get("/api/v1/admin/track-approvals").param("userId", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(3));
+        mockMvc.perform(delete("/api/v1/admin/track-approvals/3")).andExpect(status().isNoContent());
+        mockMvc.perform(post("/api/v1/admin/track-approvals")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":1}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.track").exists());
+    }
+
+    @Test
+    @WithMockUser(roles = "TEACHER")
+    void approvalsAreManagementOnly() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/track-approvals").param("userId", "1"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/v1/admin/track-approvals")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":1,\"track\":\"INNPRENDE_I\"}"))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(approvalService);
+    }
 
     @Test
     @WithMockUser(username = "ana@unisimon.edu.co", roles = "STUDENT")
@@ -160,6 +220,10 @@ class ProjectControllerTest {
     }
 
     private static ProjectResponse response() {
+        return response(null);
+    }
+
+    private static ProjectResponse response(ProjectResult result) {
         return new ProjectResponse(
                 10,
                 1,
@@ -177,6 +241,7 @@ class ProjectControllerTest {
                 5,
                 List.of(new MemberResponse(
                         1, "Ana Pérez", "ana@unisimon.edu.co", MemberRole.LEADER, MembershipStatus.ACCEPTED)),
+                result,
                 LocalDateTime.now());
     }
 }

@@ -68,6 +68,18 @@ public class Project {
     @JoinColumn(name = "teacher_id", nullable = false)
     private User teacher;
 
+    /** Lo pone el profesor del grupo o la gestión al cerrar las entregas; null mientras tanto. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private ProjectResult result;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "result_set_by")
+    private User resultSetBy;
+
+    @Column(name = "result_set_at")
+    private LocalDateTime resultSetAt;
+
     @Setter(AccessLevel.NONE)
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -90,6 +102,21 @@ public class Project {
         }
         members.add(member);
         return member;
+    }
+
+    /** Deja constancia del resultado y de quién lo puso. */
+    public void setResult(ProjectResult result, User actor) {
+        this.result = result;
+        this.resultSetBy = actor;
+        this.resultSetAt = LocalDateTime.now();
+    }
+
+    /** Los integrantes que aceptaron: los que cuentan para el resultado. */
+    public List<User> acceptedMembers() {
+        return members.stream()
+                .filter(ProjectMember::isAccepted)
+                .map(ProjectMember::getUser)
+                .toList();
     }
 
     public void removeMember(ProjectMember member) {

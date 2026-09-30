@@ -1,10 +1,24 @@
 import { useForm, useWatch } from 'react-hook-form';
+import { Check, X } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { affiliationFromUser, affiliationToApi } from '@/lib/affiliation';
 import { ROLES, ROLE_LABELS, assignableRoles, requiresAffiliation } from '@/lib/roles';
+import { TRACK_LIST, trackLabel } from '@/lib/tracks';
 import { INSTITUTIONAL_DOMAIN, handleFormError } from '@/lib/validation';
 import { FormDialog } from '@/components/forms/FormDialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogBody,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { ErrorState, Skeleton } from '@/components/ui/feedback';
 import { PasswordFields } from '@/components/forms/PasswordFields';
 import { PasswordRequirements } from '@/components/forms/PasswordRequirements';
 import { Field } from '@/components/ui/field';
@@ -12,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { PasswordInput } from '@/components/ui/password-input';
 import { AffiliationFields } from '@/features/catalogs/AffiliationFields';
-import { useCreateUser, useResetPassword, useUpdateUser } from './queries';
+import { useCreateUser, useResetPassword, useSaveTrackApproval, useTrackApprovals, useUpdateUser } from './queries';
 import { affiliationSchema, newAccountSchemaFor, passwordResetSchema } from './schemas';
 
 export function PasswordResetDialog({ user, onClose }) {
@@ -190,5 +204,108 @@ export function NewUserDialog({ actor, onClose }) {
                 </fieldset>
             )}
         </FormDialog>
+    );
+}
+
+/**
+ * Qué cátedras tiene aprobadas una persona. Las que nacen de un proyecto las
+ * escribe el resultado del proyecto; la gestión registra a mano las de quien
+ * cursó INNPRENDE I antes de existir la plataforma, y puede quitar cualquiera.
+ */
+export function TrackApprovalsDialog({ user, onClose }) {
+    const { data: approvals = [], isPending, error, refetch } = useTrackApprovals(user.id);
+    const save = useSaveTrackApproval(user.id);
+    const name = `${user.firstName} ${user.lastName}`;
+
+    const approve = async (track) => {
+        try {
+            await save.mutateAsync({ track });
+            toast.success(`${trackLabel(track)} aprobada para ${name}`);
+        } catch (saveError) {
+            toast.error(saveError.message);
+        }
+    };
+
+    const revoke = async (approval) => {
+        try {
+            await save.mutateAsync({ id: approval.id });
+            toast.success(`Se quitó la aprobación de ${trackLabel(approval.track)}`);
+        } catch (saveError) {
+            toast.error(saveError.message);
+        }
+    };
+
+    return (
+        <Dialog open onOpenChange={(open) => !open && onClose()}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Cátedras aprobadas</DialogTitle>
+                    <DialogDescription>
+                        {name}. Para inscribirse en INNPRENDE II hay que tener aprobada INNPRENDE I.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogBody>
+                    {error ? (
+                        <ErrorState title="No pudimos cargar las aprobaciones" error={error} onRetry={refetch} />
+                    ) : isPending ? (
+                        <Skeleton className="h-24" aria-busy="true" />
+                    ) : (
+                        <ul className="flex flex-col gap-2">
+                            {TRACK_LIST.map((track) => {
+                                const approval = approvals.find((item) => item.track === track);
+                                return (
+                                    <li
+                                        key={track}
+                                        className="flex flex-wrap items-center justify-between gap-3 rounded border border-outline-variant/60 px-4 py-3"
+                                    >
+                                        <div className="flex flex-col gap-1">
+                                            <p className="font-medium text-on-surface">{trackLabel(track)}</p>
+                                            {approval ? (
+                                                <p className="text-xs text-on-surface-variant">
+                                                    {approval.projectTitle
+                                                        ? `Por el proyecto "${approval.projectTitle}"`
+                                                        : 'Registrada a mano'}
+                                                    {approval.approvedBy ? ` · ${approval.approvedBy}` : ''}
+                                                </p>
+                                            ) : (
+                                                <p className="text-xs text-on-surface-variant">Sin aprobar</p>
+                                            )}
+                                        </div>
+                                        {approval ? (
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="primary">Aprobada</Badge>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => revoke(approval)}
+                                                    loading={save.isPending}
+                                                    aria-label={`Quitar la aprobación de ${trackLabel(track)}`}
+                                                >
+                                                    <X /> Quitar
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => approve(track)}
+                                                loading={save.isPending}
+                                            >
+                                                <Check /> Marcar como aprobada
+                                            </Button>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
+                </DialogBody>
+                <DialogFooter>
+                    <Button type="button" onClick={onClose}>
+                        Listo
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

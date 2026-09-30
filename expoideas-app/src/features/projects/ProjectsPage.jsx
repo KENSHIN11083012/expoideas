@@ -21,8 +21,17 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { SearchInput } from '@/components/ui/search-input';
 import { downloadProjectsCsv, useProjectDirectory } from './directory';
 import { useTeachers } from './queries';
+import { RESULTS, RESULT_LABELS, resultLabel } from './schemas';
 
-const NO_FILTERS = { editionId: '', track: '', teacherId: '', sectorId: '', search: '' };
+const NO_FILTERS = { editionId: '', track: '', teacherId: '', sectorId: '', result: '', search: '' };
+
+/** El resultado, si ya lo pusieron; si no, un guion para no llenar la tabla de texto. */
+function ResultBadge({ project }) {
+    if (!project.result) {
+        return <span className="text-on-surface-variant">—</span>;
+    }
+    return <Badge variant={project.result === RESULTS.APPROVED ? 'primary' : 'outline'}>{resultLabel(project.result)}</Badge>;
+}
 
 /** Entregables: cuántos obligatorios lleva el proyecto. */
 function DeliverablesBadge({ project }) {
@@ -68,6 +77,9 @@ function ProjectRow({ project }) {
             <td className="px-5 py-3">
                 <DeliverablesBadge project={project} />
             </td>
+            <td className="px-5 py-3">
+                <ResultBadge project={project} />
+            </td>
             <td className="px-5 py-3 text-right">
                 <Button variant="outline" size="sm" asChild>
                     <Link to={ROUTES.project(project.id)}>
@@ -111,7 +123,10 @@ function ProjectCard({ project }) {
                 </dl>
                 <div className="flex flex-wrap items-center justify-between gap-2 border-t border-outline-variant/50 pt-3">
                     <TeamCount project={project} />
-                    <DeliverablesBadge project={project} />
+                    <div className="flex flex-wrap gap-2">
+                        <DeliverablesBadge project={project} />
+                        {project.result && <ResultBadge project={project} />}
+                    </div>
                 </div>
                 <Button variant="outline" size="sm" asChild className="self-end">
                     <Link to={ROUTES.project(project.id)}>
@@ -206,6 +221,16 @@ export default function ProjectsPage() {
                         ))}
                     </NativeSelect>
                 </Field>
+                <Field label="Resultado">
+                    <NativeSelect value={filters.result} onChange={set('result')}>
+                        <option value="">Todos</option>
+                        {Object.values(RESULTS).map((result) => (
+                            <option key={result} value={result}>
+                                {RESULT_LABELS[result]}
+                            </option>
+                        ))}
+                    </NativeSelect>
+                </Field>
                 {role !== ROLES.TEACHER && (
                     <Field label="Profesor">
                         <NativeSelect value={filters.teacherId} onChange={set('teacherId')}>
@@ -269,6 +294,9 @@ export default function ProjectsPage() {
                                     </th>
                                     <th scope="col" className="px-5 py-3">
                                         Entregables
+                                    </th>
+                                    <th scope="col" className="px-5 py-3">
+                                        Resultado
                                     </th>
                                     <th scope="col" className="px-5 py-3">
                                         <span className="sr-only">Abrir</span>

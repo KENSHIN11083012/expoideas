@@ -16,7 +16,7 @@
 	<properties>
 		<java.version>25</java.version>
 		<jjwt.version>0.13.0</jjwt.version>
-		<spotless.version>3.10.2</spotless.version>
+		<spotless.version>3.10.3</spotless.version>
 		<palantir-java-format.version>2.98.0</palantir-java-format.version>
 		<!-- Las pruebas corren en UTC, como el contenedor del servidor: una fecha que salga
 		     de la zona de la máquina y no del Clock de TimeConfig se nota en cualquier equipo. -->
@@ -135,7 +135,7 @@
 		<dependency>
 			<groupId>com.icegreen</groupId>
 			<artifactId>greenmail-junit5</artifactId>
-			<version>2.1.3</version>
+			<version>2.1.14</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

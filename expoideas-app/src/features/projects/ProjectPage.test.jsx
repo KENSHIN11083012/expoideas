@@ -298,6 +298,23 @@ describe('Los jurados', () => {
         expect(screen.getByRole('link', { name: 'Calificar' })).toHaveAttribute('href', '/jurado/proyectos/10/calificar');
     });
 
+    it('con la ficha en pantalla, un fallo pasajero al volver a consultarla no la quita', () => {
+        useAuth.mockReturnValue(sessionFor({ role: 'STUDENT', user: { id: 1 } }));
+        const refresh = (error) => useProject.mockReturnValue({ data: project, isPending: false, error, refetch: vi.fn() });
+
+        refresh(apiError('Error de red. Verifica tu conexión.', 0));
+        const { unmount } = renderWithProviders(<ProjectPage />);
+        expect(screen.getByRole('heading', { level: 1, name: 'BioSensor' })).toBeInTheDocument();
+        expect(screen.queryByText('No pudimos cargar el proyecto')).not.toBeInTheDocument();
+        unmount();
+
+        // Si la API dice que ya no puede verlo, sí.
+        refresh(apiError('No tienes permiso para ver este proyecto', 403));
+        renderWithProviders(<ProjectPage />);
+        expect(screen.getByText('No pudimos cargar el proyecto')).toBeInTheDocument();
+        expect(screen.queryByRole('heading', { level: 1, name: 'BioSensor' })).not.toBeInTheDocument();
+    });
+
     it('un profesor que no es jurado de este proyecto no lo califica', () => {
         useJuryProjects.mockReturnValue({ data: [{ ...project, id: 99 }] });
         renderPage(project, { role: 'TEACHER', userId: 7 });

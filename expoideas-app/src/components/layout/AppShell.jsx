@@ -1,6 +1,7 @@
 import { Suspense, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Spinner } from '@/components/ui/feedback';
+import { ErrorBoundary } from './ErrorBoundary';
 import { SiteHeader } from './SiteHeader';
 import { SiteFooter } from './SiteFooter';
 import { PendingRoleNotice } from './PendingRoleNotice';
@@ -19,6 +20,7 @@ function ScrollToTop() {
  * barra superior, contenido y pie de página.
  */
 export function AppShell() {
+    const { pathname } = useLocation();
     return (
         <div className="flex min-h-dvh flex-col">
             <a
@@ -31,9 +33,12 @@ export function AppShell() {
             <SiteHeader />
             <PendingRoleNotice />
             <main id="main-content" className="flex-1">
-                <Suspense fallback={<Spinner className="min-h-[50vh]" />}>
-                    <Outlet />
-                </Suspense>
+                {/* Si una página falla, el menú sigue ahí; al ir a otra página, el aviso se quita. */}
+                <ErrorBoundary resetKey={pathname}>
+                    <Suspense fallback={<Spinner className="min-h-[50vh]" />}>
+                        <Outlet />
+                    </Suspense>
+                </ErrorBoundary>
             </main>
             <SiteFooter />
         </div>

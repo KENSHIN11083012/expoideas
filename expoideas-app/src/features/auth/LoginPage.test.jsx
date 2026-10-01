@@ -11,9 +11,9 @@ import { useAuth } from './useAuth';
 vi.mock('./useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('./api', () => ({ authApi: { login: vi.fn() } }));
 
-function renderLogin() {
+function renderLogin({ sessionExpired = false } = {}) {
     const login = vi.fn();
-    useAuth.mockReturnValue({ login });
+    useAuth.mockReturnValue({ login, sessionExpired });
     render(
         <MemoryRouter initialEntries={[ROUTES.LOGIN]}>
             <Routes>
@@ -84,5 +84,18 @@ describe('Inicio de sesión', () => {
         await signIn(user, 'coordinacion@unisimon.edu.co');
 
         expect(await screen.findByText('Credenciales inválidas')).toBeInTheDocument();
+    });
+
+    it('si la sesión se cerró sola, lo explica', () => {
+        renderLogin({ sessionExpired: true });
+
+        expect(screen.getByText('Tu sesión se cerró')).toBeInTheDocument();
+        expect(screen.getByText('Vuelve a entrar para seguir donde ibas.')).toBeInTheDocument();
+    });
+
+    it('quien llega a iniciar sesión por su cuenta no ve ese aviso', () => {
+        renderLogin();
+
+        expect(screen.queryByText('Tu sesión se cerró')).not.toBeInTheDocument();
     });
 });

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { useQueryClient } from '@tanstack/react-query';
 import { ONBOARDING_REQUIRED_EVENT, UNAUTHORIZED_EVENT } from '@/lib/apiClient';
@@ -12,6 +12,15 @@ const NO_PROFILE = { id: null, email: null, firstName: null, lastName: null, pho
 
 const isExpired = (decoded) => typeof decoded?.exp === 'number' && decoded.exp < Date.now() / 1000;
 
+/** De quién es un token, o null si no hay o no se puede leer. */
+const accountOf = (token) => {
+    try {
+        return jwtDecode(token).sub ?? null;
+    } catch {
+        return null;
+    }
+};
+
 /** Cada cuánto se vuelve a pedir /users/me para ver si el rol cambió. */
 const PROFILE_REFRESH_MS = 60_000;
 
@@ -24,12 +33,19 @@ const PROFILE_REFRESH_MS = 60_000;
  * con la sesión abierta (y la API ya lo lee de la BD en cada petición), mientras
  * hay sesión se consulta /users/me cada minuto y al volver a la pestaña, y manda
  * el rol que devuelva.
+ *
+ * localStorage es de todas las pestañas: si en otra se cierra la sesión o entra
+ * otra cuenta, esta se pone al día (evento `storage`).
  */
 export const AuthProvider = ({ children }) => {
     const queryClient = useQueryClient();
     const [token, setToken] = useState(session.token);
     const [profile, setProfile] = useState(() => ({ ...NO_PROFILE, ...session.user() }));
     const [pendingSteps, setPendingSteps] = useState(session.pendingSteps);
+    // La API rechazó el token de una sesión que aquí seguía abierta (venció, cambió la contraseña, la suspendieron).
+    const [closedByServer, setClosedByServer] = useState(false);
+    // Cambia cuando otra pestaña entra con otra cuenta: lo que hay en pantalla se monta de nuevo.
+    const [accountEpoch, setAccountEpoch] = useState(0);
 
     const savePendingSteps = useCallback((steps) => {
         setPendingSteps(steps);
@@ -40,6 +56,7 @@ export const AuthProvider = ({ children }) => {
         setToken(null);
         setProfile(NO_PROFILE);
         setPendingSteps([]);
+        setClosedByServer(false);
         session.clear();
         // Los datos en caché eran de esta cuenta.
         queryClient.clear();
@@ -70,11 +87,47 @@ export const AuthProvider = ({ children }) => {
         if (token && !decoded) session.clear();
     }, [token, decoded]);
 
-    // Un 401 en cualquier petición cierra la sesión desde un solo sitio.
+    // Un 401 en cualquier petición cierra la sesión desde un solo sitio, y queda
+    // dicho para que el inicio de sesión explique por qué hay que volver a entrar.
     useEffect(() => {
-        window.addEventListener(UNAUTHORIZED_EVENT, logout);
-        return () => window.removeEventListener(UNAUTHORIZED_EVENT, logout);
+        const onUnauthorized = () => {
+            logout();
+            setClosedByServer(true);
+        };
+        window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+        return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
     }, [logout]);
+
+    // La cuenta de esta pestaña, para compararla con lo que deje otra en localStorage.
+    const account = useRef(null);
+    useEffect(() => {
+        account.current = decoded?.sub ?? null;
+    }, [decoded]);
+
+    // Otra pestaña cambió la sesión: esta la toma de localStorage. Guardar la
+    // sesión son varias claves y llega un aviso por cada una; todos leen lo mismo.
+    useEffect(() => {
+        const onStorage = (event) => {
+            if (event.storageArea !== localStorage) return;
+            // Sin clave, es que se vació todo el almacenamiento.
+            if (event.key !== null && !session.owns(event.key)) return;
+
+            const newToken = session.token();
+            const newAccount = accountOf(newToken);
+            if (newAccount !== account.current) {
+                // Los datos en caché eran de la otra cuenta, y lo que hay a medio llenar en pantalla también.
+                queryClient.clear();
+                if (newAccount && account.current) setAccountEpoch((epoch) => epoch + 1);
+                account.current = newAccount;
+            }
+            if (newToken) setClosedByServer(false);
+            setToken(newToken);
+            setProfile({ ...NO_PROFILE, ...session.user() });
+            setPendingSteps(session.pendingSteps());
+        };
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
+    }, [queryClient]);
 
     // Un 403 por primer ingreso pendiente (p. ej. le restablecieron la contraseña
     // con la sesión abierta) actualiza los pasos y las rutas llevan a resolverlos.
@@ -95,6 +148,7 @@ export const AuthProvider = ({ children }) => {
         setToken(newToken);
         setProfile(newProfile);
         setPendingSteps(steps);
+        setClosedByServer(false);
     }, []);
 
     /**
@@ -138,6 +192,11 @@ export const AuthProvider = ({ children }) => {
             roleReady: !decoded || me !== undefined || profileFailed,
             /** Pasos de primer ingreso sin completar; mientras haya, las rutas protegidas llevan al primer ingreso. */
             pendingSteps: decoded ? pendingSteps : [],
+            /**
+             * Si la sesión se cerró sin que la persona lo pidiera: la API rechazó el
+             * token o ya estaba vencido al abrir la página.
+             */
+            sessionExpired: !decoded && (closedByServer || Boolean(token)),
             /** El rol del listado de la cátedra que la gestión aún no confirma, o null. */
             pendingRole: decoded ? asRole(me?.pendingRole) : null,
             isAdmin: role === ROLES.ADMIN,
@@ -149,7 +208,24 @@ export const AuthProvider = ({ children }) => {
             updateUser,
             completeStep,
         };
-    }, [decoded, me, profileFailed, profile, token, pendingSteps, login, logout, renewToken, updateUser, completeStep]);
+    }, [
+        decoded,
+        me,
+        profileFailed,
+        profile,
+        token,
+        pendingSteps,
+        closedByServer,
+        login,
+        logout,
+        renewToken,
+        updateUser,
+        completeStep,
+    ]);
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return (
+        <AuthContext.Provider value={value}>
+            <Fragment key={accountEpoch}>{children}</Fragment>
+        </AuthContext.Provider>
+    );
 };

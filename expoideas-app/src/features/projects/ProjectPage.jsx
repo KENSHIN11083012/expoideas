@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, CalendarClock, ClipboardCheck, Crown, LogOut, Pencil, Trash2, UserPlus, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { blockingError } from '@/lib/queryState';
 import { ROUTES } from '@/lib/routes';
 import { trackLabel } from '@/lib/tracks';
 import { handleFormError } from '@/lib/validation';
@@ -183,7 +184,9 @@ export default function ProjectPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user, role, isManagement } = useAuth();
-    const { data: project, isPending, error, refetch } = useProject(id);
+    const { data: project, isPending, error: lastError, refetch } = useProject(id);
+    // Con la ficha ya en pantalla, un fallo pasajero al volver a consultarla no la quita.
+    const error = blockingError({ data: project, error: lastError });
     // Un jurado asignado califica desde aquí; se pregunta solo a los roles que pueden serlo.
     const { data: juryProjects = [] } = useJuryProjects({ enabled: canBeJuror(role) });
     const removeMember = useRemoveMember(id);

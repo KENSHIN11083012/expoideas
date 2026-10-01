@@ -75,13 +75,29 @@ describe('apiClient', () => {
         await expect(request('/users/me')).rejects.toMatchObject({ status: 0, message: 'Error de red. Verifica tu conexión.' });
     });
 
-    it('un 401 avisa para cerrar la sesión', async () => {
+    it('un 401 con sesión avisa para cerrarla', async () => {
         const { listener, stop } = listen(UNAUTHORIZED_EVENT);
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ detail: 'Debes iniciar sesión' }, 401)));
+        localStorage.setItem('token', 'abc');
 
         await expect(request('/users/me')).rejects.toMatchObject({ status: 401 });
 
         expect(listener).toHaveBeenCalledTimes(1);
+        stop();
+    });
+
+    it('un 401 sin sesión (la contraseña equivocada al entrar) no avisa de ninguna sesión vencida', async () => {
+        const { listener, stop } = listen(UNAUTHORIZED_EVENT);
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ detail: 'Credenciales inválidas' }, 401)));
+        // Queda el token de una sesión anterior, pero el inicio de sesión no lo envía.
+        localStorage.setItem('token', 'abc');
+
+        await expect(request('/auth/login', { method: 'POST', body: {}, auth: false })).rejects.toMatchObject({
+            status: 401,
+            message: 'Credenciales inválidas',
+        });
+
+        expect(listener).not.toHaveBeenCalled();
         stop();
     });
 

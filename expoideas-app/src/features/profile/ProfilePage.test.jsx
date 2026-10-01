@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { screen, within } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { renderWithProviders, sessionFor } from '@/test/utils';
+import { apiError, createTestQueryClient, renderWithProviders, sessionFor } from '@/test/utils';
 import { useAuth } from '@/features/auth/useAuth';
 import ProfilePage from './ProfilePage';
 import { profileApi } from './api';
@@ -84,5 +84,37 @@ describe('Mi perfil según el rol', () => {
         expect(screen.queryByText('Completa tu vínculo con la universidad')).not.toBeInTheDocument();
         expect(cardValue('Facultad')).toBe('Ingeniería');
         expect(cardValue('Programa académico')).toBe('Sin programa');
+    });
+});
+
+describe('El perfil se vuelve a consultar cada minuto', () => {
+    it('si una de esas consultas falla, el formulario a medio llenar sigue ahí', async () => {
+        const user = userEvent.setup();
+        const queryClient = createTestQueryClient();
+        useAuth.mockReturnValue(sessionFor({ role: 'JUDGE' }));
+        profileApi.get
+            .mockResolvedValueOnce({ ...baseProfile, role: 'JUDGE' })
+            .mockRejectedValue(apiError('Error de red. Verifica tu conexión.', 0));
+        renderWithProviders(<ProfilePage />, { queryClient });
+
+        await user.type(await screen.findByLabelText(/^Nombres/), ' Lucía');
+        await act(async () => {
+            await queryClient.refetchQueries({ queryKey: ['profile'] });
+            // TanStack Query avisa a la página en la siguiente vuelta: hay que dejarla pasar.
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+
+        expect(profileApi.get).toHaveBeenCalledTimes(2);
+        expect(screen.queryByText('No pudimos cargar tu perfil')).not.toBeInTheDocument();
+        expect(screen.getByLabelText(/^Nombres/)).toHaveValue('Marta Lucía');
+    });
+
+    it('si falla la primera, sin nada que mostrar, se explica y se puede reintentar', async () => {
+        useAuth.mockReturnValue(sessionFor({ role: 'JUDGE' }));
+        profileApi.get.mockRejectedValue(apiError('Error de red. Verifica tu conexión.', 0));
+        renderWithProviders(<ProfilePage />);
+
+        expect(await screen.findByText('No pudimos cargar tu perfil')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Reintentar/ })).toBeInTheDocument();
     });
 });

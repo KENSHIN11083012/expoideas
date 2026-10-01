@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, FileText, Save, UserX } from 'lucide-react';
+import { ArrowLeft, FileText, Save, Undo2, UserX } from 'lucide-react';
 import { toast } from 'sonner';
+import { blockingError } from '@/lib/queryState';
 import { ROUTES } from '@/lib/routes';
 import { trackLabel } from '@/lib/tracks';
 import { PageContainer } from '@/components/layout/AppShell';
@@ -11,9 +12,11 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Alert, ErrorState, Skeleton } from '@/components/ui/feedback';
+import { useAuth } from '@/features/auth/useAuth';
 import { useProject } from '@/features/projects/queries';
 import { formatDateTime } from '@/features/presentations/schemas';
 import { RubricBoard } from './RubricBoard';
+import { evaluationDraft, formatDraftTime, signatureOf } from './draft';
 import { average, formatGrade, scaleLabel, scaleOf } from './grades';
 import { useMyEvaluation, useRubric, useSaveEvaluation } from './queries';
 import { evaluationSchema, fieldOf, formValues, serverFields, toRequest } from './schemas';
@@ -57,29 +60,65 @@ function Summary({ rubric, control, saving, onAbsent }) {
     );
 }
 
-/** El tablero con lo que ya se guardó (o vacío) y las acciones de guardar y de «no asistió». */
+/**
+ * El tablero con lo que ya se guardó (o vacío) y las acciones de guardar y de
+ * «no asistió». Lo que se marca queda además como borrador en el navegador
+ * (draft.js) hasta que se guarda.
+ */
 function EvaluationForm({ project, rubric, evaluation }) {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    // El borrador es de este jurado en este proyecto.
+    const owner = user?.id ?? user?.email;
     const save = useSaveEvaluation(project.id);
     const [confirmAbsent, setConfirmAbsent] = useState(false);
+    const [restored, setRestored] = useState(() => evaluationDraft.read(owner, project.id, rubric, evaluation));
+    const [initialValues] = useState(() => restored?.values ?? formValues(rubric, evaluation));
     const {
         control,
         register,
         handleSubmit,
         setError,
         clearErrors,
+        reset,
+        subscribe,
         formState: { errors, isDirty },
-    } = useForm({ resolver: zodResolver(evaluationSchema(rubric)), defaultValues: formValues(rubric, evaluation) });
+    } = useForm({ resolver: zodResolver(evaluationSchema(rubric)), defaultValues: initialValues });
 
-    // Nada se guarda hasta pulsar el botón: si hay cambios, el navegador avisa antes de cerrar o recargar.
+    // Cada cambio queda como borrador. Si lo marcado vuelve a ser lo guardado, el borrador sobra.
+    const kept = useRef(null);
     useEffect(() => {
-        if (!isDirty) return undefined;
+        kept.current ??= signatureOf(rubric, initialValues);
+        const saved = signatureOf(rubric, formValues(rubric, evaluation));
+        return subscribe({
+            formState: { values: true },
+            callback: ({ values }) => {
+                const current = signatureOf(rubric, values);
+                if (current === kept.current) return;
+                kept.current = current;
+                if (current === saved) evaluationDraft.clear(owner, project.id);
+                else evaluationDraft.save(owner, project.id, evaluation, values);
+            },
+        });
+    }, [subscribe, rubric, evaluation, initialValues, owner, project.id]);
+
+    // El borrador no es la evaluación: si hay algo sin guardar, el navegador avisa antes de cerrar o recargar.
+    const unsaved = isDirty || Boolean(restored);
+    useEffect(() => {
+        if (!unsaved) return undefined;
         const warn = (event) => event.preventDefault();
         window.addEventListener('beforeunload', warn);
         return () => window.removeEventListener('beforeunload', warn);
-    }, [isDirty]);
+    }, [unsaved]);
+
+    const discardDraft = () => {
+        evaluationDraft.clear(owner, project.id);
+        reset(formValues(rubric, evaluation));
+        setRestored(null);
+    };
 
     const done = (message) => {
+        evaluationDraft.clear(owner, project.id);
         toast.success(message);
         navigate(ROUTES.JURY_PROJECTS);
     };
@@ -136,6 +175,18 @@ function EvaluationForm({ project, rubric, evaluation }) {
                     </Alert>
                 )}
 
+                {restored && (
+                    <Alert title="Recuperamos lo que dejaste sin guardar">
+                        <p>
+                            Es del {formatDraftTime(restored.savedAt)} y solo está en este navegador. Revísalo y pulsa «Guardar
+                            evaluación» para que cuente.
+                        </p>
+                        <Button type="button" variant="outline" size="sm" className="mt-3" onClick={discardDraft}>
+                            <Undo2 /> Descartar el borrador
+                        </Button>
+                    </Alert>
+                )}
+
                 <RubricBoard rubric={rubric} form={{ control, register, clearErrors, errors }} />
 
                 {(errors.root || errors.scores?.message) && (
@@ -169,7 +220,8 @@ export default function EvaluationPage() {
     const rubric = useRubric(project.data?.track);
     const evaluation = useMyEvaluation(id);
 
-    const failed = [project, evaluation, rubric].find((query) => query.error);
+    // Con el tablero ya en pantalla, un fallo pasajero al volver a consultar no lo quita.
+    const failed = [project, evaluation, rubric].find(blockingError);
     const back = (
         <Button variant="ghost" size="sm" asChild className="self-start">
             <Link to={ROUTES.JURY_PROJECTS}>

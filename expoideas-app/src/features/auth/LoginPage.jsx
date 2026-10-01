@@ -18,7 +18,7 @@ import { useAuth } from './useAuth';
 export default function LoginPage() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { login } = useAuth();
+    const { login, sessionExpired } = useAuth();
 
     // El registro llega aquí con un mensaje y el correo recién creado.
     const registeredMessage = location.state?.message;
@@ -63,6 +63,9 @@ export default function LoginPage() {
 
             <div className="mt-8 flex flex-col gap-5">
                 {registeredMessage && !errors.root && <Alert variant="success" title={registeredMessage} />}
+                {sessionExpired && !registeredMessage && !errors.root && (
+                    <Alert title="Tu sesión se cerró">Vuelve a entrar para seguir donde ibas.</Alert>
+                )}
                 {errors.root && <Alert variant="error" title={errors.root.message} />}
 
                 <form onSubmit={handleSubmit(submit)} noValidate className="flex flex-col gap-5">

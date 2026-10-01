@@ -7,7 +7,11 @@ import { session } from '@/lib/session';
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
-/** Se dispara cuando la API responde 401: AuthProvider lo escucha y cierra la sesión. */
+/**
+ * Se dispara cuando la API responde 401 a una petición que llevaba el token de
+ * la sesión: AuthProvider lo escucha y la cierra. Un 401 sin token (la
+ * contraseña equivocada al entrar) no es una sesión vencida.
+ */
 export const UNAUTHORIZED_EVENT = 'expoideas:unauthorized';
 
 /**
@@ -78,7 +82,7 @@ export const request = async (path, { method = 'GET', body, auth = true } = {}) 
     const responseBody = await parseBody(response);
 
     if (!response.ok) {
-        if (response.status === 401) {
+        if (response.status === 401 && token) {
             window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT));
         }
         const pendingSteps = responseBody?.pendingSteps;

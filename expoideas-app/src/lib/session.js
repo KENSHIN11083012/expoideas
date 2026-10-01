@@ -33,6 +33,9 @@ export const session = {
         }
     },
 
+    /** Si esa clave de localStorage es de la sesión (para atender solo sus cambios desde otra pestaña). */
+    owns: (key) => Object.values(KEYS).includes(key),
+
     clear() {
         Object.values(KEYS).forEach((key) => localStorage.removeItem(key));
     },

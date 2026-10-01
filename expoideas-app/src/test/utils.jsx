@@ -43,10 +43,13 @@ export const sessionFor = ({ role = null, pendingSteps = [], user = {} } = {}) =
     };
 };
 
-/** JWT sin firma verificable, suficiente para jwtDecode: rol y vencimiento en una hora. */
-export const fakeJwt = (role, subject = 'marta@empresa.com') => {
+/**
+ * JWT sin firma verificable, suficiente para jwtDecode: rol y vencimiento en una
+ * hora (o en `expiresIn` segundos; negativo, ya vencido).
+ */
+export const fakeJwt = (role, subject = 'marta@empresa.com', expiresIn = 3600) => {
     const encode = (object) => btoa(JSON.stringify(object)).replace(/=+$/, '');
-    return `${encode({ alg: 'HS256' })}.${encode({ sub: subject, role, exp: Date.now() / 1000 + 3600 })}.firma`;
+    return `${encode({ alg: 'HS256' })}.${encode({ sub: subject, role, exp: Date.now() / 1000 + expiresIn })}.firma`;
 };
 
 /** Respuesta de fetch con JSON. */

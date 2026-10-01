@@ -1,12 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { apiError, renderWithProviders } from '@/test/utils';
+import { apiError, renderWithProviders, sessionFor } from '@/test/utils';
 import { project } from '@/test/fixtures';
+import { useAuth } from '@/features/auth/useAuth';
 import { useProject } from '@/features/projects/queries';
 import EvaluationPage from './EvaluationPage';
 import { useMyEvaluation, useRubric, useSaveEvaluation } from './queries';
 
+vi.mock('@/features/auth/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('@/features/projects/queries', () => ({ useProject: vi.fn() }));
 vi.mock('./queries', () => ({ useRubric: vi.fn(), useMyEvaluation: vi.fn(), useSaveEvaluation: vi.fn() }));
 
@@ -71,10 +73,15 @@ const query = (data, extra = {}) => ({ data, isPending: false, error: null, refe
 
 let save;
 
-const renderPage = ({ evaluation = null } = {}) => {
+/** @param {number} [options.jurorId] quién califica: el borrador es de cada jurado */
+const renderPage = ({ evaluation = null, jurorId = 8 } = {}) => {
+    useAuth.mockReturnValue(sessionFor({ role: 'JUDGE', user: { id: jurorId } }));
     useMyEvaluation.mockReturnValue(query(evaluation));
-    renderWithProviders(<EvaluationPage />);
+    return renderWithProviders(<EvaluationPage />);
 };
+
+/** Donde queda en el navegador el borrador del jurado 8 para el proyecto 10. */
+const DRAFT_KEY = 'expoideas:evaluation-draft:8:10';
 
 const criterion = (name) => within(screen.getByRole('radiogroup', { name: new RegExp(name) }));
 const choose = (name, levelName) => userEvent.click(criterion(name).getByRole('radio', { name: levelName }));
@@ -87,6 +94,8 @@ beforeEach(() => {
     useRubric.mockReturnValue(query(rubric));
     useSaveEvaluation.mockReturnValue(save);
 });
+
+afterEach(() => localStorage.clear());
 
 describe('El tablero del jurado', () => {
     it('muestra la rúbrica de la cátedra: cada criterio con sus niveles, su valor y su descripción', () => {
@@ -223,6 +232,7 @@ describe('Corregir y marcar que no asistieron', () => {
     });
 
     it('a quien no es jurado del proyecto se le explica', () => {
+        useAuth.mockReturnValue(sessionFor({ role: 'JUDGE', user: { id: 8 } }));
         useMyEvaluation.mockReturnValue(
             query(undefined, { error: apiError('Solo los jurados asignados califican este proyecto', 403) }),
         );
@@ -230,6 +240,133 @@ describe('Corregir y marcar que no asistieron', () => {
 
         expect(screen.getByText('No puedes calificar este proyecto')).toBeInTheDocument();
         expect(screen.getByText('Solo los jurados asignados califican este proyecto')).toBeInTheDocument();
+        expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+    });
+});
+
+describe('Lo que el jurado lleva sin guardar', () => {
+    const NOTICE = 'Recuperamos lo que dejaste sin guardar';
+
+    /** Marca un criterio y escribe una observación, y cierra la página sin guardar. */
+    const leaveHalfway = async (options) => {
+        const page = renderPage(options);
+        await choose('Planteamiento', 'Bueno, 4.5');
+        await userEvent.type(screen.getByLabelText(/Observación de «Planteamiento del problema»/), 'Bien delimitado.');
+        page.unmount();
+    };
+
+    it('sigue ahí al volver a abrir la página, con un aviso de que falta guardarlo', async () => {
+        await leaveHalfway();
+
+        renderPage();
+
+        expect(screen.getByText(NOTICE)).toBeInTheDocument();
+        expect(criterion('Planteamiento').getByRole('radio', { name: 'Bueno, 4.5' })).toBeChecked();
+        expect(screen.getByLabelText(/Observación de «Planteamiento del problema»/)).toHaveValue('Bien delimitado.');
+        expect(screen.getByText('1 de 2 criterios')).toBeInTheDocument();
+        expect(save.mutateAsync).not.toHaveBeenCalled();
+    });
+
+    it('se puede descartar para volver a lo guardado', async () => {
+        await leaveHalfway({ evaluation: saved });
+        renderPage({ evaluation: saved });
+        expect(criterion('Planteamiento').getByRole('radio', { name: 'Bueno, 4.5' })).toBeChecked();
+
+        await userEvent.click(screen.getByRole('button', { name: /Descartar el borrador/ }));
+
+        expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
+        expect(criterion('Planteamiento').getByRole('radio', { name: 'Deficiente, 1.5' })).toBeChecked();
+        expect(screen.getByLabelText(/Observación de «Planteamiento del problema»/)).toHaveValue('El problema quedó genérico.');
+        expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
+    });
+
+    it('al guardar la evaluación, el borrador se borra', async () => {
+        await leaveHalfway();
+        renderPage();
+        expect(localStorage.getItem(DRAFT_KEY)).not.toBeNull();
+
+        await choose('Objetivos', 'Aceptable, 4.0');
+        await userEvent.click(saveButton());
+
+        await waitFor(() => expect(navigate).toHaveBeenCalledWith('/jurado/proyectos'));
+        expect(save.mutateAsync.mock.calls[0][0].scores[0]).toEqual({ criterionId: 1, levelId: 14, comment: 'Bien delimitado.' });
+        expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
+    });
+
+    it('si guardar falla, el borrador se queda', async () => {
+        save.mutateAsync.mockRejectedValue(apiError('Tu sesión expiró. Inicia sesión nuevamente.', 401));
+        renderPage();
+
+        await choose('Planteamiento', 'Bueno, 4.5');
+        await choose('Objetivos', 'Aceptable, 4.0');
+        await userEvent.click(saveButton());
+
+        expect(await screen.findByText('Tu sesión expiró. Inicia sesión nuevamente.')).toBeInTheDocument();
+        expect(JSON.parse(localStorage.getItem(DRAFT_KEY)).scores).toEqual({
+            c1: { levelId: 14, comment: '' },
+            c2: { levelId: 23, comment: '' },
+        });
+    });
+
+    it('deshacer a mano lo marcado no deja un borrador igual a lo guardado', async () => {
+        renderPage({ evaluation: saved });
+
+        await choose('Planteamiento', 'Bueno, 4.5');
+        expect(localStorage.getItem(DRAFT_KEY)).not.toBeNull();
+
+        await choose('Planteamiento', 'Deficiente, 1.5');
+        expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
+    });
+
+    it('es de cada jurado: otro que califique en el mismo navegador no lo ve', async () => {
+        await leaveHalfway();
+
+        renderPage({ jurorId: 9 });
+
+        expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
+        expect(screen.getByText('0 de 2 criterios')).toBeInTheDocument();
+    });
+
+    it('si la evaluación guardada cambió después (calificó desde otro equipo), el borrador ya no aplica', async () => {
+        await leaveHalfway();
+
+        renderPage({ evaluation: saved });
+
+        expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
+        expect(criterion('Planteamiento').getByRole('radio', { name: 'Deficiente, 1.5' })).toBeChecked();
+        expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
+    });
+
+    it('un borrador que no encaja con la rúbrica de hoy se descarta', () => {
+        localStorage.setItem(
+            DRAFT_KEY,
+            JSON.stringify({ base: null, savedAt: Date.now(), scores: { c1: { levelId: 999, comment: '' } } }),
+        );
+
+        renderPage();
+
+        expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
+        expect(screen.getByText('0 de 2 criterios')).toBeInTheDocument();
+    });
+});
+
+describe('Cuando falla volver a consultar con el tablero en pantalla', () => {
+    it('un fallo pasajero (se fue la conexión) no quita el tablero', () => {
+        useProject.mockReturnValue(query(project, { error: apiError('Error de red. Verifica tu conexión.', 0) }));
+        renderPage({ evaluation: saved });
+
+        expect(criterion('Planteamiento').getByRole('radio', { name: 'Deficiente, 1.5' })).toBeChecked();
+        expect(screen.queryByText('No puedes calificar este proyecto')).not.toBeInTheDocument();
+    });
+
+    it('si la API responde que ya no es jurado, sí', () => {
+        useAuth.mockReturnValue(sessionFor({ role: 'JUDGE', user: { id: 8 } }));
+        useMyEvaluation.mockReturnValue(
+            query(saved, { error: apiError('Solo los jurados asignados califican este proyecto', 403) }),
+        );
+        renderWithProviders(<EvaluationPage />);
+
+        expect(screen.getByText('No puedes calificar este proyecto')).toBeInTheDocument();
         expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
     });
 });

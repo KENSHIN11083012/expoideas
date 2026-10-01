@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { KeyRound } from 'lucide-react';
 import { useAuth } from '@/features/auth/useAuth';
+import { blockingError } from '@/lib/queryState';
 import { requiresAffiliation } from '@/lib/roles';
 import { ROUTES } from '@/lib/routes';
 import { PageContainer } from '@/components/layout/AppShell';
@@ -47,7 +48,9 @@ function PasswordCard() {
 
 export default function ProfilePage() {
     const { role } = useAuth();
-    const { data: profile, error, refetch } = useProfile();
+    const { data: profile, error: lastError, refetch } = useProfile();
+    // El perfil se vuelve a consultar cada minuto: un fallo pasajero no quita el formulario a medio llenar.
+    const error = blockingError({ data: profile, error: lastError });
 
     return (
         <PageContainer>

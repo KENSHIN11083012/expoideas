@@ -6,11 +6,13 @@ import { apiError, renderWithProviders, sessionFor } from '@/test/utils';
 import { project } from '@/test/fixtures';
 import ProjectPage from './ProjectPage';
 import { useProjectPresentation } from '@/features/presentations/queries';
+import { useJuryProjects } from '@/features/jury/queries';
 import { useDeleteProject, useInviteMember, useProject, useRemoveMember, useSetResult } from './queries';
 
 vi.mock('@/features/auth/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('@/features/presentations/queries', () => ({ useProjectPresentation: vi.fn() }));
 vi.mock('@/features/jury/JurorsPanel', () => ({ JurorsPanel: () => <section>Panel de jurados</section> }));
+vi.mock('@/features/jury/queries', () => ({ useJuryProjects: vi.fn() }));
 vi.mock('./queries', () => ({
     useProject: vi.fn(),
     useInviteMember: vi.fn(),
@@ -55,6 +57,7 @@ beforeEach(() => {
     deleteProject = { mutateAsync: vi.fn().mockResolvedValue({}), isPending: false };
     setResult = { mutateAsync: vi.fn().mockResolvedValue({}), isPending: false };
     useProjectPresentation.mockReturnValue({ data: null, isPending: false, error: null });
+    useJuryProjects.mockReturnValue({ data: [] });
     useInviteMember.mockReturnValue(invite);
     useRemoveMember.mockReturnValue(removeMember);
     useDeleteProject.mockReturnValue(deleteProject);
@@ -254,5 +257,19 @@ describe('Los jurados', () => {
         renderPage(project, { role: 'JUDGE', userId: 8 });
 
         expect(screen.getByRole('link', { name: /Evaluar/ })).toHaveAttribute('href', '/jurado/proyectos');
+    });
+
+    it('el jurado asignado tiene el botón para calificar; los demás, no', () => {
+        useJuryProjects.mockReturnValue({ data: [project] });
+        renderPage(project, { role: 'JUDGE', userId: 8 });
+
+        expect(screen.getByRole('link', { name: 'Calificar' })).toHaveAttribute('href', '/jurado/proyectos/10/calificar');
+    });
+
+    it('un profesor que no es jurado de este proyecto no lo califica', () => {
+        useJuryProjects.mockReturnValue({ data: [{ ...project, id: 99 }] });
+        renderPage(project, { role: 'TEACHER', userId: 7 });
+
+        expect(screen.queryByRole('link', { name: 'Calificar' })).not.toBeInTheDocument();
     });
 });

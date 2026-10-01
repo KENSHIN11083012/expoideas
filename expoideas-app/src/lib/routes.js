@@ -24,6 +24,9 @@ export const ROUTES = {
 /** La ficha de un proyecto. La misma para su equipo, su docente y la gestión. */
 ROUTES.project = (id) => `${ROUTES.PROJECTS}/${id}`;
 
+/** El tablero donde un jurado califica un proyecto que le asignaron. */
+ROUTES.evaluate = (id) => `${ROUTES.JURY_PROJECTS}/${id}/calificar`;
+
 /** Donde aterriza cada rol tras iniciar sesión. */
 export const homeRouteFor = (role) => (isManagement(role) ? ROUTES.USERS : ROUTES.HOME);
 

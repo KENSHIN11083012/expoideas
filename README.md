@@ -55,17 +55,17 @@ sustentaciones); el servidor SMTP lo pone TI. Y los jurados por asignación: la 
 profesores, jurados externos o cuentas de gestión a cada proyecto, y cada jurado ve los suyos en
 «Evaluar», con sus entregables. El mecanismo de los tipos de prototipo de INNPRENDE II también
 está: el catálogo (vacío hasta que MacondoLab entregue los tipos), el tipo por proyecto y los
-entregables que se piden solo a un tipo. Y la API de la evaluación: las dos
-[rúbricas](docs/rubricas.md) cargadas como datos, la evaluación de cada jurado asignado (con
-«no asistió» y observación obligatoria por debajo de 3.0) y la nota del proyecto para el
-profesor del grupo y la gestión.
+entregables que se piden solo a un tipo. Y la evaluación: las dos [rúbricas](docs/rubricas.md)
+cargadas como datos y el tablero donde cada jurado asignado califica, arrastrando la ficha de cada
+criterio a su nivel o tocándolo (con «no asistió» y observación obligatoria por debajo de 3.0). La
+API ya calcula la nota del proyecto para el profesor del grupo y la gestión.
 
 - Los tipos de prototipo de INNPRENDE II y qué evidencia pide cada uno (los carga la gestión en
   Catálogos y en los entregables; falta que MacondoLab los defina).
 - Identidad visual de Idearium: los nombres ya están puestos; faltan los logos y la paleta (el
   monograma y los colores de ahora son provisionales).
-- Evaluación con rúbrica: falta el tablero donde el jurado califica, mostrar las notas en la
-  ficha, el listado y el CSV, y el recordatorio por correo a los jurados con pendientes.
+- Evaluación con rúbrica: falta mostrar las notas en la ficha, el listado y el CSV, y el
+  recordatorio por correo a los jurados con pendientes.
 - Precarga del listado de la cátedra para asignar roles al registrarse (falta el listado).
 
 Sin definir por MacondoLab, y por eso fuera del piloto: ranking y premios por sector, y la vitrina

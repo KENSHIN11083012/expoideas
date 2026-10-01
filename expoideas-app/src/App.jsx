@@ -22,6 +22,7 @@ const CatalogsPage = lazy(() => import('@/features/catalogs/CatalogsPage'));
 const EditionsPage = lazy(() => import('@/features/editions/EditionsPage'));
 const PresentationsPage = lazy(() => import('@/features/presentations/PresentationsPage'));
 const JuryProjectsPage = lazy(() => import('@/features/jury/JuryProjectsPage'));
+const EvaluationPage = lazy(() => import('@/features/evaluations/EvaluationPage'));
 const UnauthorizedPage = lazy(() => import('@/features/errors/UnauthorizedPage'));
 const NotFoundPage = lazy(() => import('@/features/errors/NotFoundPage'));
 
@@ -107,6 +108,14 @@ export default function App() {
                             element={
                                 <ProtectedRoute allowedRoles={[...MANAGEMENT_ROLES, ROLES.TEACHER, ROLES.JUDGE]}>
                                     <JuryProjectsPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path={`${ROUTES.JURY_PROJECTS}/:id/calificar`}
+                            element={
+                                <ProtectedRoute allowedRoles={[...MANAGEMENT_ROLES, ROLES.TEACHER, ROLES.JUDGE]}>
+                                    <EvaluationPage />
                                 </ProtectedRoute>
                             }
                         />

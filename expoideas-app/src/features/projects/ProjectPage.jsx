@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, CalendarClock, Crown, LogOut, Pencil, Trash2, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, CalendarClock, ClipboardCheck, Crown, LogOut, Pencil, Trash2, UserPlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { ROUTES } from '@/lib/routes';
 import { trackLabel } from '@/lib/tracks';
@@ -20,6 +20,8 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { ProjectDeliverables } from '@/features/deliverables/ProjectDeliverables';
 import { JurorsPanel } from '@/features/jury/JurorsPanel';
+import { useJuryProjects } from '@/features/jury/queries';
+import { canBeJuror } from '@/features/jury/schemas';
 import { useProjectPresentation } from '@/features/presentations/queries';
 import { formatDateTime } from '@/features/presentations/schemas';
 import { useDeleteProject, useInviteMember, useProject, useRemoveMember, useSetResult } from './queries';
@@ -178,8 +180,10 @@ function TeamMember({ member, canRemove, isMe, onRemove }) {
 export default function ProjectPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user, isManagement } = useAuth();
+    const { user, role, isManagement } = useAuth();
     const { data: project, isPending, error, refetch } = useProject(id);
+    // Un jurado asignado califica desde aquí; se pregunta solo a los roles que pueden serlo.
+    const { data: juryProjects = [] } = useJuryProjects({ enabled: canBeJuror(role) });
     const removeMember = useRemoveMember(id);
     const deleteProject = useDeleteProject();
     const [editing, setEditing] = useState(false);
@@ -206,6 +210,7 @@ export default function ProjectPage() {
     const listRoute = me ? ROUTES.MY_PROJECTS : isManagement || isTeacher ? ROUTES.PROJECTS : ROUTES.JURY_PROJECTS;
     const listLabel = me ? 'Mis proyectos' : isManagement || isTeacher ? 'Proyectos' : 'Evaluar';
     const isLeader = me?.teamRole === 'LEADER';
+    const isJuror = juryProjects.some((assigned) => assigned.id === project.id);
     const open = project.registrationOpen;
     const accepted = project.members.filter((member) => member.status === 'ACCEPTED').length;
     const full = project.members.length >= project.maxMembers;
@@ -251,8 +256,7 @@ export default function ProjectPage() {
                 title={project.title}
                 description={project.summary}
                 actions={
-                    isLeader &&
-                    open && (
+                    isLeader && open ? (
                         <div className="flex gap-2">
                             <Button variant="outline" onClick={() => setEditing(true)}>
                                 <Pencil /> Editar
@@ -261,6 +265,14 @@ export default function ProjectPage() {
                                 <Trash2 /> Eliminar
                             </Button>
                         </div>
+                    ) : (
+                        isJuror && (
+                            <Button asChild>
+                                <Link to={ROUTES.evaluate(project.id)}>
+                                    <ClipboardCheck /> Calificar
+                                </Link>
+                            </Button>
+                        )
                     )
                 }
             />

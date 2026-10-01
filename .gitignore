@@ -23,6 +23,9 @@ application-local.properties
 # Archivos subidos en desarrollo local
 uploads/
 
+# Copias de seguridad (scripts/copia.sh): llevan datos reales
+copias/
+
 # Claude Code: ajustes personales de cada equipo
 .claude/settings.local.json
 

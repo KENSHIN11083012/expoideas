@@ -3,7 +3,8 @@
 # Nginx también reenvía /expoideas/api/ a la API, así que la app y la API
 # comparten origen y no hace falta CORS.
 
-FROM node:26-slim AS build
+# La misma versión de Node que .nvmrc y la integración continua: lo que se prueba es lo que se publica.
+FROM node:24-slim AS build
 WORKDIR /src
 
 COPY package.json package-lock.json ./

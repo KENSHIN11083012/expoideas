@@ -25,9 +25,13 @@ RUN groupadd --system expoideas \
 WORKDIR /app
 COPY --from=build /app.jar app.jar
 
+# El montón de Java usa hasta el 60 % de la memoria del contenedor. El resto es
+# para lo que la JVM gasta fuera del montón (clases cargadas, hilos, código
+# compilado): con un porcentaje mayor, el contenedor llegaría a su límite antes
+# que el montón al suyo y Docker lo mataría sin aviso.
 ENV SPRING_PROFILES_ACTIVE=prod \
     FILES_DIR=/data/files \
-    JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75"
+    JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=60"
 
 # Los archivos subidos deben sobrevivir a una actualización de la imagen.
 VOLUME /data/files

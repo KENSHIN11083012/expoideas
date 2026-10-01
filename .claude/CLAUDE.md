@@ -49,3 +49,7 @@ cd ..\expoideas-app; npm run lint; npm run format:check; npm test; npm run build
 - **Secretos locales.** `.env`, `application-local.properties`, `uploads/` y, si existe, la carpeta
   local `qa/` (sin versionar, con credenciales de prueba) no se leen ni se suben.
   `settings.json` niega su lectura.
+- **Copias de seguridad.** `scripts/copia.sh` deja en `copias/` paquetes con datos reales: tampoco
+  se leen ni se suben (la carpeta está en el `.gitignore`). `scripts/restaurar.sh` borra la base y
+  los archivos de la instalación que indique `COMPOSE_PROJECT_NAME`: solo se ejecuta contra una
+  desechable, o si el usuario lo pide para la suya.

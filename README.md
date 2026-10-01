@@ -325,20 +325,25 @@ Los datos viven en dos volúmenes de Docker, `expoideas_mysql-data` (la base de 
 borra, con todo lo que tengan: es la forma de empezar de cero.
 
 **Copia de seguridad.** La base de datos y los archivos se respaldan **juntos**: la base guarda los
-metadatos y la carpeta, el contenido. Estos dos comandos son para Bash: usan `$(date +%F)` para
-fechar el archivo, y en PowerShell la redirección `>` puede cambiar la codificación del volcado. En
-Windows se ejecutan desde Git Bash, poniendo `MSYS_NO_PATHCONV=1` delante del segundo para que no
-convierta las rutas del contenedor.
+metadatos y la carpeta, el contenido. Con la plataforma encendida, desde la raíz del repositorio
+(en Windows, desde Git Bash):
 
 ```bash
-docker compose exec -T mysql sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction --routines expoideas' > expoideas-$(date +%F).sql
+scripts/copia.sh
 ```
+
+Deja en `copias/` un solo paquete con las dos cosas. Lleva datos reales: se guarda fuera del
+repositorio (la carpeta está en el `.gitignore`) y fuera del servidor.
+
+**Restaurar una copia** reemplaza la base y los archivos por los de la copia, y pide confirmación
+porque lo que haya en ese momento se pierde:
 
 ```bash
-docker run --rm -v expoideas_files:/datos -v "$PWD":/respaldo alpine tar czf /respaldo/archivos-$(date +%F).tar.gz -C /datos .
+scripts/restaurar.sh copias/idearium-AAAA-MM-DD-HHMMSS.tar
 ```
 
-Los dos archivos resultantes contienen datos reales: se guardan fuera del repositorio.
+Cómo programar la copia y cómo probar una restauración sin tocar la instalación real está en
+[docs/despliegue.md](docs/despliegue.md#copias-de-seguridad).
 
 ### Camino B — para programar
 

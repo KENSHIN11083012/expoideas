@@ -50,6 +50,18 @@ Datos persistentes (volúmenes de Docker):
 | `expoideas_mysql-data` | Base de datos |
 | `expoideas_files` | Archivos subidos |
 
+Cada servicio tiene un tope de memoria, para que uno que se desboque no tumbe a los otros ni al
+servidor. Los valores por defecto suman cerca de 2 GB y se cambian en el `.env`:
+
+| Variable | Por defecto | Servicio |
+|---|---|---|
+| `MYSQL_MEMORY` | `1g` | MySQL (en reposo usa cerca de 480 MB) |
+| `API_MEMORY` | `768m` | API (el montón de Java se queda con el 60 %) |
+| `APP_MEMORY` | `128m` | Nginx con la app (usa cerca de 15 MB) |
+
+Si un servicio se reinicia solo y `docker inspect` dice `OOMKilled`, le faltó memoria: se sube su
+variable y se ejecuta `docker compose up -d`.
+
 ### HTTPS
 
 Nginx de la app escucha HTTP en el puerto 8080 del contenedor. Lo habitual es poner delante el
@@ -171,25 +183,82 @@ piden una contraseña: es la `DB_PASSWORD` del `.env`.
 
 - `GET /actuator/health/liveness` y `/actuator/health/readiness` en la API (puerto interno 8080)
   responden `{"status":"UP"}`. No exponen detalles ni requieren sesión. Nginx no los publica.
-- En Docker, la imagen de la API trae su propio `HEALTHCHECK` (`docker compose ps`).
+- En Docker, los tres servicios tienen comprobación de salud: `docker compose ps` debe mostrarlos
+  `healthy`. La de la app comprueba que Nginx responde; la de la API, que está lista.
+- Al parar o actualizar, la API termina las peticiones en curso y los correos que estaba enviando
+  antes de apagarse, y MySQL cierra bien sus archivos. Por eso `docker compose stop` puede tardar
+  hasta un minuto: no hay que matarlo.
+- Nginx vuelve a buscar la dirección de la API cada diez segundos, así que actualizar solo la API
+  (`docker compose up -d --build api`) no obliga a reiniciarlo.
 - Logs: salida estándar de cada contenedor (`docker compose logs -f api`).
 
 ### Copias de seguridad
 
 Hay que respaldar **juntas** la base de datos y la carpeta de archivos: la base guarda los
-metadatos y la carpeta, el contenido.
+metadatos y la carpeta, el contenido. Uno sin el otro no sirve.
+
+**Hacer una copia.** Desde la raíz del repositorio, con la plataforma encendida (no hace falta
+apagarla ni sacar a nadie):
 
 ```bash
-# Base de datos
-docker compose exec -T mysql sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction --routines expoideas' > expoideas-$(date +%F).sql
-# Archivos
-docker run --rm -v expoideas_files:/datos -v "$PWD":/respaldo alpine tar czf /respaldo/archivos-$(date +%F).tar.gz -C /datos .
+scripts/copia.sh
 ```
+
+Deja en `copias/` un solo archivo, `idearium-AAAA-MM-DD-HHMMSS.tar`, con el volcado de la base, los
+archivos subidos y un manifiesto (fecha, versión de la base, número de archivos y sus sumas de
+comprobación). Si algo falla, no deja paquete y termina con error: sirve para programarlo.
+
+- La carpeta de destino se puede cambiar: `scripts/copia.sh /ruta/de/copias`.
+- El paquete lleva datos reales de estudiantes y **no es una copia hasta que sale del servidor**: hay
+  que llevarlo a donde TI guarde sus respaldos. `copias/` está en el `.gitignore`.
+- El script no borra copias viejas: cuántas se conservan lo decide quien administra el disco.
+- Para programarla cada noche, una línea de `cron` en el servidor:
+
+```
+30 2 * * * cd /ruta/a/expoideas && scripts/copia.sh /ruta/de/copias >> /var/log/idearium-copia.log 2>&1
+```
+
+**Restaurar una copia.** Reemplaza la base y los archivos por los de la copia; lo que haya en ese
+momento se pierde, y por eso pide escribir `RESTAURAR`:
+
+```bash
+scripts/restaurar.sh copias/idearium-AAAA-MM-DD-HHMMSS.tar
+```
+
+Antes de tocar nada comprueba que el paquete esté entero (si no coincide con su manifiesto, se
+niega). Después apaga la app y la API, carga la base, repone los archivos y lo vuelve a encender
+todo. La copia puede ser de esta versión de la plataforma o de una anterior: al arrancar, la API
+aplica las migraciones que falten. No sirve una copia de una versión **más nueva** que el código
+instalado: la API no arrancaría.
+
+**Probar la restauración** sin tocar la instalación real. Una copia que nunca se ha restaurado no
+está probada. Se levanta una segunda instalación, vacía, con otro nombre y otro puerto, y se
+restaura ahí:
+
+```bash
+export COMPOSE_PROJECT_NAME=idearium-prueba HTTP_PORT=8090
+docker compose up -d --build
+scripts/restaurar.sh copias/idearium-AAAA-MM-DD-HHMMSS.tar
+# Entrar a http://servidor:8090/expoideas/ con una cuenta real y abrir un entregable.
+docker compose down -v      # borra la instalación de prueba, con sus datos
+unset COMPOSE_PROJECT_NAME HTTP_PORT
+```
+
+Los dos `export` son los que hacen que todo lo que sigue, incluido el script, actúe sobre la
+instalación de prueba y no sobre la real: sin ellos, `restaurar.sh` y `down -v` actuarían sobre la
+real. El script dice sobre qué instalación va a actuar antes de pedir la confirmación.
+
+Así se probó el 1 de octubre de 2026: con cuentas, un proyecto con jurados y un archivo subido, se
+hizo la copia, se borró la instalación entera, se levantó vacía y se restauró. Volvieron las mismas
+cuentas y el mismo proyecto, y el archivo se descargó idéntico al original.
+
+En una instalación sin Docker (opción B) los scripts no aplican: la copia es un `mysqldump
+--single-transaction` de la base y un `tar` de la carpeta `FILES_DIR`, hechos en ese orden.
 
 ### Actualizar a una versión nueva
 
 ```bash
-# 1. Respaldar base de datos y archivos (ver arriba)
+scripts/copia.sh
 git pull
 docker compose up -d --build
 ```
@@ -204,7 +273,8 @@ puede quedar a medias: por eso el respaldo previo es obligatorio y es lo que se 
 - [ ] `.env` fuera del repositorio, con permisos restringidos y contraseñas únicas.
 - [ ] MySQL y la API sin puertos publicados (solo la app).
 - [ ] `SPRING_PROFILES_ACTIVE=prod` (Swagger apagado).
-- [ ] Copias de seguridad programadas y una restauración probada.
+- [ ] Copias de seguridad programadas (`scripts/copia.sh`), guardadas fuera del servidor, y una
+      restauración probada con una copia real (`scripts/restaurar.sh` en una instalación de prueba).
 - [ ] Opcional: antivirus sobre la carpeta de archivos (p. ej. ClamAV). La plataforma ya valida
       tipo y tamaño de cada archivo por su contenido.
 

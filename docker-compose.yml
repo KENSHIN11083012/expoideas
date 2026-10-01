@@ -31,6 +31,12 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Define MYSQL_ROOT_PASSWORD en .env}
     command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    # Límite de memoria: un servicio que se desboca no se lleva por delante a los otros
+    # ni al servidor. Se ajusta en el .env según la máquina que dé TI.
+    mem_limit: ${MYSQL_MEMORY:-1g}
+    # Al parar, MySQL necesita tiempo para cerrar bien sus archivos: con los 10 s por
+    # defecto Docker lo mataría a medias y el siguiente arranque tendría que recuperarse.
+    stop_grace_period: 1m
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -46,6 +52,10 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    mem_limit: ${API_MEMORY:-768m}
+    # La API termina las peticiones en curso y los correos que estaba enviando antes
+    # de apagarse (ver application.properties); hay que darle tiempo para hacerlo.
+    stop_grace_period: 1m
     environment:
       TZ: America/Bogota
       DB_URL: jdbc:mysql://mysql:3306/expoideas
@@ -81,8 +91,16 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    mem_limit: ${APP_MEMORY:-128m}
     ports:
       - "${HTTP_PORT:-8080}:8080"
+    # Que Nginx responda y tenga la app para servir. La API tiene su propia comprobación.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/expoideas/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 10s
 
   # Solo en desarrollo (docker compose --profile dev up -d mailpit): atrapa los
   # correos que envía la API y los muestra en http://localhost:8025.

@@ -17,6 +17,12 @@ updates:
       - dependency-name: "@eslint/js"
         update-types: ["version-update:semver-major"]
 
+  # Playwright, para las pruebas de punta a punta.
+  - package-ecosystem: npm
+    directory: /qa/e2e
+    schedule:
+      interval: weekly
+
   - package-ecosystem: maven
     directory: /expoideas-api
     schedule:

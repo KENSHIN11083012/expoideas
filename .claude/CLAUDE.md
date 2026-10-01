@@ -1,7 +1,10 @@
 # Idearium · guía de entrada para Claude Code
 
 Este archivo no repite reglas: dice dónde está cada cosa y añade lo que no está escrito en otro
-sitio. Las reglas del repositorio están en [AGENTS.md](../AGENTS.md), que Claude Code ya carga solo.
+sitio. Las reglas del repositorio están en [AGENTS.md](../AGENTS.md) y se importan aquí abajo:
+habiendo un `CLAUDE.md`, Claude Code ya no carga `AGENTS.md` por su cuenta.
+
+@../AGENTS.md
 
 ## Qué leer y cuándo
 

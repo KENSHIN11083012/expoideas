@@ -75,6 +75,17 @@ public class User {
     @Column(nullable = false, unique = true, length = 150)
     private String email;
 
+    /**
+     * Se registró cuando la plataforma podía enviar correos y todavía no abre el
+     * enlace de verificación. Mientras tanto solo puede completar su primer ingreso.
+     */
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean emailVerificationPending = false;
+
+    /** Cuándo demostró que el correo es suyo. Nulo si nunca se le pidió o aún no lo hace. */
+    private LocalDateTime emailVerifiedAt;
+
     /** Hash BCrypt. La API responde con DTOs; @JsonIgnore es solo una red por si acaso. */
     @JsonIgnore
     @Column(nullable = false)
@@ -160,6 +171,9 @@ public class User {
     /** Lo que la cuenta debe resolver antes de usar la plataforma, en el orden en que se pide. */
     public List<OnboardingStep> pendingSteps() {
         List<OnboardingStep> steps = new ArrayList<>();
+        if (emailVerificationPending) {
+            steps.add(OnboardingStep.VERIFY_EMAIL);
+        }
         if (mustChangePassword) {
             steps.add(OnboardingStep.CHANGE_PASSWORD);
         }
@@ -182,6 +196,21 @@ public class User {
         if (!dataConsent) {
             dataConsent = true;
             dataConsentAt = now;
+        }
+    }
+
+    /**
+     * El correo es suyo: abrió un enlace que solo llega a ese buzón. Con eso recibe
+     * el rol que el listado de la cátedra le tuviera reservado, sin esperar a la gestión.
+     */
+    public void verifyEmail(LocalDateTime now) {
+        emailVerificationPending = false;
+        if (emailVerifiedAt == null) {
+            emailVerifiedAt = now;
+        }
+        if (pendingRole != null) {
+            role = pendingRole;
+            pendingRole = null;
         }
     }
 

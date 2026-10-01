@@ -31,6 +31,12 @@ export const passwordChangeSchema = z
         path: ['newPassword'],
     });
 
+/** El correo de la cuenta cuya contraseña se quiere recuperar; puede ser el de un jurado externo. */
+export const passwordRecoverySchema = z.object({ email: rules.anyEmail() });
+
+/** Contraseña nueva desde el enlace de recuperación: no se conoce la anterior. */
+export const passwordResetSchema = z.object(newPasswordShape).refine(...passwordsMatch);
+
 /** Autorización de datos en el primer ingreso de una cuenta creada desde la gestión. */
 export const dataConsentSchema = z.object({
     dataConsent: rules.dataConsent('Debes autorizar el tratamiento de tus datos para usar la plataforma'),

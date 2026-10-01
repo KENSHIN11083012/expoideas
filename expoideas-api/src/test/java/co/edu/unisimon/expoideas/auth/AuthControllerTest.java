@@ -3,6 +3,7 @@ package co.edu.unisimon.expoideas.auth;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -12,7 +13,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import co.edu.unisimon.expoideas.common.ConflictException;
 import co.edu.unisimon.expoideas.support.SecuredWebMvcTest;
+import co.edu.unisimon.expoideas.users.AccountLinkService;
 import co.edu.unisimon.expoideas.users.OnboardingStep;
+import co.edu.unisimon.expoideas.users.PasswordRecoveryResetRequest;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.UserAccountService;
 import co.edu.unisimon.expoideas.users.UserResponse;
@@ -22,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -39,6 +43,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private UserAccountService accountService;
+
+    @MockitoBean
+    private AccountLinkService accountLinks;
 
     // ── Login ───────────────────────────────────────────────────────────────
 
@@ -154,6 +161,62 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registration(EMAIL, "ñ".repeat(35) + "-1", true)))
                 .andExpect(status().isCreated());
+    }
+
+    // ── Enlaces enviados por correo ─────────────────────────────────────────
+
+    @Test
+    void openingTheVerificationLinkNeedsNoSession() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/email-verification")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"abc\"}"))
+                .andExpect(status().isNoContent());
+
+        verify(accountLinks).verifyEmail("abc");
+    }
+
+    @Test
+    void askingForTheLinkAgainNeedsASession() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/email-verification/resend")).andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(accountLinks);
+    }
+
+    @Test
+    @WithMockUser(username = EMAIL)
+    void withASessionTheLinkIsSentAgain() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/email-verification/resend")).andExpect(status().isNoContent());
+
+        verify(accountLinks).resendVerification(EMAIL);
+    }
+
+    @Test
+    void passwordRecoveryIsAcceptedWithoutSayingIfTheAccountExists() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/password-recovery")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"" + EMAIL + "\"}"))
+                .andExpect(status().isAccepted())
+                .andExpect(content().string(""));
+
+        verify(accountLinks).requestPasswordRecovery(EMAIL);
+    }
+
+    @Test
+    void theNewPasswordFromARecoveryLinkFollowsTheSameRules() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/password-reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"abc\",\"newPassword\":\"123\",\"confirmPassword\":\"123\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.newPassword").exists());
+        verifyNoInteractions(accountLinks);
+
+        mockMvc.perform(
+                        post("/api/v1/auth/password-reset")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"token\":\"abc\",\"newPassword\":\"Nueva#2026\",\"confirmPassword\":\"Nueva#2026\"}"))
+                .andExpect(status().isNoContent());
+        verify(accountLinks).resetPassword(new PasswordRecoveryResetRequest("abc", "Nueva#2026", "Nueva#2026"));
     }
 
     @Test

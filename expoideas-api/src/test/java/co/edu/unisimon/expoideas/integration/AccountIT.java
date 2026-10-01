@@ -25,7 +25,9 @@ class AccountIT extends IntegrationTest {
         Response created = register(email).expect(201);
         assertThat(created.<String>json("$.role")).isEqualTo("STUDENT");
         assertThat(created.<String>json("$.firstName")).isNull();
-        assertThat(created.<List<String>>json("$.pendingSteps")).containsExactly("COMPLETE_PROFILE");
+        assertThat(created.<List<String>>json("$.pendingSteps")).containsExactly("VERIFY_EMAIL", "COMPLETE_PROFILE");
+        // Lo primero es demostrar que el correo es suyo, con el enlace que le llegó.
+        verifyEmail(email);
 
         Response login = post("/api/v1/auth/login", null, Map.of("email", email, "password", PASSWORD))
                 .expect(200);

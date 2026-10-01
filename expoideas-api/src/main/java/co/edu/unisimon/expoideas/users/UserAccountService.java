@@ -37,13 +37,15 @@ public class UserAccountService {
     private final FileService fileService;
     private final Clock clock;
     private final SessionTokens sessionTokens;
+    private final AccountLinkService accountLinks;
 
     /**
      * Registro público: la cuenta nace como estudiante, con la autorización de
      * datos que exige el formulario y sin nombre ni adscripción, que quedan como
      * paso pendiente ({@link OnboardingStep#COMPLETE_PROFILE}) del primer ingreso.
      * Si el correo está en el listado de la cátedra, nace con el nombre que traiga
-     * el listado; si ahí figura con otro rol, ese rol queda pendiente de que la
+     * el listado; si ahí figura con otro rol, ese rol queda pendiente hasta que
+     * verifique su correo o, si la plataforma no envía correos, hasta que la
      * gestión lo confirme.
      *
      * @throws ConflictException si el correo ya está en uso
@@ -57,7 +59,9 @@ public class UserAccountService {
         User.UserBuilder user = User.builder()
                 .email(email)
                 .passwordHash(passwords.hash(request.password()))
-                .role(Role.STUDENT);
+                .role(Role.STUDENT)
+                // Si se puede escribir a su correo, tiene que demostrar que es suyo antes de usar la cuenta.
+                .emailVerificationPending(accountLinks.canSendLinks());
         rosterRepository.findByEmail(email.toLowerCase(Locale.ROOT)).ifPresent(entry -> {
             // Nadie ha comprobado que quien se registra sea el dueño del correo: un rol con más
             // alcance que el de estudiante espera a que la gestión lo confirme.
@@ -76,6 +80,9 @@ public class UserAccountService {
 
         User saved = userRepository.save(user);
         log.info("Usuario registrado con ID {}", saved.getId());
+        if (saved.isEmailVerificationPending()) {
+            accountLinks.sendVerification(saved);
+        }
         return UserResponse.from(saved);
     }
 

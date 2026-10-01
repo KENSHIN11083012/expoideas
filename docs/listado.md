@@ -9,10 +9,12 @@ y el administrador le cambia el rol a mano.
 
 Quien figura como **profesor** también nace como estudiante, con el rol de profesor **por
 confirmar**: en «Usuarios» aparece el aviso «Pide rol: Profesor» y la gestión se lo da o lo descarta
-desde el menú de la cuenta. El motivo es que el registro todavía no comprueba que quien se registra
-sea el dueño del correo; sin ese paso, cualquiera que conociera el correo de un profesor podría
-registrarlo y quedar con su rol. Cuando el registro verifique el correo con un enlace (pendiente
-del servidor de correo de TI), el rol se dará solo al verificarlo.
+desde el menú de la cuenta. El motivo es que, sin servidor de correo, el registro no puede comprobar
+que quien se registra sea el dueño del correo; sin ese paso, cualquiera que conociera el correo de
+un profesor podría registrarlo y quedar con su rol.
+
+Con el servidor de correo configurado, el registro envía un enlace de verificación y el rol se da
+solo al abrirlo, sin pasar por la gestión: quien abre el enlace demostró que el correo es suyo.
 
 ## El archivo
 

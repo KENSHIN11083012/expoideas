@@ -36,6 +36,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,6 +84,9 @@ abstract class IntegrationTest {
     protected static final GreenMail MAIL = new GreenMail(ServerSetupTest.SMTP.dynamicPort());
 
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
+
+    /** El token va en el fragmento del enlace, que el navegador no envía al servidor. */
+    private static final Pattern LINK_TOKEN = Pattern.compile("#token=([A-Za-z0-9_-]+)");
 
     private static Integer openEditionId;
 
@@ -153,6 +158,20 @@ abstract class IntegrationTest {
 
     protected static String body(MimeMessage message) throws Exception {
         return message.getContent().toString();
+    }
+
+    /**
+     * El token del enlace del último correo con ese asunto que le llegó a esa
+     * dirección: lo que la persona tendría al abrir el correo y pulsar el enlace.
+     */
+    protected static String linkTokenFor(String email, String subjectStart) {
+        try {
+            Matcher link = LINK_TOKEN.matcher(body(awaitMail(email, subjectStart)));
+            assertThat(link.find()).as("enlace en el correo a %s", email).isTrue();
+            return link.group(1);
+        } catch (Exception e) {
+            throw new IllegalStateException("No se pudo leer el correo de " + email, e);
+        }
     }
 
     @LocalServerPort
@@ -242,6 +261,12 @@ abstract class IntegrationTest {
     /** Registro público: solo correo, contraseña y autorización de datos. Devuelve la respuesta. */
     protected Response register(String email) {
         return post("/api/v1/auth/register", null, Map.of("email", email, "password", PASSWORD, "dataConsent", true));
+    }
+
+    /** Abre el enlace de verificación que le llegó a ese correo tras registrarse. */
+    protected void verifyEmail(String email) {
+        post("/api/v1/auth/email-verification", null, Map.of("token", linkTokenFor(email, "Verifica tu correo")))
+                .expect(204);
     }
 
     /**

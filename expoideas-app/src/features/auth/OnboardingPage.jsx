@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, MailCheck } from 'lucide-react';
 import { affiliationToApi } from '@/lib/affiliation';
 import { requiresAffiliation } from '@/lib/roles';
 import { ROUTES, homeRouteFor } from '@/lib/routes';
@@ -18,11 +18,78 @@ import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Alert } from '@/components/ui/feedback';
 import { AffiliationFields } from '@/features/catalogs/AffiliationFields';
-import { useUpdateProfile } from '@/features/profile/queries';
+import { useProfile, useUpdateProfile } from '@/features/profile/queries';
 import { personalDataSchema, profileSchema } from '@/features/profile/schemas';
 import { accountApi } from './api';
 import { dataConsentSchema, passwordChangeSchema } from './schemas';
 import { useAuth } from './useAuth';
+
+/**
+ * La cuenta no sirve hasta abrir el enlace que llegó a su correo: es lo que
+ * demuestra que el correo es suyo. Aquí se espera, se pide otro enlace o se
+ * comprueba si ya lo abrió (quizá en otro dispositivo).
+ */
+function VerifyEmailStep({ onDone }) {
+    const { user } = useAuth();
+    // Solo se consulta al pulsar el botón; el perfil dice si el paso sigue pendiente.
+    const profile = useProfile({ enabled: false });
+    const [busy, setBusy] = useState(null); // 'check' | 'resend'
+    const [notice, setNotice] = useState(null); // { variant, text }
+
+    const check = async () => {
+        setBusy('check');
+        const { data, error } = await profile.refetch();
+        setBusy(null);
+        if (error) {
+            setNotice({ variant: 'error', text: error.message });
+        } else if (data?.pendingSteps?.includes('VERIFY_EMAIL')) {
+            setNotice({ variant: 'error', text: 'Todavía no vemos tu correo verificado. Abre el enlace que te enviamos.' });
+        } else {
+            onDone();
+        }
+    };
+
+    const resend = async () => {
+        setBusy('resend');
+        try {
+            await accountApi.resendVerification();
+            setNotice({ variant: 'success', text: 'Te enviamos un enlace nuevo. El anterior ya no sirve.' });
+        } catch (error) {
+            setNotice({ variant: 'error', text: error.message });
+        } finally {
+            setBusy(null);
+        }
+    };
+
+    return (
+        <div className="flex flex-col gap-5">
+            {notice && <Alert variant={notice.variant} title={notice.text} />}
+            <Alert title={`Te enviamos un enlace a ${user?.email ?? 'tu correo'}`}>
+                Ábrelo para confirmar que el correo es tuyo. Vale 48 horas. Si no lo ves, mira en el correo no deseado.
+            </Alert>
+            <Button
+                type="button"
+                size="lg"
+                loading={busy === 'check'}
+                disabled={busy === 'resend'}
+                onClick={check}
+                className="w-full"
+            >
+                <MailCheck /> Ya abrí el enlace
+            </Button>
+            <Button
+                type="button"
+                variant="outline"
+                loading={busy === 'resend'}
+                disabled={busy === 'check'}
+                onClick={resend}
+                className="w-full"
+            >
+                Enviarme otro enlace
+            </Button>
+        </div>
+    );
+}
 
 function ChangePasswordStep({ onDone }) {
     const { renewToken } = useAuth();
@@ -161,6 +228,11 @@ function CompleteProfileStep({ onDone }) {
 
 /** Pasos que conoce la app, en el orden en que se piden (el mismo de la API). */
 const ONBOARDING_STEPS = {
+    VERIFY_EMAIL: {
+        title: 'Verifica tu correo',
+        description: 'Antes de usar tu cuenta necesitamos confirmar que el correo con el que te registraste es tuyo.',
+        Step: VerifyEmailStep,
+    },
     CHANGE_PASSWORD: {
         title: 'Crea tu contraseña',
         description: 'La contraseña que recibiste es temporal. Elige una propia para proteger tu cuenta.',

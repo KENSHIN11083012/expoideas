@@ -64,6 +64,23 @@ class UserTest {
     }
 
     @Test
+    void verifyingTheEmailIsTheFirstStepAndGivesTheRoleReservedByTheRoster() {
+        User user = complete(Role.STUDENT)
+                .emailVerificationPending(true)
+                .pendingRole(Role.TEACHER)
+                .build();
+        assertThat(user.pendingSteps()).containsExactly(OnboardingStep.VERIFY_EMAIL);
+        LocalDateTime now = LocalDateTime.of(2026, 11, 3, 8, 0);
+
+        user.verifyEmail(now);
+
+        assertThat(user.pendingSteps()).isEmpty();
+        assertThat(user.getEmailVerifiedAt()).isEqualTo(now);
+        assertThat(user.getRole()).isEqualTo(Role.TEACHER);
+        assertThat(user.getPendingRole()).isNull();
+    }
+
+    @Test
     void theFifthFailedLoginInARowLocksTheAccountAndTheCountStartsOver() {
         User user = User.builder().build();
         LocalDateTime now = LocalDateTime.of(2026, 11, 3, 8, 0);

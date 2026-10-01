@@ -85,6 +85,12 @@ export default function LoginPage() {
                     </Button>
                 </form>
 
+                <p className="text-center text-sm">
+                    <Link to={ROUTES.RECOVER_PASSWORD} className="font-semibold text-primary underline-offset-4 hover:underline">
+                        ¿Olvidaste tu contraseña?
+                    </Link>
+                </p>
+
                 <p className="text-center text-sm text-on-surface-variant">
                     ¿Aún no tienes cuenta?{' '}
                     <Link to={ROUTES.REGISTER} className="font-semibold text-primary underline-offset-4 hover:underline">

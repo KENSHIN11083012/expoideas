@@ -35,10 +35,12 @@ export default function RegisterPage() {
 
     const submit = async ({ confirmPassword: _, ...values }) => {
         try {
-            await authApi.register(values);
-            navigate(ROUTES.LOGIN, {
-                state: { message: 'Tu cuenta fue creada. Ya puedes iniciar sesión.', email: values.email },
-            });
+            const created = await authApi.register(values);
+            // Si la plataforma envía correos, la cuenta no sirve hasta abrir el enlace de verificación.
+            const message = created?.pendingSteps?.includes('VERIFY_EMAIL')
+                ? 'Tu cuenta fue creada. Te enviamos un enlace a tu correo para verificarla.'
+                : 'Tu cuenta fue creada. Ya puedes iniciar sesión.';
+            navigate(ROUTES.LOGIN, { state: { message, email: values.email } });
         } catch (error) {
             if (error.status === 409) {
                 setError('email', { type: 'server', message: error.message }, { shouldFocus: true });

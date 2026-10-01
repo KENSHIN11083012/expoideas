@@ -103,8 +103,26 @@ cupo: en una hora pico de inscripciones se quedarían cortas.
 | `SPRING_MAIL_HOST` / `SPRING_MAIL_PORT` | No | Servidor SMTP de TI para los avisos (invitaciones, cuentas creadas, sustentaciones). Sin host no se envía nada y la API lo dice en el log. En `docker-compose.yml` salen de `MAIL_HOST` y `MAIL_PORT` |
 | `SPRING_MAIL_USERNAME` / `SPRING_MAIL_PASSWORD` | No | Credenciales del SMTP (`MAIL_USERNAME` y `MAIL_PASSWORD` en el `.env`). Con `MAIL_AUTH=false` y `MAIL_STARTTLS=false` se desactivan la autenticación y STARTTLS |
 | `MAIL_FROM` | No | Remitente de los avisos (por defecto `no-reply@unisimon.edu.co`; debe ser una dirección que el SMTP acepte) |
-| `APP_URL` | No | URL pública de la app, para los enlaces de los correos (`https://<dominio>.unisimon.edu.co/expoideas`) |
+| `APP_URL` | No | URL pública de la app, para los enlaces de los correos (`https://<dominio>.unisimon.edu.co/expoideas`). Junto con el SMTP activa la verificación del correo al registrarse y la recuperación de contraseña; ver «Verificación del correo» abajo |
 | `JAVA_TOOL_OPTIONS` | No | Opciones de la JVM. La imagen Docker ya trae `-XX:MaxRAMPercentage=75`; fuera de Docker no hay valor por defecto |
+
+## Verificación del correo y recuperación de contraseña
+
+Cuando la API tiene servidor de correo (`SPRING_MAIL_HOST`) **y** una `APP_URL` válida:
+
+- Quien se registra recibe un enlace y no puede usar su cuenta hasta abrirlo (vale 48 horas; se
+  puede pedir otro desde la pantalla de primer ingreso). Es lo que demuestra que el correo es suyo.
+- En el inicio de sesión aparece «¿Olvidaste tu contraseña?», que envía un enlace de una hora para
+  poner una nueva.
+- Quien figura como profesor en el listado de la cátedra recibe ese rol al verificar su correo.
+
+Sin servidor de correo, o con `APP_URL` vacía o mal escrita, nada de eso se activa: el registro no
+pide verificación, el rol del listado lo confirma la gestión y las contraseñas se restablecen desde
+**Usuarios**.
+
+Al activar el correo en una instalación que ya tiene cuentas, las existentes no quedan pendientes
+de verificar. Antes de anunciarlo conviene registrar una cuenta de prueba y comprobar que el enlace
+llega y abre: si el SMTP rechaza los envíos, las cuentas nuevas no podrían entrar.
 
 ## Primer administrador
 

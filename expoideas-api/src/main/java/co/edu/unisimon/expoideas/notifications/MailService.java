@@ -1,6 +1,8 @@
 package co.edu.unisimon.expoideas.notifications;
 
 import co.edu.unisimon.expoideas.common.ExpoideasProperties;
+import java.net.URI;
+import java.net.URISyntaxException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -27,6 +29,30 @@ public class MailService {
     /** Si hay un servidor de correo configurado. */
     public boolean isConfigured() {
         return senders.getIfAvailable() != null;
+    }
+
+    /**
+     * Si se le puede mandar a alguien un enlace a la plataforma: hace falta el
+     * servidor de correo y una URL pública (APP_URL) con la que armarlo.
+     *
+     * <p>La URL se comprueba porque de aquí depende que el registro exija verificar
+     * el correo: con una URL que no abre (el valor de ejemplo del .env sin
+     * cambiar), nadie podría verificar y nadie podría usar su cuenta.
+     */
+    public boolean canSendLinks() {
+        return isConfigured() && isPublicUrl(properties.appUrl());
+    }
+
+    private static boolean isPublicUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return false;
+        }
+        try {
+            URI uri = new URI(url.strip());
+            return uri.getHost() != null && ("https".equals(uri.getScheme()) || "http".equals(uri.getScheme()));
+        } catch (URISyntaxException e) {
+            return false;
+        }
     }
 
     /**

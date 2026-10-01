@@ -122,6 +122,38 @@ public class NotificationListener {
         deliver(event.email(), subject, body);
     }
 
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    public void onEmailVerification(EmailVerificationEvent event) {
+        String subject = "Verifica tu correo en Idearium";
+        String body = """
+                Hola, %s.
+
+                Para terminar de crear tu cuenta en Idearium, abre este enlace:%s
+
+                El enlace vale 48 horas y sirve una sola vez. Si no creaste la cuenta, ignora este correo: sin abrir el enlace, nadie puede usarla.
+
+                Cátedra UNISIMÓN INNPRENDE · MacondoLab
+                """.formatted(event.fullName(), appLink("/verificar-correo#token=" + event.token()));
+        deliver(event.email(), subject, body);
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    public void onPasswordRecovery(PasswordRecoveryEvent event) {
+        String subject = "Recupera tu contraseña de Idearium";
+        String body = """
+                Hola, %s.
+
+                Alguien pidió cambiar la contraseña de tu cuenta en Idearium. Si fuiste tú, abre este enlace para poner una nueva:%s
+
+                El enlace vale una hora y sirve una sola vez. Si no lo pediste, ignora este correo: tu contraseña sigue siendo la misma.
+
+                Cátedra UNISIMÓN INNPRENDE · MacondoLab
+                """.formatted(event.fullName(), appLink("/restablecer-contrasena#token=" + event.token()));
+        deliver(event.email(), subject, body);
+    }
+
     private void deliver(String to, String subject, String body) {
         try {
             mailService.send(to, subject, body);

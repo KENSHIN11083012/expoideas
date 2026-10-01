@@ -74,6 +74,9 @@ class UserAccountServiceTest {
     @Mock
     private RosterRepository rosterRepository;
 
+    @Mock
+    private AccountLinkService accountLinks;
+
     /** Las 03:15 UTC del 1 de octubre: en Colombia todavía es 30 de septiembre, 22:15. */
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-01T03:15:00Z"), TimeConfig.ZONE);
 
@@ -101,7 +104,8 @@ class UserAccountServiceTest {
                 new PasswordUpdater(passwordEncoder),
                 fileService,
                 CLOCK,
-                user -> "token-de-" + user.getTokenVersion());
+                user -> "token-de-" + user.getTokenVersion(),
+                accountLinks);
         lenient().when(rosterRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
         lenient().when(campusRepository.findById(1)).thenReturn(Optional.of(barranquilla));
@@ -148,6 +152,25 @@ class UserAccountServiceTest {
             assertThat(created.firstName()).isEqualTo("Carlos");
             assertThat(created.lastName()).isEqualTo("Mendoza");
             assertThat(created.pendingSteps()).containsExactly(OnboardingStep.COMPLETE_PROFILE);
+        }
+
+        @Test
+        void whenThePlatformCanSendMailTheAccountMustVerifyItsEmailFirst() {
+            when(accountLinks.canSendLinks()).thenReturn(true);
+
+            UserResponse created = service.register(registration(EMAIL));
+
+            assertThat(created.pendingSteps())
+                    .containsExactly(OnboardingStep.VERIFY_EMAIL, OnboardingStep.COMPLETE_PROFILE);
+            verify(accountLinks).sendVerification(any(User.class));
+        }
+
+        @Test
+        void withoutAMailServerThereIsNothingToVerify() {
+            UserResponse created = service.register(registration(EMAIL));
+
+            assertThat(created.pendingSteps()).containsExactly(OnboardingStep.COMPLETE_PROFILE);
+            verify(accountLinks, never()).sendVerification(any());
         }
 
         @Test

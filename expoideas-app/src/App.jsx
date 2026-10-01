@@ -12,6 +12,9 @@ const HomePage = lazy(() => import('@/features/home/HomePage'));
 const LoginPage = lazy(() => import('@/features/auth/LoginPage'));
 const RegisterPage = lazy(() => import('@/features/auth/RegisterPage'));
 const OnboardingPage = lazy(() => import('@/features/auth/OnboardingPage'));
+const VerifyEmailPage = lazy(() => import('@/features/auth/VerifyEmailPage'));
+const RecoverPasswordPage = lazy(() => import('@/features/auth/RecoverPasswordPage'));
+const ResetPasswordPage = lazy(() => import('@/features/auth/ResetPasswordPage'));
 const MyProjectsPage = lazy(() => import('@/features/projects/MyProjectsPage'));
 const ProjectPage = lazy(() => import('@/features/projects/ProjectPage'));
 const ProjectsPage = lazy(() => import('@/features/projects/ProjectsPage'));
@@ -53,6 +56,17 @@ export default function App() {
                     />
                     {/* La página misma decide: sin sesión va al inicio de sesión y sin pendientes, al inicio. */}
                     <Route path={ROUTES.ONBOARDING} element={<OnboardingPage />} />
+                    {/* Adonde llevan los enlaces de los correos: valen con sesión o sin ella. */}
+                    <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmailPage />} />
+                    <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
+                    <Route
+                        path={ROUTES.RECOVER_PASSWORD}
+                        element={
+                            <GuestRoute>
+                                <RecoverPasswordPage />
+                            </GuestRoute>
+                        }
+                    />
 
                     <Route element={<AppShell />}>
                         {/* Públicas */}

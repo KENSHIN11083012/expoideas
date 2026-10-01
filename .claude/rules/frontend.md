@@ -17,6 +17,8 @@ Las URLs salen de `lib/routes.js` y las rutas se declaran en `App.jsx`, con carg
 | `/` | `home/HomePage` | Pública |
 | `/iniciar-sesion`, `/registro` | `auth/LoginPage`, `auth/RegisterPage` | Sin sesión (`GuestRoute`) |
 | `/primer-ingreso` | `auth/OnboardingPage` | Cuenta con pasos pendientes |
+| `/verificar-correo`, `/restablecer-contrasena` | `auth/VerifyEmailPage`, `auth/ResetPasswordPage` | Quien abre el enlace del correo, con sesión o sin ella. El token va en el fragmento (`#token=`) |
+| `/recuperar-contrasena` | `auth/RecoverPasswordPage` | Sin sesión (`GuestRoute`) |
 | `/mis-proyectos` | `projects/MyProjectsPage` | `STUDENT` |
 | `/proyectos` | `projects/ProjectsPage` | Gestión y `TEACHER` |
 | `/proyectos/:id` | `projects/ProjectPage` | Con sesión; quién lo ve lo decide la API |

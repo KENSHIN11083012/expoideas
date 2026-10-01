@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import co.edu.unisimon.expoideas.common.ExpoideasProperties;
 import co.edu.unisimon.expoideas.support.TestData;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -36,6 +37,34 @@ class MailServiceTest {
         assertThat(service.isConfigured()).isFalse();
         assertThatCode(() -> service.send("ana@unisimon.edu.co", "Hola", "Cuerpo"))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    void linksNeedAMailServerAndAPublicUrlThatActuallyOpens() {
+        JavaMailSender sender = mock(JavaMailSender.class);
+
+        assertThat(serviceWithAppUrl(sender, "https://idearium.unisimon.edu.co/expoideas")
+                        .canSendLinks())
+                .isTrue();
+        assertThat(serviceWithAppUrl(sender, "http://localhost:8080/expoideas").canSendLinks())
+                .isTrue();
+        // Sin URL, sin servidor, o con el valor de ejemplo del .env sin cambiar: no se pide verificar el correo.
+        assertThat(serviceWithAppUrl(sender, "").canSendLinks()).isFalse();
+        assertThat(serviceWithAppUrl(null, "https://idearium.unisimon.edu.co/expoideas")
+                        .canSendLinks())
+                .isFalse();
+        assertThat(serviceWithAppUrl(sender, "https://<dominio>.unisimon.edu.co/expoideas")
+                        .canSendLinks())
+                .isFalse();
+        assertThat(serviceWithAppUrl(sender, "idearium.unisimon.edu.co").canSendLinks())
+                .isFalse();
+    }
+
+    private static MailService serviceWithAppUrl(JavaMailSender sender, String appUrl) {
+        ExpoideasProperties base = TestData.properties(Path.of("x"));
+        return new MailService(
+                provider(sender),
+                new ExpoideasProperties(base.jwt(), base.cors(), base.files(), base.mail(), base.login(), appUrl));
     }
 
     @Test

@@ -5,15 +5,17 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ROUTES } from '@/lib/routes';
 import { useAffiliationCatalogs } from '@/features/catalogs/queries';
-import { useUpdateProfile } from '@/features/profile/queries';
+import { useProfile, useUpdateProfile } from '@/features/profile/queries';
 import { apiError } from '@/test/utils';
 import OnboardingPage from './OnboardingPage';
 import { accountApi } from './api';
 import { useAuth } from './useAuth';
 
 vi.mock('./useAuth', () => ({ useAuth: vi.fn() }));
-vi.mock('./api', () => ({ accountApi: { changePassword: vi.fn(), giveDataConsent: vi.fn() } }));
-vi.mock('@/features/profile/queries', () => ({ useUpdateProfile: vi.fn() }));
+vi.mock('./api', () => ({
+    accountApi: { changePassword: vi.fn(), giveDataConsent: vi.fn(), resendVerification: vi.fn() },
+}));
+vi.mock('@/features/profile/queries', () => ({ useUpdateProfile: vi.fn(), useProfile: vi.fn() }));
 vi.mock('@/features/catalogs/queries', () => ({ useAffiliationCatalogs: vi.fn() }));
 
 const TestSession = createContext(null);
@@ -58,17 +60,66 @@ async function changePassword(user, { current = 'Temporal#2026', next = 'Propia#
 }
 
 const updateProfile = { mutateAsync: vi.fn() };
+const profile = { refetch: vi.fn() };
 
 beforeEach(() => {
     updateProfile.mutateAsync.mockReset();
     renewToken.mockReset();
     useUpdateProfile.mockReturnValue(updateProfile);
+    profile.refetch.mockReset();
+    useProfile.mockReturnValue(profile);
     useAffiliationCatalogs.mockReturnValue({
         campuses: [{ id: 1, name: 'Barranquilla' }],
         faculties: [{ id: 2, name: 'Ingeniería' }],
         programs: [{ id: 5, name: 'Ingeniería de Sistemas', facultyId: 2 }],
         isPending: false,
         error: null,
+    });
+});
+
+describe('Verificación del correo en el primer ingreso', () => {
+    const student = { fullName: '', email: 'ana@unisimon.edu.co' };
+
+    it('es el primer paso y dice a qué correo se envió el enlace', () => {
+        renderOnboarding(['VERIFY_EMAIL', 'COMPLETE_PROFILE'], 'STUDENT', student);
+
+        expect(screen.getByText('Primer ingreso · Paso 1 de 2')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Verifica tu correo' })).toBeInTheDocument();
+        expect(screen.getByText('Te enviamos un enlace a ana@unisimon.edu.co')).toBeInTheDocument();
+    });
+
+    it('no avanza mientras la API siga viendo el correo sin verificar', async () => {
+        const user = userEvent.setup();
+        profile.refetch.mockResolvedValue({ data: { pendingSteps: ['VERIFY_EMAIL', 'COMPLETE_PROFILE'] } });
+        renderOnboarding(['VERIFY_EMAIL', 'COMPLETE_PROFILE'], 'STUDENT', student);
+
+        await user.click(screen.getByRole('button', { name: /Ya abrí el enlace/ }));
+
+        expect(await screen.findByText(/Todavía no vemos tu correo verificado/)).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Verifica tu correo' })).toBeInTheDocument();
+    });
+
+    it('al abrir el enlace, aunque sea en otro dispositivo, sigue con el paso siguiente', async () => {
+        const user = userEvent.setup();
+        profile.refetch.mockResolvedValue({ data: { pendingSteps: ['COMPLETE_PROFILE'] } });
+        renderOnboarding(['VERIFY_EMAIL', 'COMPLETE_PROFILE'], 'STUDENT', student);
+
+        await user.click(screen.getByRole('button', { name: /Ya abrí el enlace/ }));
+
+        expect(await screen.findByRole('heading', { name: 'Completa tu perfil' })).toBeInTheDocument();
+    });
+
+    it('pide otro enlace y muestra lo que responde la API si es muy pronto', async () => {
+        const user = userEvent.setup();
+        accountApi.resendVerification.mockResolvedValueOnce(null);
+        renderOnboarding(['VERIFY_EMAIL'], 'STUDENT', student);
+
+        await user.click(screen.getByRole('button', { name: 'Enviarme otro enlace' }));
+        expect(await screen.findByText(/Te enviamos un enlace nuevo/)).toBeInTheDocument();
+
+        accountApi.resendVerification.mockRejectedValueOnce(apiError('Acabamos de enviarte un enlace.', 409));
+        await user.click(screen.getByRole('button', { name: 'Enviarme otro enlace' }));
+        expect(await screen.findByText('Acabamos de enviarte un enlace.')).toBeInTheDocument();
     });
 });
 

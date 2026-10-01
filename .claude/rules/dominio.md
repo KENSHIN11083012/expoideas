@@ -44,8 +44,12 @@ declaran sede y facultad.
 - El equipo ve su nota y las observaciones, sin nombres, solo cuando la gestión publica las notas de
   la cátedra en «Ediciones». Publicar no congela nada.
 - El listado de la cátedra solo actúa al registrarse; a una cuenta que ya existe no le cambia nada.
-  Quien figura ahí como profesor nace estudiante con ese rol por confirmar (`User.pendingRole`), y la
-  gestión lo confirma o lo descarta en «Usuarios»: el registro aún no verifica el correo.
+  Quien figura ahí como profesor nace estudiante con ese rol por confirmar (`User.pendingRole`): lo
+  recibe al verificar su correo o, si la plataforma no envía correos, cuando la gestión lo confirma
+  en «Usuarios».
+- Con servidor de correo y `APP_URL`, quien se registra debe abrir el enlace que le llega antes de
+  usar la cuenta (paso `VERIFY_EMAIL`), y «Olvidé mi contraseña» envía otro enlace. Los enlaces son
+  de un solo uso y en la base solo queda su hash (`account_tokens`).
 - Cambiar o restablecer la contraseña cierra las sesiones abiertas de la cuenta. Una cuenta
   suspendida no entra, pero conserva todo lo suyo. Cinco contraseñas equivocadas seguidas bloquean
   la cuenta cinco minutos.

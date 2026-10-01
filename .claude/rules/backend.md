@@ -10,9 +10,9 @@ están en AGENTS.md; esto es solo el mapa para ubicarse.
 
 | Paquete | Controladores y rutas | Tablas | Contratos con otros módulos |
 |---|---|---|---|
-| `auth` | `AuthController`: `/auth/login`, `/auth/register` (públicas) | — | — |
+| `auth` | `AuthController`: `/auth/login`, `/auth/register`, `/auth/email-verification` (+ `/resend`), `/auth/password-recovery`, `/auth/password-reset` (públicas) | — | — |
 | `security` | — | — | `JwtAuthenticationFilter`, `OnboardingFilter` (403 con los pasos de primer ingreso pendientes), `SecurityConfig` |
-| `users` | `UserController` `/users/me` · `UserAdminController` `/admin/users` · `TeacherController` `/teachers` · `RosterController` `/admin/roster` | `users`, `roster_entries` | Define `AccountDeletionRule`. Publica `AccountCreatedEvent` |
+| `users` | `UserController` `/users/me` · `UserAdminController` `/admin/users` · `TeacherController` `/teachers` · `RosterController` `/admin/roster` | `users`, `roster_entries`, `account_tokens` | Define `AccountDeletionRule`. Publica `AccountCreatedEvent` |
 | `catalogs` | `CatalogController`: `/campuses`, `/faculties`, `/academic-programs`, `/sectors`, `/keywords`, `/prototype-types` | las seis homónimas | — |
 | `editions` | `EditionController` `/editions`, y `/editions/{id}/tracks/{track}/grades-publication` | `editions`, `edition_tracks` | Dueño de `Track` |
 | `projects` | `ProjectController` `/projects/mine`, `/projects/{id}` (+ `/result`, `/invitations`, `/members/{userId}`) · `InvitationController` `/invitations` · `TrackApprovalController` `/admin/track-approvals` | `projects`, `project_members`, `track_approvals` | Define `ProjectVisibilityRule`. Implementa `AccountDeletionRule`. Publica `ProjectDeletedEvent` y `TeamInvitationEvent`. Permisos en `ProjectPolicy` |

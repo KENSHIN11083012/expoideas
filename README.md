@@ -25,13 +25,17 @@ dominio.
 **Cuentas y catálogos**
 
 - Autenticación: registro con solo el correo institucional y una contraseña, inicio de sesión y
-  primer ingreso, donde cada cuenta resuelve sus pasos pendientes (cambiar la contraseña temporal,
-  aceptar el tratamiento de datos, completar el perfil).
+  primer ingreso, donde cada cuenta resuelve sus pasos pendientes (verificar el correo, cambiar la
+  contraseña temporal, aceptar el tratamiento de datos, completar el perfil).
+- Enlaces por correo: quien se registra verifica que el correo es suyo abriendo un enlace, y quien
+  olvidó la contraseña pone una nueva con otro. Los dos dependen del servidor de correo y de
+  `APP_URL`; sin ellos no se pide verificación y la contraseña la restablece la gestión.
 - Perfil propio: foto, datos personales, seguridad (cambio de contraseña) y consentimiento de datos.
   Cambiar la contraseña cierra las demás sesiones abiertas de esa cuenta.
 - Gestión de usuarios: ADMIN y MacondoLab crean, editan, restablecen contraseña, suspenden y eliminan
   cuentas, y cargan el [listado de la cátedra](docs/listado.md) para que cada persona se registre
-  con su rol; el de profesor queda por confirmar hasta que la gestión lo acepta. Una cuenta
+  con su rol; el de profesor se recibe al verificar el correo o, sin servidor de correo, cuando la
+  gestión lo confirma. Una cuenta
   suspendida no entra, pero conserva sus proyectos, entregas y evaluaciones.
 - Catálogos: sedes, facultades, programas académicos, sectores, keywords y tipos de prototipo.
 - Archivos: subida y descarga, hasta 5 MB, validados por contenido (JPG, PNG, WEBP y PDF; las
@@ -163,7 +167,7 @@ docker run --rm alpine sh -c "head -c 32 /dev/urandom | base64"
 | `DB_PASSWORD` | Sí | Contraseña del usuario `expoideas`, con el que se conecta la API. Distinta de la anterior |
 | `JWT_SECRET` | Sí | Clave con la que se firman las sesiones. Tiene que ser Base64 de 32 bytes o más: una frase escrita a mano no sirve |
 | `HTTP_PORT` | No | Puerto del equipo donde se publica la plataforma. Por defecto, 8080 |
-| `APP_URL` | Solo con correo | URL pública de la app, para los enlaces de los correos. El valor de ejemplo no sirve tal cual: pon la URL real o déjalo vacío |
+| `APP_URL` | Solo con correo | URL pública de la app (`https://<dominio>/expoideas`), para los enlaces de los correos. Con ella y con `MAIL_HOST`, el registro pide verificar el correo y funciona «Olvidé mi contraseña»; vacía, ninguna de las dos cosas |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM` | No | Servidor SMTP para los avisos. Sin `MAIL_HOST` la plataforma funciona, pero no envía correos |
 | `MAIL_AUTH`, `MAIL_STARTTLS` | No | `false` si el SMTP no pide autenticación o STARTTLS |
 | `JWT_EXPIRATION` | No | Duración de la sesión (`4h`, `30m`…). Por defecto, 4 horas |
@@ -277,7 +281,10 @@ detalle para TI está en [docs/despliegue.md](docs/despliegue.md), y lo impresci
 
 - **Correo.** Rellena las variables `MAIL_*` con el SMTP de TI y pon en `APP_URL` la URL pública
   (`https://<dominio>/expoideas`), que es la que llevan los enlaces de los correos. Después,
-  `docker compose up -d` aplica el cambio.
+  `docker compose up -d` aplica el cambio. Desde ese momento quien se registra tiene que abrir el
+  enlace que le llega para usar su cuenta, así que conviene probarlo con una cuenta propia antes de
+  anunciarlo: si los correos no llegan, nadie nuevo puede entrar. Las cuentas que ya existían no
+  tienen que verificar nada.
 - **Sin Docker.** Si TI no lo permite, [docs/despliegue.md](docs/despliegue.md) explica cómo
   instalar MySQL, la API y la app por separado, con la tabla completa de variables de entorno y la
   lista de verificación de seguridad.
@@ -461,7 +468,8 @@ Con Docker (camino A), lo primero es siempre mirar qué dice el servicio: `docke
 | Después de actualizar se sigue viendo la versión anterior | Se levantó sin reconstruir | `docker compose up -d --build` |
 | La portada carga en el servidor pero no desde otro equipo | El cortafuegos no deja entrar al puerto | Abrir el `HTTP_PORT` en el cortafuegos del servidor |
 | Detrás del proxy de TI, subir un archivo falla con 413 | El proxy corta los cuerpos grandes antes de la app | Subir su límite a 10 MB (`client_max_body_size 10m` en Nginx) |
-| Los enlaces de los correos no abren | `APP_URL` quedó con el valor de ejemplo | Poner la URL pública real y `docker compose up -d` |
+| Los enlaces de los correos no abren | `APP_URL` no es la dirección con la que se entra a la plataforma | Poner la URL pública real y `docker compose up -d` |
+| Las cuentas nuevas no reciben el enlace de verificación | El SMTP rechaza o demora los envíos | Mirar `docker compose logs api`. Mientras se arregla, vaciar `APP_URL` y `docker compose up -d` deja de pedir la verificación a quien se registre |
 | La API no arranca: `Port 8080 was already in use` | Otro programa ocupa el 8080 (camino B) | Poner `server.port=8081` en `config/application-local.properties`, y `VITE_API_URL=http://localhost:8081/api/v1` en `expoideas-app/.env` |
 | `Validate failed: Migration checksum mismatch` | Se editó una migración ya aplicada | Nunca se edita una migración aplicada: se añade otra. Para empezar de cero en local, borrar la base y dejar que Flyway la recree |
 | Las pruebas `*IT` fallan con `Could not find a valid Docker environment` | Docker Desktop está apagado | Encenderlo y repetir. `./mvnw test` no lo necesita |

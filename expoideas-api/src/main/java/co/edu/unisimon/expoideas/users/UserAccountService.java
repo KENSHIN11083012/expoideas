@@ -42,8 +42,9 @@ public class UserAccountService {
      * Registro público: la cuenta nace como estudiante, con la autorización de
      * datos que exige el formulario y sin nombre ni adscripción, que quedan como
      * paso pendiente ({@link OnboardingStep#COMPLETE_PROFILE}) del primer ingreso.
-     * Si el correo está en el listado de la cátedra, nace con el rol (y el
-     * nombre, si venía) que dice el listado.
+     * Si el correo está en el listado de la cátedra, nace con el nombre que traiga
+     * el listado; si ahí figura con otro rol, ese rol queda pendiente de que la
+     * gestión lo confirme.
      *
      * @throws ConflictException si el correo ya está en uso
      */
@@ -58,7 +59,11 @@ public class UserAccountService {
                 .passwordHash(passwords.hash(request.password()))
                 .role(Role.STUDENT);
         rosterRepository.findByEmail(email.toLowerCase(Locale.ROOT)).ifPresent(entry -> {
-            user.role(entry.getRole());
+            // Nadie ha comprobado que quien se registra sea el dueño del correo: un rol con más
+            // alcance que el de estudiante espera a que la gestión lo confirme.
+            if (entry.getRole() != Role.STUDENT) {
+                user.pendingRole(entry.getRole());
+            }
             if (entry.hasName()) {
                 user.firstName(entry.getFirstName()).lastName(entry.getLastName());
             }

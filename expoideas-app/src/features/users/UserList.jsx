@@ -3,12 +3,13 @@ import { fullName } from '@/lib/text';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { AffiliationSummary, OnboardingBadge, RoleSelector, SuspendedBadge, UserActions } from './UserDetails';
+import { AffiliationSummary, OnboardingBadge, PendingRoleBadge, RoleSelector, SuspendedBadge, UserActions } from './UserDetails';
 
 /**
  * Cuentas en tabla (escritorio) y en tarjetas (celular).
  *
- * @param {object} props.handlers { onRoleChange, onEditAffiliation, onResetPassword, onSetSuspended, onDelete }
+ * @param {object} props.handlers { onRoleChange, onEditAffiliation, onResetPassword, onSetSuspended,
+ *                                  onResolvePendingRole, onDelete }
  * @param {(user) => boolean} props.isOwn   si es la cuenta de la sesión
  * @param {(user) => boolean} props.isBusy  si su rol se está guardando
  */
@@ -57,6 +58,7 @@ export function UserList({ users, actor, isOwn, isBusy, handlers }) {
                                                 )}
                                                 <OnboardingBadge user={user} className="ml-2" />
                                                 <SuspendedBadge user={user} className="ml-2" />
+                                                <PendingRoleBadge user={user} className="ml-2" />
                                             </p>
                                             <p className="truncate text-on-surface-variant">{user.email}</p>
                                         </div>
@@ -84,6 +86,7 @@ export function UserList({ users, actor, isOwn, isBusy, handlers }) {
                                     <p className="font-semibold">{fullName(user.firstName, user.lastName)}</p>
                                     <OnboardingBadge user={user} className="mt-1" />
                                     <SuspendedBadge user={user} className="mt-1" />
+                                    <PendingRoleBadge user={user} className="mt-1" />
                                     <p className="truncate text-sm text-on-surface-variant">{user.email}</p>
                                     <div className="mt-1 text-sm text-on-surface-variant">
                                         <AffiliationSummary user={user} />

@@ -100,7 +100,8 @@ public class UserManagementService {
     }
 
     /**
-     * Cambia rol y adscripción.
+     * Cambia rol y adscripción. Enviar un rol, aunque sea el que la cuenta ya
+     * tiene, resuelve el que el listado de la cátedra hubiera dejado pendiente.
      *
      * @throws ForbiddenActionException si el actor no puede gestionar la cuenta o el rol pedido, o cambia su propio rol
      * @throws IllegalArgumentException si llega adscripción para un rol que no la lleva
@@ -121,6 +122,10 @@ public class UserManagementService {
                         "Solo un administrador puede asignar los roles Administrador o MacondoLab.");
             }
             user.setRole(request.role());
+        }
+        if (request.role() != null) {
+            // La gestión ya decidió el rol de esta cuenta, sea el del listado u otro: no queda nada por confirmar.
+            user.setPendingRole(null);
         }
 
         boolean hasAffiliation =

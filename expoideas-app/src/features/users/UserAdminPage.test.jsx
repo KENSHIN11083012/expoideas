@@ -163,6 +163,43 @@ describe('Suspender una cuenta', () => {
     });
 });
 
+describe('Rol del listado por confirmar', () => {
+    const pending = { ...ana, pendingRole: 'TEACHER' };
+
+    it('la lista dice qué rol pide y la gestión se lo da', async () => {
+        const user = userEvent.setup();
+        const table = renderAs(marta, 'MACONDOLAB', [pending, luis]);
+
+        expect(within(row(table, ana.email)).getByText('Pide rol: Profesor')).toBeInTheDocument();
+        expect(within(row(table, luis.email)).queryByText(/Pide rol/)).not.toBeInTheDocument();
+
+        await user.click(within(row(table, ana.email)).getByRole('button', { name: /^Acciones para/ }));
+        await user.click(await screen.findByRole('menuitem', { name: /Dar el rol de Profesor/ }));
+
+        expect(updateUser.mutate).toHaveBeenCalledWith({ id: ana.id, changes: { role: 'TEACHER' } }, expect.anything());
+    });
+
+    it('descartarlo deja la cuenta con el rol que tiene', async () => {
+        const user = userEvent.setup();
+        const table = renderAs(marta, 'MACONDOLAB', [pending]);
+
+        await user.click(within(row(table, ana.email)).getByRole('button', { name: /^Acciones para/ }));
+        await user.click(await screen.findByRole('menuitem', { name: /Descartar el rol del listado/ }));
+
+        expect(updateUser.mutate).toHaveBeenCalledWith({ id: ana.id, changes: { role: 'STUDENT' } }, expect.anything());
+    });
+
+    it('sin rol pendiente no aparecen esas opciones', async () => {
+        const user = userEvent.setup();
+        const table = renderAs(marta, 'MACONDOLAB', [ana]);
+
+        await user.click(within(row(table, ana.email)).getByRole('button', { name: /^Acciones para/ }));
+
+        expect(await screen.findByRole('menuitem', { name: /Restablecer contraseña/ })).toBeInTheDocument();
+        expect(screen.queryByRole('menuitem', { name: /rol del listado/ })).not.toBeInTheDocument();
+    });
+});
+
 describe('Primer ingreso en la lista', () => {
     it('marca las cuentas que aún no completan su primer ingreso', () => {
         const table = renderAs(carla, 'MACONDOLAB', [ana, marta]);

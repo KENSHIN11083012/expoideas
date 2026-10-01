@@ -98,6 +98,14 @@ public class User {
     @Column(nullable = false, length = 30)
     private Role role = Role.STUDENT;
 
+    /**
+     * El rol que el listado de la cátedra le asigna y que la gestión aún no ha
+     * confirmado. Nulo si no hay nada por confirmar.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private Role pendingRole;
+
     /** En false la cuenta está suspendida: ni inicia sesión ni usa la que tuviera abierta. */
     @Builder.Default
     @Column(nullable = false)

@@ -44,6 +44,11 @@ declaran sede y facultad.
 - El equipo ve su nota y las observaciones, sin nombres, solo cuando la gestión publica las notas de
   la cátedra en «Ediciones». Publicar no congela nada.
 - El listado de la cátedra solo actúa al registrarse; a una cuenta que ya existe no le cambia nada.
+  Quien figura ahí como profesor nace estudiante con ese rol por confirmar (`User.pendingRole`), y la
+  gestión lo confirma o lo descarta en «Usuarios»: el registro aún no verifica el correo.
+- Cambiar o restablecer la contraseña cierra las sesiones abiertas de la cuenta. Una cuenta
+  suspendida no entra, pero conserva todo lo suyo. Cinco contraseñas equivocadas seguidas bloquean
+  la cuenta cinco minutos.
 
 Detalle: [docs/rubricas.md](../../docs/rubricas.md), [docs/listado.md](../../docs/listado.md).
 

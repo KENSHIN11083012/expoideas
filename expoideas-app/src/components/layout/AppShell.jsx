@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Spinner } from '@/components/ui/feedback';
 import { SiteHeader } from './SiteHeader';
 import { SiteFooter } from './SiteFooter';
+import { PendingRoleNotice } from './PendingRoleNotice';
 
 /** Al cambiar de página, vuelve arriba (el router no lo hace solo). */
 function ScrollToTop() {
@@ -28,6 +29,7 @@ export function AppShell() {
             </a>
             <ScrollToTop />
             <SiteHeader />
+            <PendingRoleNotice />
             <main id="main-content" className="flex-1">
                 <Suspense fallback={<Spinner className="min-h-[50vh]" />}>
                     <Outlet />

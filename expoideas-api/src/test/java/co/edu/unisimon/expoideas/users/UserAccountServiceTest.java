@@ -133,7 +133,7 @@ class UserAccountServiceTest {
         }
 
         @Test
-        void whoeverIsOnTheRosterGetsItsRoleAndName() {
+        void whoeverIsOnTheRosterAsATeacherStartsAsAStudentWithTheRolePending() {
             RosterEntry entry = RosterEntry.of(EMAIL);
             entry.setRole(Role.TEACHER);
             entry.setFirstName("Carlos");
@@ -142,10 +142,24 @@ class UserAccountServiceTest {
 
             UserResponse created = service.register(registration("Ana@unisimon.edu.co"));
 
-            assertThat(created.role()).isEqualTo(Role.TEACHER);
+            // Nadie comprobó que el correo sea suyo: el rol de profesor lo confirma la gestión.
+            assertThat(created.role()).isEqualTo(Role.STUDENT);
+            assertThat(created.pendingRole()).isEqualTo(Role.TEACHER);
             assertThat(created.firstName()).isEqualTo("Carlos");
             assertThat(created.lastName()).isEqualTo("Mendoza");
             assertThat(created.pendingSteps()).containsExactly(OnboardingStep.COMPLETE_PROFILE);
+        }
+
+        @Test
+        void whoeverIsOnTheRosterAsAStudentHasNothingPending() {
+            RosterEntry entry = RosterEntry.of(EMAIL);
+            entry.setRole(Role.STUDENT);
+            when(rosterRepository.findByEmail(EMAIL)).thenReturn(Optional.of(entry));
+
+            UserResponse created = service.register(registration(EMAIL));
+
+            assertThat(created.role()).isEqualTo(Role.STUDENT);
+            assertThat(created.pendingRole()).isNull();
         }
 
         @Test

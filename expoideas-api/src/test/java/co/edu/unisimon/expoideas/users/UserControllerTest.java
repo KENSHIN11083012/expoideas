@@ -243,6 +243,7 @@ class UserControllerTest {
                 null,
                 null,
                 List.of(),
-                false);
+                false,
+                null);
     }
 }

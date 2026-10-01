@@ -31,7 +31,8 @@ dominio.
   Cambiar la contraseña cierra las demás sesiones abiertas de esa cuenta.
 - Gestión de usuarios: ADMIN y MacondoLab crean, editan, restablecen contraseña, suspenden y eliminan
   cuentas, y cargan el [listado de la cátedra](docs/listado.md) para que cada persona se registre
-  con su rol. Una cuenta suspendida no entra, pero conserva sus proyectos, entregas y evaluaciones.
+  con su rol; el de profesor queda por confirmar hasta que la gestión lo acepta. Una cuenta
+  suspendida no entra, pero conserva sus proyectos, entregas y evaluaciones.
 - Catálogos: sedes, facultades, programas académicos, sectores, keywords y tipos de prototipo.
 - Archivos: subida y descarga, hasta 5 MB, validados por contenido (JPG, PNG, WEBP y PDF; las
   plantillas también en DOCX y PPTX).

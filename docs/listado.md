@@ -4,8 +4,15 @@
 > llega; mientras tanto todos se registran como estudiantes y el administrador asigna los roles a mano.
 
 Lo que MacondoLab carga en «Usuarios → Listado de la cátedra» para que cada persona se registre con
-su rol (reunión de septiembre de 2026, punto 10). Quien está en el listado nace como estudiante o
-profesor según diga; quien no está, como estudiante, y el administrador le cambia el rol a mano.
+su rol (reunión de septiembre de 2026, punto 10). Quien no está en el listado nace como estudiante,
+y el administrador le cambia el rol a mano.
+
+Quien figura como **profesor** también nace como estudiante, con el rol de profesor **por
+confirmar**: en «Usuarios» aparece el aviso «Pide rol: Profesor» y la gestión se lo da o lo descarta
+desde el menú de la cuenta. El motivo es que el registro todavía no comprueba que quien se registra
+sea el dueño del correo; sin ese paso, cualquiera que conociera el correo de un profesor podría
+registrarlo y quedar con su rol. Cuando el registro verifique el correo con un enlace (pendiente
+del servidor de correo de TI), el rol se dará solo al verificarlo.
 
 ## El archivo
 
@@ -38,4 +45,7 @@ mayúsculas en el correo (se guarda en minúsculas).
   rechazan y se muestran con su línea; el resto entra igual.
 - El listado solo actúa **al registrarse**. Si el correo ya tiene cuenta, no se le cambia nada: eso
   sigue siendo cosa del administrador en «Usuarios».
+- Mientras su rol está por confirmar, la persona ve un aviso que se lo explica y usa la plataforma
+  como estudiante. Al confirmarlo la gestión, el cambio le aparece sin volver a entrar.
+- Cambiarle el rol desde el selector de «Usuarios», al que sea, también deja resuelto el pendiente.
 - Solo estudiantes y profesores. Los jurados externos entran por invitación de la gestión.

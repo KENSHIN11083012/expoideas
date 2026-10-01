@@ -71,6 +71,25 @@ export default function UserAdminPage() {
             },
         );
 
+    /**
+     * Resuelve el rol que el listado de la cátedra dejó pendiente: dárselo, o dejar
+     * la cuenta con el que tiene. En los dos casos se envía un rol, que es lo que
+     * le dice a la API que la gestión ya decidió.
+     */
+    const resolvePendingRole = (user, role) =>
+        updateUser.mutate(
+            { id: user.id, changes: { role } },
+            {
+                onSuccess: () =>
+                    toast.success(
+                        role === user.role
+                            ? `${user.firstName} sigue como ${ROLE_LABELS[role]}`
+                            : `${user.firstName} ya es ${ROLE_LABELS[role]}`,
+                    ),
+                onError: (resolveError) => toast.error(resolveError.message),
+            },
+        );
+
     // Otorgar un rol de gestión se confirma; los demás cambios se aplican directo.
     const onRoleChange = (user, role) => (isManagement(role) ? setRoleGrant({ user, role }) : changeRole(user, role));
 
@@ -194,6 +213,7 @@ export default function UserAdminPage() {
                                 onTrackApprovals: (user) => setDialog({ type: 'approvals', user }),
                                 onResetPassword: (user) => setDialog({ type: 'password', user }),
                                 onSetSuspended,
+                                onResolvePendingRole: resolvePendingRole,
                                 onDelete: setToDelete,
                             }}
                         />

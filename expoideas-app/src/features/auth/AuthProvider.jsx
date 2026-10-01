@@ -138,6 +138,8 @@ export const AuthProvider = ({ children }) => {
             roleReady: !decoded || me !== undefined || profileFailed,
             /** Pasos de primer ingreso sin completar; mientras haya, las rutas protegidas llevan al primer ingreso. */
             pendingSteps: decoded ? pendingSteps : [],
+            /** El rol del listado de la cátedra que la gestión aún no confirma, o null. */
+            pendingRole: decoded ? asRole(me?.pendingRole) : null,
             isAdmin: role === ROLES.ADMIN,
             /** MacondoLab o administrador: acceso a Usuarios y Catálogos. */
             isManagement: isManagement(role),

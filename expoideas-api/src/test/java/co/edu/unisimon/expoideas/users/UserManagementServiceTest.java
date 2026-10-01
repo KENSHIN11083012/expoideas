@@ -155,6 +155,35 @@ class UserManagementServiceTest {
         }
 
         @Test
+        void givingTheRoleFromTheRosterLeavesNothingPending() {
+            student.setPendingRole(Role.TEACHER);
+
+            UserResponse confirmed = service.update(MACONDOLAB_EMAIL, 3, withRole(Role.TEACHER));
+
+            assertThat(confirmed.role()).isEqualTo(Role.TEACHER);
+            assertThat(confirmed.pendingRole()).isNull();
+        }
+
+        @Test
+        void sendingTheCurrentRoleDiscardsTheOneFromTheRoster() {
+            student.setPendingRole(Role.TEACHER);
+
+            UserResponse kept = service.update(MACONDOLAB_EMAIL, 3, withRole(Role.STUDENT));
+
+            assertThat(kept.role()).isEqualTo(Role.STUDENT);
+            assertThat(kept.pendingRole()).isNull();
+        }
+
+        @Test
+        void changingOnlyTheAffiliationKeepsTheRoleFromTheRosterPending() {
+            student.setPendingRole(Role.TEACHER);
+
+            assertThat(service.update(MACONDOLAB_EMAIL, 3, new UserUpdateRequest(null, null, null, 100))
+                            .pendingRole())
+                    .isEqualTo(Role.TEACHER);
+        }
+
+        @Test
         void sendingTheSameRoleIsNotAChange() {
             assertThat(service.update(ADMIN_EMAIL, 1, withRole(Role.ADMIN)).role())
                     .isEqualTo(Role.ADMIN);

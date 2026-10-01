@@ -1,4 +1,4 @@
-import { Award, Ban, Ellipsis, GraduationCap, KeyRound, Trash2, UserCheck } from 'lucide-react';
+import { Award, Ban, BadgeCheck, Ellipsis, GraduationCap, KeyRound, Trash2, UserCheck, X } from 'lucide-react';
 import { ROLES, ROLE_LABELS, assignableRoles, canManage, isManagement, requiresAffiliation, roleLabel } from '@/lib/roles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -52,6 +52,16 @@ export function OnboardingBadge({ user, className }) {
     );
 }
 
+/** Figura en el listado de la cátedra con un rol que la gestión aún no confirma. */
+export function PendingRoleBadge({ user, className }) {
+    if (!user.pendingRole) return null;
+    return (
+        <Badge variant="lime" mono className={className} title="Así figura en el listado de la cátedra">
+            Pide rol: {roleLabel(user.pendingRole)}
+        </Badge>
+    );
+}
+
 /** La gestión le cortó el acceso: no inicia sesión hasta que la reactiven. */
 export function SuspendedBadge({ user, className }) {
     if (!user.suspended) return null;
@@ -86,6 +96,7 @@ export function UserActions({
     onTrackApprovals,
     onResetPassword,
     onSetSuspended,
+    onResolvePendingRole,
     onDelete,
 }) {
     if (!canManage(actor, user.role)) return null;
@@ -98,6 +109,17 @@ export function UserActions({
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+                {user.pendingRole && canManage(actor, user.pendingRole) && (
+                    <>
+                        <DropdownMenuItem onSelect={() => onResolvePendingRole(user, user.pendingRole)}>
+                            <BadgeCheck /> Dar el rol de {roleLabel(user.pendingRole)}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => onResolvePendingRole(user, user.role)}>
+                            <X /> Descartar el rol del listado
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                    </>
+                )}
                 {requiresAffiliation(user.role) && (
                     <DropdownMenuItem onSelect={() => onEditAffiliation(user)}>
                         <GraduationCap /> Editar adscripción

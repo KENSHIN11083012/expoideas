@@ -2,6 +2,8 @@ package co.edu.unisimon.expoideas.projects;
 
 import co.edu.unisimon.expoideas.catalogs.CatalogLookup;
 import co.edu.unisimon.expoideas.catalogs.PrototypeType;
+import co.edu.unisimon.expoideas.common.AuditableAction;
+import co.edu.unisimon.expoideas.common.AuditableAction.Action;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
 import co.edu.unisimon.expoideas.editions.Edition;
 import co.edu.unisimon.expoideas.editions.EditionRepository;
@@ -144,6 +146,12 @@ public class ProjectService {
         policy.requireLeader(project, actor);
         policy.requireRegistrationOpen(project.getEdition());
 
+        events.publishEvent(new AuditableAction(
+                Action.PROJECT_DELETED,
+                project.getId(),
+                project.getTitle(),
+                project.getEdition().getName() + " · " + project.getTrack().label() + " · integrantes: "
+                        + project.getMembers().size()));
         // Los módulos que cuelgan del proyecto se llevan lo suyo antes del borrado.
         events.publishEvent(new ProjectDeletedEvent(project.getId()));
         projectRepository.delete(project);

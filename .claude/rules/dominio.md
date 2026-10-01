@@ -53,6 +53,9 @@ declaran sede y facultad.
 - Cambiar o restablecer la contraseña cierra las sesiones abiertas de la cuenta. Una cuenta
   suspendida no entra, pero conserva todo lo suyo. Cinco contraseñas equivocadas seguidas bloquean
   la cuenta cinco minutos.
+- Queda rastro (`audit_events`) de quién cambió un rol, restableció una contraseña, suspendió o
+  eliminó una cuenta, publicó u ocultó notas, corrigió una evaluación (con la nota anterior y la
+  nueva), quitó a un jurado o eliminó un proyecto o un entregable. Solo lo lee un administrador.
 
 Detalle: [docs/rubricas.md](../../docs/rubricas.md), [docs/listado.md](../../docs/listado.md).
 

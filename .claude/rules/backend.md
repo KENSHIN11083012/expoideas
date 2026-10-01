@@ -23,14 +23,15 @@ están en AGENTS.md; esto es solo el mapa para ubicarse.
 | `notifications` | — | — | `NotificationListener` envía los correos tras el commit (`AFTER_COMMIT`). Aquí viven los `record` de los eventos de correo |
 | `reports` | `ProjectDirectoryController`: `GET /projects`, `GET /projects/export` (CSV) | — | Solo lectura sobre lo de los demás |
 | `files` | `FileController` `/files/{id}` | `files` | Define `PrivateFileAccessRule`; no sabe qué es un proyecto |
-| `common` | — | — | Excepciones, `GlobalExceptionHandler`, `ExpoideasProperties`, `TimeConfig` (el `Clock`), `ValidationPatterns` |
+| `audit` | `AuditController`: `GET /admin/audit` (solo `ADMIN`; filtros `action`, `from`, `to`; paginada) | `audit_events` | `AuditListener` guarda cada `AuditableAction` en la misma transacción que la acción |
+| `common` | — | — | Excepciones, `GlobalExceptionHandler`, `ExpoideasProperties`, `TimeConfig` (el `Clock`), `ValidationPatterns`, `AuditableAction` (el evento del rastro) |
 
 ## Quién puede qué
 
 Se decide en dos sitios, y hay que mirar los dos antes de añadir una ruta:
 
-- **Por ruta y método**, en `SecurityConfig`: `/admin/**` es de la gestión (borrar cuentas, solo
-  `ADMIN`); sedes, facultades y programas los escribe `ADMIN`; sectores, keywords y tipos de
+- **Por ruta y método**, en `SecurityConfig`: `/admin/**` es de la gestión (borrar cuentas y leer
+  el rastro de auditoría, solo `ADMIN`); sedes, facultades y programas los escribe `ADMIN`; sectores, keywords y tipos de
   prototipo, la gestión; también ediciones, tipos de entregable, jurados, agenda y recordatorios.
   Una ruta nueva que no se declare ahí queda solo como «con sesión».
 - **Por dato**, en el servicio: quién ve un proyecto (`ProjectPolicy` más las `ProjectVisibilityRule`),
@@ -59,6 +60,21 @@ se usa la que aplique:
 - **`ProjectPolicy.lock(projectId)` como primera lectura de la transacción**, cuando hay que contar.
   Tiene que ir antes que cualquier otra consulta: MySQL fija lo que la transacción ve en su primera
   lectura normal.
+
+## El rastro de auditoría
+
+Lo que después hay que poder explicar (cambio de rol, contraseña restablecida, cuenta suspendida o
+eliminada, notas publicadas u ocultadas, evaluación corregida, jurado quitado, proyecto o
+entregable eliminado) se publica como `AuditableAction` desde el servicio donde ocurre:
+
+```java
+events.publishEvent(new AuditableAction(Action.JUROR_REMOVED, projectId, project.getTitle(), "Jurado: …"));
+```
+
+- Se publica **dentro de la transacción** de la acción (el listener exige una abierta) y antes de
+  borrar aquello de lo que se habla. Quién actuó lo pone el listener: es la cuenta de la sesión.
+- `targetLabel` y `detail` son texto para leer cuando la cuenta o el proyecto ya no existan.
+- Una acción nueva se añade a `AuditableAction.Action`; no hace falta migración.
 
 ## Al añadir una tabla
 

@@ -10,8 +10,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import co.edu.unisimon.expoideas.common.AuditableAction;
+import co.edu.unisimon.expoideas.common.AuditableAction.Action;
 import co.edu.unisimon.expoideas.common.ForbiddenActionException;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
+import co.edu.unisimon.expoideas.editions.EditionTrack;
 import co.edu.unisimon.expoideas.editions.Track;
 import co.edu.unisimon.expoideas.evaluations.EvaluationRequest.ScoreRequest;
 import co.edu.unisimon.expoideas.notifications.EvaluationReminderEvent;
@@ -33,6 +36,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /** Quién califica, qué se le exige a una evaluación y cómo sale la nota. */
 @ExtendWith(MockitoExtension.class)
@@ -183,6 +187,45 @@ class EvaluationServiceTest {
         assertThat(existing.getScores()).hasSize(2);
         assertThat(corrected.absent()).isFalse();
         assertThat(corrected.grade()).isEqualByComparingTo("4.5");
+    }
+
+    @Test
+    void correctingASavedEvaluationLeavesATraceWithTheGradeItHad() {
+        Evaluation existing = Evaluation.of(project, marta);
+        ReflectionTestUtils.setField(existing, "id", 40);
+        existing.score(rubric.getCriteria().get(0), level(rubric, 13), null, NOW);
+        existing.score(rubric.getCriteria().get(1), level(rubric, 23), null, NOW);
+        when(evaluationRepository.findByProjectIdAndJurorId(PROJECT, 8)).thenReturn(Optional.of(existing));
+        EditionTrack settings = mock(EditionTrack.class);
+        when(project.trackSettings()).thenReturn(settings);
+        when(project.getTitle()).thenReturn("BioSensor");
+
+        // De (4.0 + 5.0) / 2 = 4.5 a (3.0 + 4.5) / 2 = 3.75, que sube a 3.8.
+        service.save(PROJECT, marta.getEmail(), scores(score(1, 12), score(2, 22)));
+
+        verify(events)
+                .publishEvent(new AuditableAction(
+                        Action.EVALUATION_EDITED, 40, "BioSensor", "Jurado: Nombre Apellido · Nota: 4.5 → 3.8"));
+
+        // Si el equipo ya está viendo las notas, la corrección lo dice.
+        when(settings.isGradesPublished()).thenReturn(true);
+        service.save(PROJECT, marta.getEmail(), new EvaluationRequest(true, null));
+
+        verify(events)
+                .publishEvent(new AuditableAction(
+                        Action.EVALUATION_EDITED,
+                        40,
+                        "BioSensor",
+                        "Jurado: Nombre Apellido · Nota: 3.8 → no asistió (0.0) · con las notas ya publicadas"));
+    }
+
+    @Test
+    void evaluatingForTheFirstTimeLeavesNoTrace() {
+        when(evaluationRepository.findByProjectIdAndJurorId(PROJECT, 8)).thenReturn(Optional.empty());
+
+        service.save(PROJECT, marta.getEmail(), scores(score(1, 13), score(2, 23)));
+
+        verify(events, never()).publishEvent(any());
     }
 
     @Test

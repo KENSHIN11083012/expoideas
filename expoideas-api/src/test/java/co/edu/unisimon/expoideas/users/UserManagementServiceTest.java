@@ -21,6 +21,8 @@ import co.edu.unisimon.expoideas.catalogs.Faculty;
 import co.edu.unisimon.expoideas.catalogs.FacultyRepository;
 import co.edu.unisimon.expoideas.catalogs.PrototypeTypeRepository;
 import co.edu.unisimon.expoideas.catalogs.SectorRepository;
+import co.edu.unisimon.expoideas.common.AuditableAction;
+import co.edu.unisimon.expoideas.common.AuditableAction.Action;
 import co.edu.unisimon.expoideas.common.ConflictException;
 import co.edu.unisimon.expoideas.common.ForbiddenActionException;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
@@ -124,6 +126,9 @@ class UserManagementServiceTest {
         void macondoLabMakesAStudentAJudge() {
             assertThat(service.update(MACONDOLAB_EMAIL, 3, withRole(Role.JUDGE)).role())
                     .isEqualTo(Role.JUDGE);
+            verify(events)
+                    .publishEvent(
+                            new AuditableAction(Action.ROLE_CHANGED, 3, "ana@unisimon.edu.co", "Estudiante → Jurado"));
         }
 
         @Test
@@ -139,6 +144,8 @@ class UserManagementServiceTest {
                     .isInstanceOf(ForbiddenActionException.class)
                     .hasMessageContaining("Solo un administrador puede asignar");
             assertThat(student.getRole()).isEqualTo(Role.STUDENT);
+            // Lo que no se hizo no deja rastro.
+            verify(events, never()).publishEvent(any());
         }
 
         @Test
@@ -162,6 +169,12 @@ class UserManagementServiceTest {
 
             assertThat(confirmed.role()).isEqualTo(Role.TEACHER);
             assertThat(confirmed.pendingRole()).isNull();
+            verify(events)
+                    .publishEvent(new AuditableAction(
+                            Action.ROLE_CHANGED,
+                            3,
+                            "ana@unisimon.edu.co",
+                            "Estudiante → Profesor (lo pedía el listado)"));
         }
 
         @Test
@@ -172,6 +185,12 @@ class UserManagementServiceTest {
 
             assertThat(kept.role()).isEqualTo(Role.STUDENT);
             assertThat(kept.pendingRole()).isNull();
+            verify(events)
+                    .publishEvent(new AuditableAction(
+                            Action.PENDING_ROLE_DISCARDED,
+                            3,
+                            "ana@unisimon.edu.co",
+                            "Pedía Profesor; sigue como Estudiante"));
         }
 
         @Test
@@ -181,12 +200,14 @@ class UserManagementServiceTest {
             assertThat(service.update(MACONDOLAB_EMAIL, 3, new UserUpdateRequest(null, null, null, 100))
                             .pendingRole())
                     .isEqualTo(Role.TEACHER);
+            verify(events, never()).publishEvent(any());
         }
 
         @Test
         void sendingTheSameRoleIsNotAChange() {
             assertThat(service.update(ADMIN_EMAIL, 1, withRole(Role.ADMIN)).role())
                     .isEqualTo(Role.ADMIN);
+            verify(events, never()).publishEvent(any());
         }
     }
 
@@ -294,6 +315,7 @@ class UserManagementServiceTest {
             assertThatThrownBy(() -> service.resetPassword(MACONDOLAB_EMAIL, 1, newPassword()))
                     .isInstanceOf(ForbiddenActionException.class);
             assertThat(admin.getPasswordHash()).isEqualTo("hash-actual");
+            verify(events, never()).publishEvent(any());
         }
 
         @Test
@@ -309,6 +331,7 @@ class UserManagementServiceTest {
 
             assertThat(student.getPasswordHash()).isEqualTo("hash-nuevo");
             assertThat(student.isMustChangePassword()).isTrue();
+            verify(events).publishEvent(new AuditableAction(Action.PASSWORD_RESET, 3, "ana@unisimon.edu.co", null));
         }
 
         private static PasswordResetRequest newPassword() {
@@ -325,6 +348,7 @@ class UserManagementServiceTest {
                     .isInstanceOf(ForbiddenActionException.class)
                     .hasMessage("No puedes eliminar tu propia cuenta.");
             verify(userRepository, never()).delete(any());
+            verify(events, never()).publishEvent(any());
         }
 
         @Test
@@ -333,7 +357,11 @@ class UserManagementServiceTest {
 
             service.delete(ADMIN_EMAIL, 3);
 
-            InOrder order = inOrder(fileService, userRepository);
+            // El rastro se escribe con la cuenta todavía ahí: después no hay de dónde sacar quién era.
+            InOrder order = inOrder(events, fileService, userRepository);
+            order.verify(events)
+                    .publishEvent(new AuditableAction(
+                            Action.ACCOUNT_DELETED, 3, "ana@unisimon.edu.co", "Nombre Apellido · Estudiante"));
             order.verify(fileService).deleteAllOwnedBy(student);
             order.verify(userRepository).delete(student);
             assertThat(student.getPhoto()).isNull();

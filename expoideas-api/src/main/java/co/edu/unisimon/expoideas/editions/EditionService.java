@@ -1,5 +1,7 @@
 package co.edu.unisimon.expoideas.editions;
 
+import co.edu.unisimon.expoideas.common.AuditableAction;
+import co.edu.unisimon.expoideas.common.AuditableAction.Action;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
 import co.edu.unisimon.expoideas.users.User;
 import co.edu.unisimon.expoideas.users.UserRepository;
@@ -12,6 +14,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +33,7 @@ public class EditionService {
     private final EditionRepository editionRepository;
     private final UserRepository userRepository;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
     @Transactional(readOnly = true)
     public List<EditionResponse> list() {
@@ -69,6 +73,8 @@ public class EditionService {
                 .findByEmail(actorEmail)
                 .orElseThrow(() -> new NoSuchElementException("No existe una cuenta con el correo: " + actorEmail));
         trackOf(edition, track).publishGrades(actor, LocalDateTime.now(clock));
+        events.publishEvent(
+                new AuditableAction(Action.GRADES_PUBLISHED, edition.getId(), edition.getName(), track.label()));
         return EditionResponse.from(edition, today());
     }
 
@@ -77,6 +83,8 @@ public class EditionService {
     public EditionResponse hideGrades(Integer id, Track track) {
         Edition edition = find(id);
         trackOf(edition, track).hideGrades();
+        events.publishEvent(
+                new AuditableAction(Action.GRADES_HIDDEN, edition.getId(), edition.getName(), track.label()));
         return EditionResponse.from(edition, today());
     }
 

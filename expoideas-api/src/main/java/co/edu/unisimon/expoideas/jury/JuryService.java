@@ -1,5 +1,7 @@
 package co.edu.unisimon.expoideas.jury;
 
+import co.edu.unisimon.expoideas.common.AuditableAction;
+import co.edu.unisimon.expoideas.common.AuditableAction.Action;
 import co.edu.unisimon.expoideas.common.ConflictException;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
 import co.edu.unisimon.expoideas.projects.Project;
@@ -12,6 +14,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +34,7 @@ public class JuryService {
     private final JuryAssignmentRepository assignmentRepository;
     private final UserRepository userRepository;
     private final ProjectPolicy policy;
+    private final ApplicationEventPublisher events;
 
     @Transactional(readOnly = true)
     public List<JurorResponse> list(Integer projectId) {
@@ -82,6 +86,13 @@ public class JuryService {
         JuryAssignment assignment = assignmentRepository
                 .findByProjectIdAndUserId(projectId, userId)
                 .orElseThrow(() -> new NoSuchElementException("Esa persona no es jurado de este proyecto"));
+        // Su evaluación se conserva pero deja de contar: la nota del proyecto puede cambiar.
+        User juror = assignment.getUser();
+        events.publishEvent(new AuditableAction(
+                Action.JUROR_REMOVED,
+                projectId,
+                assignment.getProject().getTitle(),
+                "Jurado: " + juror.fullName() + " (" + juror.getEmail() + ")"));
         assignmentRepository.delete(assignment);
         log.info("Proyecto {}: usuario ID {} deja de ser jurado", projectId, userId);
     }

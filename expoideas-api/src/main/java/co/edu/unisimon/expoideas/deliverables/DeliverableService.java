@@ -1,5 +1,7 @@
 package co.edu.unisimon.expoideas.deliverables;
 
+import co.edu.unisimon.expoideas.common.AuditableAction;
+import co.edu.unisimon.expoideas.common.AuditableAction.Action;
 import co.edu.unisimon.expoideas.common.ConflictException;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
 import co.edu.unisimon.expoideas.files.FileService;
@@ -18,6 +20,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -41,6 +44,7 @@ public class DeliverableService {
     private final DeliverableTypeRepository typeRepository;
     private final FileService fileService;
     private final ProjectPolicy policy;
+    private final ApplicationEventPublisher events;
 
     /** Los entregables de la cátedra con lo que el proyecto lleva subido. */
     @Transactional(readOnly = true)
@@ -177,6 +181,14 @@ public class DeliverableService {
                 .orElseThrow(() -> new NoSuchElementException("No existe un archivo con ID: " + deliverableId));
         policy.requireSubmissionOpen(project.getEdition(), deliverable.getType().getClosesOn());
 
+        events.publishEvent(new AuditableAction(
+                Action.DELIVERABLE_DELETED,
+                deliverable.getId(),
+                project.getTitle(),
+                deliverable.getType().getName() + ": "
+                        + (deliverable.isLink()
+                                ? deliverable.getUrl()
+                                : deliverable.getFile().getOriginalName())));
         deliverableRepository.delete(deliverable);
         if (!deliverable.isLink()) {
             fileService.delete(deliverable.getFile());

@@ -1,5 +1,7 @@
 package co.edu.unisimon.expoideas.users;
 
+import co.edu.unisimon.expoideas.common.AuditableAction;
+import co.edu.unisimon.expoideas.common.AuditableAction.Action;
 import co.edu.unisimon.expoideas.common.ConflictException;
 import co.edu.unisimon.expoideas.common.ForbiddenActionException;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
@@ -113,7 +115,9 @@ public class UserManagementService {
         User actor = findByEmail(actorEmail);
         User user = findById(id);
         requireCanManage(actor, user);
-        if (request.role() != null && request.role() != user.getRole()) {
+        Role previous = user.getRole();
+        Role pending = user.getPendingRole();
+        if (request.role() != null && request.role() != previous) {
             if (actor.getId().equals(user.getId())) {
                 throw new ForbiddenActionException("No puedes cambiar tu propio rol.");
             }
@@ -122,6 +126,10 @@ public class UserManagementService {
                         "Solo un administrador puede asignar los roles Administrador o MacondoLab.");
             }
             user.setRole(request.role());
+            String change = previous.label() + " → " + request.role().label();
+            audit(Action.ROLE_CHANGED, user, request.role() == pending ? change + " (lo pedía el listado)" : change);
+        } else if (request.role() != null && pending != null) {
+            audit(Action.PENDING_ROLE_DISCARDED, user, "Pedía " + pending.label() + "; sigue como " + previous.label());
         }
         if (request.role() != null) {
             // La gestión ya decidió el rol de esta cuenta, sea el del listado u otro: no queda nada por confirmar.
@@ -165,6 +173,7 @@ public class UserManagementService {
         }
         requireCanManage(actor, user);
         passwords.replace(user, request.newPassword(), request.confirmPassword(), true);
+        audit(Action.PASSWORD_RESET, user, null);
         log.info("Contraseña del usuario ID {} restablecida desde la gestión", id);
     }
 
@@ -185,6 +194,7 @@ public class UserManagementService {
         }
         requireCanManage(actor, user);
         user.suspend();
+        audit(Action.ACCOUNT_SUSPENDED, user, null);
         log.info("Usuario ID {} suspendido por el usuario ID {}", id, actor.getId());
         return UserResponse.from(user);
     }
@@ -202,6 +212,7 @@ public class UserManagementService {
         User user = findById(id);
         requireCanManage(actor, user);
         user.reactivate();
+        audit(Action.ACCOUNT_REACTIVATED, user, null);
         log.info("Usuario ID {} reactivado por el usuario ID {}", id, actor.getId());
         return UserResponse.from(user);
     }
@@ -228,11 +239,21 @@ public class UserManagementService {
                 .ifPresent(reason -> {
                     throw new ConflictException(reason);
                 });
+        // Antes de borrarla: después ya no hay de dónde sacar quién era.
+        audit(
+                Action.ACCOUNT_DELETED,
+                user,
+                user.fullName() + " · " + user.getRole().label());
         // Sus archivos no pueden quedar sin dueño: se borran con la cuenta.
         user.setPhoto(null);
         fileService.deleteAllOwnedBy(user);
         userRepository.delete(user);
         log.info("Usuario ID {} eliminado", id);
+    }
+
+    /** Deja en el rastro una acción sobre esa cuenta; quien la hizo es la cuenta de la sesión. */
+    private void audit(Action action, User target, String detail) {
+        events.publishEvent(new AuditableAction(action, target.getId(), target.getEmail(), detail));
     }
 
     private static void requireCanManage(User actor, User target) {

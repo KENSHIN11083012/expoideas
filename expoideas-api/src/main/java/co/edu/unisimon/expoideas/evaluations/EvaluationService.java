@@ -1,5 +1,7 @@
 package co.edu.unisimon.expoideas.evaluations;
 
+import co.edu.unisimon.expoideas.common.AuditableAction;
+import co.edu.unisimon.expoideas.common.AuditableAction.Action;
 import co.edu.unisimon.expoideas.common.ConflictException;
 import co.edu.unisimon.expoideas.common.ForbiddenActionException;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
@@ -101,6 +103,8 @@ public class EvaluationService {
         Evaluation evaluation = evaluationRepository
                 .findByProjectIdAndJurorId(projectId, juror.getId())
                 .orElseGet(() -> Evaluation.of(project, juror));
+        // Guardar por primera vez es lo normal; corregir lo guardado deja rastro de lo que había.
+        String previous = evaluation.getId() == null ? null : gradeText(evaluation);
 
         if (request.isAbsent()) {
             evaluation.markAbsent(policy.now());
@@ -109,6 +113,14 @@ public class EvaluationService {
         }
 
         Evaluation saved = evaluationRepository.save(evaluation);
+        if (previous != null) {
+            String detail = "Jurado: " + juror.fullName() + " · Nota: " + previous + " → " + gradeText(saved);
+            events.publishEvent(new AuditableAction(
+                    Action.EVALUATION_EDITED,
+                    saved.getId(),
+                    project.getTitle(),
+                    project.trackSettings().isGradesPublished() ? detail + " · con las notas ya publicadas" : detail));
+        }
         log.info(
                 "Proyecto {}: el usuario ID {} guardó su evaluación ({})",
                 projectId,
@@ -335,6 +347,11 @@ public class EvaluationService {
 
         LocalDateTime now = policy.now();
         chosen.forEach((criterion, level) -> evaluation.score(criterion, level, comments.get(criterion.getId()), now));
+    }
+
+    /** La nota de una evaluación como se lee en el rastro. */
+    private static String gradeText(Evaluation evaluation) {
+        return evaluation.isAbsent() ? "no asistió (0.0)" : evaluation.grade().toPlainString();
     }
 
     /** Sin espacios alrededor; vacía es lo mismo que no escribirla. */

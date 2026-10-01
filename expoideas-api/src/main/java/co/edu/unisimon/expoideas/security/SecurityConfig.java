@@ -89,6 +89,9 @@ public class SecurityConfig {
                         // Gestión de cuentas: MacondoLab y administradores; eliminar, solo el administrador.
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/admin/users/**")
                         .hasRole("ADMIN")
+                        // El rastro de auditoría recoge también lo que hace MacondoLab: solo lo lee el administrador.
+                        .requestMatchers("/api/v1/admin/audit/**")
+                        .hasRole("ADMIN")
                         .requestMatchers("/api/v1/admin/**")
                         .hasRole("MACONDOLAB")
 

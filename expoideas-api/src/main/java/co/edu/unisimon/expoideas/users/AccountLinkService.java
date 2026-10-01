@@ -1,5 +1,7 @@
 package co.edu.unisimon.expoideas.users;
 
+import co.edu.unisimon.expoideas.common.AuditableAction;
+import co.edu.unisimon.expoideas.common.AuditableAction.Action;
 import co.edu.unisimon.expoideas.common.ConflictException;
 import co.edu.unisimon.expoideas.notifications.EmailVerificationEvent;
 import co.edu.unisimon.expoideas.notifications.MailService;
@@ -78,7 +80,7 @@ public class AccountLinkService {
     @Transactional
     public void verifyEmail(String token) {
         User user = tokens.consume(token, AccountTokenPurpose.VERIFY_EMAIL);
-        user.verifyEmail(now());
+        verify(user);
         log.info("Usuario ID {} verificó su correo", user.getId());
     }
 
@@ -121,8 +123,25 @@ public class AccountLinkService {
             throw new ConflictException("Tu cuenta está suspendida. Comunícate con la coordinación de la cátedra.");
         }
         passwords.replace(user, request.newPassword(), request.confirmPassword(), false);
-        user.verifyEmail(now());
+        verify(user);
         log.info("Usuario ID {} puso una contraseña nueva con un enlace de recuperación", user.getId());
+    }
+
+    /**
+     * Da el correo por verificado. Con él llega el rol que el listado de la
+     * cátedra hubiera dejado pendiente: como nadie de la gestión interviene,
+     * queda en el rastro de dónde salió.
+     */
+    private void verify(User user) {
+        Role previous = user.getRole();
+        user.verifyEmail(now());
+        if (user.getRole() != previous) {
+            events.publishEvent(new AuditableAction(
+                    Action.ROLE_CHANGED,
+                    user.getId(),
+                    user.getEmail(),
+                    previous.label() + " → " + user.getRole().label() + " (del listado, al verificar el correo)"));
+        }
     }
 
     private LocalDateTime now() {

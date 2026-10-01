@@ -37,6 +37,10 @@ dominio.
   con su rol; el de profesor se recibe al verificar el correo o, sin servidor de correo, cuando la
   gestión lo confirma. Una cuenta
   suspendida no entra, pero conserva sus proyectos, entregas y evaluaciones.
+- Rastro de auditoría: queda registrado quién cambió un rol, restableció una contraseña, suspendió o
+  eliminó una cuenta, publicó u ocultó notas, corrigió una evaluación (con la nota que tenía y la
+  nueva), quitó a un jurado o eliminó un proyecto o un entregable. Por ahora se consulta por la API
+  (`GET /api/v1/admin/audit`, solo ADMIN); todavía no tiene pantalla.
 - Catálogos: sedes, facultades, programas académicos, sectores, keywords y tipos de prototipo.
 - Archivos: subida y descarga, hasta 5 MB, validados por contenido (JPG, PNG, WEBP y PDF; las
   plantillas también en DOCX y PPTX).

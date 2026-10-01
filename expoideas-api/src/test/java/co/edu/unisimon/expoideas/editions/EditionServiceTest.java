@@ -7,6 +7,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import co.edu.unisimon.expoideas.common.AuditableAction;
+import co.edu.unisimon.expoideas.common.AuditableAction.Action;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
 import co.edu.unisimon.expoideas.support.TestData;
 import co.edu.unisimon.expoideas.users.Role;
@@ -23,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 /** Reglas de las ediciones: orden de las fechas, las dos cátedras y sin cruces. */
 @ExtendWith(MockitoExtension.class)
@@ -41,12 +44,15 @@ class EditionServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ApplicationEventPublisher events;
+
     private EditionService service;
 
     @BeforeEach
     void createService() {
         Clock clock = Clock.fixed(TODAY.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC);
-        service = new EditionService(editionRepository, userRepository, clock);
+        service = new EditionService(editionRepository, userRepository, clock, events);
     }
 
     // ── Alta ────────────────────────────────────────────────────────────────
@@ -260,11 +266,17 @@ class EditionServiceTest {
                 .satisfies(track -> assertThat(track.gradesPublishedAt()).isNull());
         assertThat(edition.track(Track.INNPRENDE_I).orElseThrow().getGradesPublishedBy())
                 .isSameAs(coordination);
+        verify(events)
+                .publishEvent(
+                        new AuditableAction(Action.GRADES_PUBLISHED, 7, "Expoideas 2026-2", "INNPRENDE I · Despegue"));
 
         EditionResponse hidden = service.hideGrades(7, Track.INNPRENDE_I);
 
         assertThat(hidden.tracks())
                 .allSatisfy(track -> assertThat(track.gradesPublishedAt()).isNull());
+        verify(events)
+                .publishEvent(
+                        new AuditableAction(Action.GRADES_HIDDEN, 7, "Expoideas 2026-2", "INNPRENDE I · Despegue"));
     }
 
     /** Los dos extremos de cada plazo cuentan: el último día todavía se puede. */

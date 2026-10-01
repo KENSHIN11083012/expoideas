@@ -121,7 +121,7 @@ cupo: en una hora pico de inscripciones se quedarían cortas.
 | `MAIL_FROM` | No | Remitente de los avisos (por defecto `no-reply@unisimon.edu.co`; debe ser una dirección que el SMTP acepte) |
 | `MAIL_ATTEMPTS` / `MAIL_RETRY_DELAY` | No | Cuántas veces se intenta un envío (por defecto 3) y cuánto se espera antes del segundo intento (por defecto `5s`; antes del tercero, el doble). Ver «Si un correo no sale» abajo |
 | `APP_URL` | No | URL pública de la app, para los enlaces de los correos (`https://<dominio>.unisimon.edu.co/expoideas`). Junto con el SMTP activa la verificación del correo al registrarse y la recuperación de contraseña; ver «Verificación del correo» abajo |
-| `JAVA_TOOL_OPTIONS` | No | Opciones de la JVM. La imagen Docker ya trae `-XX:MaxRAMPercentage=75`; fuera de Docker no hay valor por defecto |
+| `JAVA_TOOL_OPTIONS` | No | Opciones de la JVM. La imagen Docker ya trae `-XX:MaxRAMPercentage=60`; fuera de Docker no hay valor por defecto |
 
 ## Verificación del correo y recuperación de contraseña
 

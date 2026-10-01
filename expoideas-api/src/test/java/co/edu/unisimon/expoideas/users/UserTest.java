@@ -63,6 +63,36 @@ class UserTest {
         assertThat(user.getDataConsentAt()).isEqualTo(first);
     }
 
+    @Test
+    void theFifthFailedLoginInARowLocksTheAccountAndTheCountStartsOver() {
+        User user = User.builder().build();
+        LocalDateTime now = LocalDateTime.of(2026, 11, 3, 8, 0);
+        LocalDateTime until = now.plusMinutes(5);
+
+        for (int attempt = 1; attempt <= 4; attempt++) {
+            user.registerFailedLogin(5, until);
+        }
+        assertThat(user.isLockedAt(now)).isFalse();
+
+        user.registerFailedLogin(5, until);
+
+        assertThat(user.isLockedAt(now)).isTrue();
+        assertThat(user.isLockedAt(until)).isFalse();
+        assertThat(user.getFailedLogins()).isZero();
+    }
+
+    @Test
+    void clearingTheLoginFailuresAlsoLiftsTheLock() {
+        User user = User.builder().build();
+        LocalDateTime now = LocalDateTime.of(2026, 11, 3, 8, 0);
+        user.registerFailedLogin(1, now.plusMinutes(5));
+
+        user.clearLoginFailures();
+
+        assertThat(user.isLockedAt(now)).isFalse();
+        assertThat(user.hasLoginFailures()).isFalse();
+    }
+
     /** El registro solo pide correo y contraseña: el resto se completa en el primer ingreso. */
     @Nested
     class CompleteProfile {

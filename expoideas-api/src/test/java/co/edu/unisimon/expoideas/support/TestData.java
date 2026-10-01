@@ -6,6 +6,7 @@ import co.edu.unisimon.expoideas.common.ExpoideasProperties;
 import co.edu.unisimon.expoideas.common.ExpoideasProperties.CorsSettings;
 import co.edu.unisimon.expoideas.common.ExpoideasProperties.FilesSettings;
 import co.edu.unisimon.expoideas.common.ExpoideasProperties.JwtSettings;
+import co.edu.unisimon.expoideas.common.ExpoideasProperties.LoginSettings;
 import co.edu.unisimon.expoideas.common.ExpoideasProperties.MailSettings;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
@@ -60,6 +61,7 @@ public final class TestData {
                 new CorsSettings(List.of()),
                 new FilesSettings(filesDirectory),
                 new MailSettings("expoideas@pruebas.local"),
+                new LoginSettings(5, Duration.ofMinutes(5)),
                 "");
     }
 

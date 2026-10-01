@@ -43,7 +43,7 @@ cd ..\expoideas-app; npm run lint; npm run format:check; npm test; npm run build
 - **Dos nombres.** La plataforma es Idearium; el repositorio, los paquetes Java, la base de datos y
   la ruta `/expoideas/` siguen llamándose `expoideas`. No se renombran.
 - **«Profesor», no «docente»**, en todo texto que ve el usuario. En el código el rol es `TEACHER`.
-- **La siguiente migración es `V17__`.** Antes de crearla, mirar la última en `db/migration/`.
+- **La siguiente migración es `V18__`.** Antes de crearla, mirar la última en `db/migration/`.
 - **Espejos API ↔ app.** `Role.java` ↔ `lib/roles.js`, `Track.java` ↔ `lib/tracks.js`,
   `ValidationPatterns.java` ↔ `lib/validation.js`. Se cambian los dos lados en el mismo commit.
 - **Secretos locales.** `.env`, `application-local.properties`, `uploads/` y, si existe, la carpeta

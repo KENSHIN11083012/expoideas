@@ -166,6 +166,7 @@ docker run --rm alpine sh -c "head -c 32 /dev/urandom | base64"
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM` | No | Servidor SMTP para los avisos. Sin `MAIL_HOST` la plataforma funciona, pero no envía correos |
 | `MAIL_AUTH`, `MAIL_STARTTLS` | No | `false` si el SMTP no pide autenticación o STARTTLS |
 | `JWT_EXPIRATION` | No | Duración de la sesión (`4h`, `30m`…). Por defecto, 4 horas |
+| `LOGIN_MAX_FAILED_ATTEMPTS`, `LOGIN_LOCK_DURATION` | No | Contraseñas equivocadas seguidas que bloquean una cuenta (5) y cuánto dura el bloqueo (`5m`) |
 
 Si escribes una contraseña a mano, que no lleve `$`, espacios ni comillas: Docker Compose los
 interpreta. El `.env` está ignorado por git y nunca se sube.

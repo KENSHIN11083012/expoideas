@@ -53,6 +53,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
       JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env (openssl rand -base64 32)}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-4h}
+      # Fallos seguidos de inicio de sesión que bloquean una cuenta, y por cuánto tiempo.
+      LOGIN_MAX_FAILED_ATTEMPTS: ${LOGIN_MAX_FAILED_ATTEMPTS:-5}
+      LOGIN_LOCK_DURATION: ${LOGIN_LOCK_DURATION:-5m}
       # La app llama a la API por el mismo origen: no hace falta abrir CORS.
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
       # Correo: servidor SMTP de TI. Sin MAIL_HOST no se envía nada.

@@ -33,6 +33,8 @@ class PasswordUpdater {
         user.setMustChangePassword(temporary);
         // La contraseña anterior pudo estar en otras manos: lo que se abrió con ella se cierra.
         user.closeSessions();
+        // Quien se bloqueó probando contraseñas no tiene que esperar, además, a que pase el bloqueo.
+        user.clearLoginFailures();
     }
 
     String hash(String password) {

@@ -53,6 +53,26 @@ class UserManagementIT extends IntegrationTest {
     }
 
     @Test
+    void resettingAPasswordAlsoLiftsTheLockOfFailedAttempts() {
+        String email = createAccount(Role.STUDENT);
+        for (int attempt = 0; attempt < 5; attempt++) {
+            post("/api/v1/auth/login", null, Map.of("email", email, "password", "Incorrecta#" + attempt))
+                    .expect(401);
+        }
+        post("/api/v1/auth/login", null, Map.of("email", email, "password", PASSWORD))
+                .expect(429);
+
+        post(
+                        "/api/v1/admin/users/" + idOf(email) + "/password-reset",
+                        loginAs(Role.MACONDOLAB),
+                        Map.of("newPassword", "Temporal#2026", "confirmPassword", "Temporal#2026"))
+                .expect(204);
+
+        // Quien olvidó la contraseña y se bloqueó probando no tiene que esperar además el bloqueo.
+        login(email, "Temporal#2026");
+    }
+
+    @Test
     void aSuspendedAccountLosesItsSessionAndCannotLogInUntilReactivated() {
         String macondolab = loginAs(Role.MACONDOLAB);
         String email = createAccount(Role.STUDENT);

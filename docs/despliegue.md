@@ -98,6 +98,7 @@ cupo: en una hora pico de inscripciones se quedarían cortas.
 | `FILES_DIR` | No | Carpeta de archivos (por defecto `uploads`; en Docker: `/data/files`) |
 | `PORT` | No | Puerto de la API (por defecto 8080) |
 | `JWT_EXPIRATION` | No | Duración de la sesión: `4h`, `30m`… (por defecto 4 h; un número sin unidad son milisegundos) |
+| `LOGIN_MAX_FAILED_ATTEMPTS` / `LOGIN_LOCK_DURATION` | No | Cuántas contraseñas equivocadas seguidas bloquean una cuenta (por defecto 5) y por cuánto tiempo (por defecto `5m`). Mientras dura el bloqueo no entra ni la contraseña correcta; restablecer la contraseña desde **Usuarios** lo quita |
 | `ALLOWED_ORIGINS` | No | Orígenes externos permitidos por CORS, separados por comas. Por defecto vacío: solo el mismo origen, como detrás de Nginx |
 | `SPRING_MAIL_HOST` / `SPRING_MAIL_PORT` | No | Servidor SMTP de TI para los avisos (invitaciones, cuentas creadas, sustentaciones). Sin host no se envía nada y la API lo dice en el log. En `docker-compose.yml` salen de `MAIL_HOST` y `MAIL_PORT` |
 | `SPRING_MAIL_USERNAME` / `SPRING_MAIL_PASSWORD` | No | Credenciales del SMTP (`MAIL_USERNAME` y `MAIL_PASSWORD` en el `.env`). Con `MAIL_AUTH=false` y `MAIL_STARTTLS=false` se desactivan la autenticación y STARTTLS |

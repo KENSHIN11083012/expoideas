@@ -103,6 +103,14 @@ public class User {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    /** Intentos fallidos de inicio de sesión seguidos; un ingreso correcto los borra. */
+    @Builder.Default
+    @Column(nullable = false)
+    private int failedLogins = 0;
+
+    /** Hasta cuándo no se le deja entrar por acumular intentos fallidos. Nulo si no está bloqueada. */
+    private LocalDateTime lockedUntil;
+
     /** Autorización de tratamiento de datos personales (Ley 1581 de 2012). */
     @Builder.Default
     @Column(nullable = false)
@@ -182,5 +190,31 @@ public class User {
 
     public void reactivate() {
         enabled = true;
+    }
+
+    /**
+     * Un intento fallido más. Al llegar a {@code maxAttempts} seguidos la cuenta
+     * queda bloqueada hasta {@code lockUntil} y la cuenta de fallos empieza de nuevo.
+     */
+    public void registerFailedLogin(int maxAttempts, LocalDateTime lockUntil) {
+        failedLogins++;
+        if (failedLogins >= maxAttempts) {
+            lockedUntil = lockUntil;
+            failedLogins = 0;
+        }
+    }
+
+    public boolean isLockedAt(LocalDateTime now) {
+        return lockedUntil != null && now.isBefore(lockedUntil);
+    }
+
+    public boolean hasLoginFailures() {
+        return failedLogins > 0 || lockedUntil != null;
+    }
+
+    /** Borra los intentos fallidos y el bloqueo: entró bien, o la gestión le restableció la contraseña. */
+    public void clearLoginFailures() {
+        failedLogins = 0;
+        lockedUntil = null;
     }
 }

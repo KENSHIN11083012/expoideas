@@ -1,6 +1,7 @@
 package co.edu.unisimon.expoideas.common;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.nio.file.Path;
@@ -22,6 +23,7 @@ public record ExpoideasProperties(
         @DefaultValue CorsSettings cors,
         @DefaultValue FilesSettings files,
         @DefaultValue MailSettings mail,
+        @DefaultValue LoginSettings login,
         @DefaultValue("") String appUrl) {
 
     /**
@@ -36,6 +38,16 @@ public record ExpoideasProperties(
 
     /** Carpeta del contenido de los archivos subidos (FILES_DIR). */
     public record FilesSettings(@DefaultValue("uploads") Path directory) {}
+
+    /**
+     * Freno a la prueba de contraseñas contra una cuenta.
+     *
+     * @param maxFailedAttempts fallos seguidos que bloquean la cuenta (LOGIN_MAX_FAILED_ATTEMPTS)
+     * @param lockDuration      cuánto dura el bloqueo (LOGIN_LOCK_DURATION)
+     */
+    public record LoginSettings(
+            @DefaultValue("5") @Min(1) int maxFailedAttempts,
+            @DefaultValue("5m") Duration lockDuration) {}
 
     /** Remitente de los correos (MAIL_FROM). El servidor SMTP va en spring.mail.*. */
     public record MailSettings(

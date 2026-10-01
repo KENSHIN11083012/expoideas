@@ -164,6 +164,49 @@ class AccountIT extends IntegrationTest {
         login(email, nueva);
     }
 
+    // ── Intentos fallidos ───────────────────────────────────────────────────
+
+    @Test
+    void afterFiveWrongPasswordsTheAccountLocksEvenForTheRightOne() {
+        String email = createAccount(Role.STUDENT);
+        failLogin(email, 5);
+
+        Response locked = post("/api/v1/auth/login", null, Map.of("email", email, "password", PASSWORD))
+                .expect(429);
+        assertThat(locked.<String>json("$.detail")).contains("Demasiados intentos");
+
+        // Cumplido el bloqueo, la contraseña correcta vuelve a entrar.
+        jdbc.update(
+                "UPDATE users SET locked_until = ? WHERE email = ?",
+                LocalDateTime.now(TimeConfig.ZONE).minusSeconds(1),
+                email);
+        login(email, PASSWORD);
+    }
+
+    @Test
+    void aSuccessfulLoginStartsTheCountAgain() {
+        String email = createAccount(Role.STUDENT);
+
+        failLogin(email, 4);
+        login(email, PASSWORD);
+        failLogin(email, 4);
+
+        // Ocho fallos en total, pero nunca cinco seguidos.
+        login(email, PASSWORD);
+    }
+
+    @Test
+    void wrongPasswordsForAnEmailWithoutAccountAreJust401() {
+        failLogin(uniqueEmail("nadie"), 7);
+    }
+
+    private void failLogin(String email, int times) {
+        for (int attempt = 0; attempt < times; attempt++) {
+            post("/api/v1/auth/login", null, Map.of("email", email, "password", "Incorrecta#" + attempt))
+                    .expect(401);
+        }
+    }
+
     @Test
     void changingThePasswordClosesTheOtherSessionsAndKeepsThisOne() {
         String email = createAccount(Role.STUDENT);

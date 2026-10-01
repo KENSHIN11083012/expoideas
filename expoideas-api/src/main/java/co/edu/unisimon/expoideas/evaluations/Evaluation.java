@@ -81,8 +81,9 @@ public class Evaluation {
     }
 
     /**
-     * Pone o cambia el nivel de un criterio. Se actualiza la fila que ya existe
-     * en vez de borrar y crear: solo hay una por criterio.
+     * Pone o cambia el nivel de un criterio, con lo que ese nivel vale ahora. Se
+     * actualiza la fila que ya existe en vez de borrar y crear: solo hay una por
+     * criterio.
      */
     public void score(RubricCriterion criterion, RubricLevel level, String comment, LocalDateTime now) {
         absent = false;
@@ -94,6 +95,7 @@ public class Evaluation {
             return created;
         });
         score.setLevel(level);
+        score.setScoreValue(level.getScore());
         score.setComment(comment);
         touch(now);
     }
@@ -104,13 +106,16 @@ public class Evaluation {
                 .findFirst();
     }
 
-    /** Promedio simple de los criterios, con un decimal; 0.0 si el equipo no asistió. */
+    /**
+     * Promedio simple de los criterios, con un decimal; 0.0 si el equipo no
+     * asistió. Cada criterio cuenta por lo que valía su nivel al calificarlo.
+     */
     public BigDecimal grade() {
         if (absent) {
             return new BigDecimal("0.0");
         }
         List<BigDecimal> values =
-                scores.stream().map(score -> score.getLevel().getScore()).toList();
+                scores.stream().map(EvaluationScore::getScoreValue).toList();
         return GradeScale.average(values).orElse(new BigDecimal("0.0"));
     }
 

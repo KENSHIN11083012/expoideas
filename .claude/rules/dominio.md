@@ -40,6 +40,9 @@ declaran sede y facultad.
 - Un profesor puede ser jurado de proyectos de otros, nunca del suyo.
 - Nota del jurado: promedio simple de sus criterios, con un decimal. Nota del proyecto: promedio de
   sus jurados. Observación obligatoria por debajo de 3.0. «No asistió» vale 0.0.
+- La nota sale del valor que cada nivel tenía al calificar (`evaluation_scores.score_value`), no del
+  que tenga hoy la rúbrica: corregir la rúbrica no reescribe notas ya puestas. Una evaluación
+  anterior solo toma los valores nuevos si su jurado la vuelve a guardar.
 - Si la gestión quita a un jurado, su evaluación se conserva pero deja de contar.
 - El equipo ve su nota y las observaciones, sin nombres, solo cuando la gestión publica las notas de
   la cátedra en «Ediciones». Publicar no congela nada.

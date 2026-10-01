@@ -15,7 +15,11 @@ este documento es la referencia para leerlas y para revisar cambios.
 - Las notas las ven el profesor del grupo y la gestión; cada jurado, solo la suya. El equipo ve su nota
   final y las observaciones (sin nombres de jurados) solo cuando la gestión **publica las notas** de la
   cátedra en «Ediciones»; se pueden volver a ocultar. Publicar no congela nada: una corrección posterior
-  de un jurado se ve al instante.
+  de un jurado se ve al instante, y queda en el rastro de auditoría con la nota que había y la nueva.
+- Cada criterio calificado guarda **lo que valía su nivel en ese momento**. Si después se corrige un
+  valor de la rúbrica (con una migración), las notas ya puestas no cambian solas: la corrección vale
+  para lo que se califique desde entonces, y una evaluación anterior solo toma los valores nuevos si su
+  jurado la vuelve a guardar.
 - La gestión puede recordar por correo, desde «Sustentaciones», a los jurados de una cátedra lo que les
   falta por calificar. No hay envíos automáticos: no está definido cuándo.
 - Escala institucional (Art. 62 del Estatuto Estudiantil): Deficiente 0,0–2,9 · Aceptable 3,0–3,9 ·

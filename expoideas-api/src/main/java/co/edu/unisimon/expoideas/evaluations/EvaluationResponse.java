@@ -35,7 +35,7 @@ public record EvaluationResponse(
                         .map(score -> new ScoreResponse(
                                 score.getCriterion().getId(),
                                 score.getLevel().getId(),
-                                score.getLevel().getScore(),
+                                score.getScoreValue(),
                                 score.getComment()))
                         .toList(),
                 evaluation.getUpdatedAt());

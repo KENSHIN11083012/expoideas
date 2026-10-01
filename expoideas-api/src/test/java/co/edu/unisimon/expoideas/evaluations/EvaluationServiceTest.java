@@ -220,6 +220,31 @@ class EvaluationServiceTest {
     }
 
     @Test
+    void correctingTheRubricLaterDoesNotRewriteAGradeAlreadyGiven() {
+        Evaluation existing = Evaluation.of(project, marta);
+        existing.score(rubric.getCriteria().get(0), level(rubric, 13), null, NOW);
+        existing.score(rubric.getCriteria().get(1), level(rubric, 22), null, NOW);
+        when(evaluationRepository.findByProjectIdAndJurorId(PROJECT, 8)).thenReturn(Optional.of(existing));
+
+        // MacondoLab corrige la rúbrica: el nivel que valía 4.0 ahora vale 5.0.
+        level(rubric, 13).setScore(new BigDecimal("5.0"));
+
+        // Lo que Marta ya calificó sigue valiendo lo que valía: (4.0 + 4.5) / 2 = 4.25, que sube a 4.3.
+        EvaluationResponse kept = service.mine(PROJECT, marta.getEmail()).orElseThrow();
+        assertThat(kept.grade()).isEqualByComparingTo("4.3");
+        assertThat(kept.scores())
+                .extracting(score -> score.score().toPlainString())
+                .containsExactly("4.0", "4.5");
+
+        // Si vuelve a guardar, califica con la rúbrica que tiene delante: (5.0 + 4.5) / 2 = 4.75, que sube a 4.8.
+        EvaluationResponse again = service.save(PROJECT, marta.getEmail(), scores(score(1, 13), score(2, 22)));
+        assertThat(again.grade()).isEqualByComparingTo("4.8");
+        assertThat(again.scores())
+                .extracting(score -> score.score().toPlainString())
+                .containsExactly("5.0", "4.5");
+    }
+
+    @Test
     void evaluatingForTheFirstTimeLeavesNoTrace() {
         when(evaluationRepository.findByProjectIdAndJurorId(PROJECT, 8)).thenReturn(Optional.empty());
 

@@ -189,6 +189,54 @@ class EvaluationIT extends IntegrationTest {
 
     // ── Datos de apoyo ──────────────────────────────────────────────────────
 
+    @Test
+    void correctingARubricValueDoesNotRewriteTheGradesAlreadyGiven() {
+        String macondolab = loginAs(Role.MACONDOLAB);
+        String teacherEmail = createAccount(Role.TEACHER);
+        int projectId = createProject(loginAs(Role.STUDENT), teacherEmail);
+        String martaEmail = createAccount(Role.JUDGE);
+        String marta = login(martaEmail, PASSWORD);
+        String mine = "/api/v1/projects/" + projectId + "/evaluations/mine";
+        String results = "/api/v1/projects/" + projectId + "/evaluations";
+        Response rubric = get("/api/v1/rubrics/INNPRENDE_I", macondolab).expect(200);
+        post("/api/v1/projects/" + projectId + "/jurors", macondolab, Map.of("email", martaEmail))
+                .expect(201);
+
+        // Todo en el nivel más alto: 5.0.
+        List<Map<String, Object>> excellent = levels(rubric, 4, 4, 4, 4, 4, 4);
+        int evaluationId =
+                put(mine, marta, Map.of("scores", excellent)).expect(200).json("$.id");
+        int levelId = (int) excellent.getFirst().get("levelId");
+
+        // La rúbrica es de todas las pruebas: se deja como estaba pase lo que pase.
+        jdbc.update("UPDATE rubric_levels SET score = 4.0 WHERE id = ?", levelId);
+        try {
+            // La rúbrica ya muestra el valor corregido...
+            assertThat(scores(get("/api/v1/rubrics/INNPRENDE_I", marta).expect(200), 0))
+                    .endsWith(4.0);
+
+            // ...pero lo que Marta calificó sigue valiendo lo que valía, para ella y para quien ve las notas.
+            Response kept = get(mine, marta).expect(200);
+            assertThat(kept.<Double>json("$.grade")).isEqualTo(5.0);
+            assertThat(kept.<Double>json("$.scores[0].score")).isEqualTo(5.0);
+            assertThat(get(results, macondolab).expect(200).<Double>json("$.grade"))
+                    .isEqualTo(5.0);
+            assertThat(get(results, login(teacherEmail, PASSWORD)).expect(200).<Double>json("$.grade"))
+                    .isEqualTo(5.0);
+
+            // Si vuelve a guardar, califica con la rúbrica de ahora: (4.0 + 5.0 × 5) / 6 = 4.83, que queda en 4.8.
+            Response again = put(mine, marta, Map.of("scores", excellent)).expect(200);
+            assertThat(again.<Double>json("$.grade")).isEqualTo(4.8);
+            assertThat(again.<Double>json("$.scores[0].score")).isEqualTo(4.0);
+            assertThat(again.<Integer>json("$.id")).isEqualTo(evaluationId);
+        } finally {
+            jdbc.update("UPDATE rubric_levels SET score = 5.0 WHERE id = ?", levelId);
+        }
+
+        // Devolver el valor a la rúbrica tampoco mueve lo guardado.
+        assertThat(get(mine, marta).expect(200).<Double>json("$.grade")).isEqualTo(4.8);
+    }
+
     private int createProject(String leaderToken, String teacherEmail) {
         Map<String, Object> body = new HashMap<>();
         body.put("editionId", openEdition());

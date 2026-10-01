@@ -17,6 +17,11 @@ RUN ./mvnw -B -q -DskipTests package \
 
 FROM eclipse-temurin:25-jre
 
+# Parches de seguridad del sistema que la imagen base todavía no trae.
+RUN apt-get update \
+    && apt-get -y upgrade \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN groupadd --system expoideas \
     && useradd --system --gid expoideas --home-dir /app --no-create-home expoideas \
     && mkdir -p /app /data/files \

@@ -22,6 +22,14 @@ export default defineConfig(({ mode }) => {
             environment: 'jsdom',
             setupFiles: ['./src/test/setup.js'],
             css: false,
+            // npm run test:coverage: cuánto del código de la app ejercitan las pruebas.
+            // El informe navegable queda en coverage/index.html.
+            coverage: {
+                provider: 'v8',
+                reporter: ['text-summary', 'json-summary', 'html'],
+                include: ['src/**/*.{js,jsx}'],
+                exclude: ['src/**/*.test.{js,jsx}', 'src/test/**', 'src/main.jsx'],
+            },
         },
         build: {
             // Las fuentes siempre como archivo, nunca incrustadas como data:. Así las

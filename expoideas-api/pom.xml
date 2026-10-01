@@ -21,6 +21,14 @@
 		<!-- Las pruebas corren en UTC, como el contenedor del servidor: una fecha que salga
 		     de la zona de la máquina y no del Clock de TimeConfig se nota en cualquier equipo. -->
 		<argLine>-Duser.timezone=UTC</argLine>
+		<jacoco.version>0.8.15</jacoco.version>
+		<!-- Parches de seguridad que Spring Boot 4.1.1 todavía no trae (los encontró el
+		     escaneo de la imagen): Tomcat 11.0.24 y Jackson 3.1.5 / 2.21.5 tienen
+		     vulnerabilidades conocidas con arreglo publicado. Son versiones de parche de
+		     la misma línea. Se quitan cuando Spring Boot las incluya. -->
+		<tomcat.version>11.0.26</tomcat.version>
+		<jackson-bom.version>3.1.7</jackson-bom.version>
+		<jackson-2-bom.version>2.21.7</jackson-2-bom.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -162,6 +170,56 @@
 						</exclude>
 					</excludes>
 				</configuration>
+			</plugin>
+			<!-- Cobertura de las pruebas, unitarias y de integración juntas. No rompe el
+			     build: mvnw verify deja el informe en target/site/jacoco/index.html. -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<executions>
+					<execution>
+						<id>agente-unitarias</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>agente-integracion</id>
+						<goals>
+							<goal>prepare-agent-integration</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>unir</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>merge</goal>
+						</goals>
+						<configuration>
+							<fileSets>
+								<fileSet>
+									<directory>${project.build.directory}</directory>
+									<includes>
+										<include>jacoco.exec</include>
+										<include>jacoco-it.exec</include>
+									</includes>
+								</fileSet>
+							</fileSets>
+							<destFile>${project.build.directory}/jacoco-todo.exec</destFile>
+						</configuration>
+					</execution>
+					<execution>
+						<id>informe</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<configuration>
+							<dataFile>${project.build.directory}/jacoco-todo.exec</dataFile>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 			<!-- Formato automático. spotless:check corre en la fase verify (mvnw verify);
 			     el formateo en sí se aplica con mvnw spotless:apply. -->

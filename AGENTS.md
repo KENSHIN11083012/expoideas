@@ -139,7 +139,13 @@ lo acordado. Cuando llega una respuesta, se anota en esa lista en el mismo commi
 Es lo que corre el CI (`.github/workflows/ci.yml`). Las `*IT` necesitan Docker encendido. Si
 algo de esto falla, el cambio no está listo, aunque «funcione».
 
-El CI corre además las pruebas de punta a punta de `qa/`, con la plataforma levantada con Docker.
+El CI revisa además las dependencias de la app (`npm audit`) y escanea las dos imágenes: una
+vulnerabilidad crítica con arreglo publicado rompe la corrida. Se arregla subiendo la dependencia;
+`.trivyignore` es solo para lo que se revisó y no aplica, con el motivo escrito. Las acciones de
+`ci.yml` van fijadas al commit de su versión: una nueva se añade igual, con el commit y la versión
+en un comentario.
+
+El CI corre también las pruebas de punta a punta de `qa/`, con la plataforma levantada con Docker.
 Cuando un cambio toca lo que una persona ve o puede hacer (una pantalla, una etiqueta, una ruta, un
 permiso), se corren antes de subirlo, contra una instalación desechable y nunca contra una con datos
 reales: [qa/README.md](qa/README.md) dice cómo. Si el cambio rompe un recorrido, se arregla el

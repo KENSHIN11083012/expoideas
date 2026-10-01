@@ -372,3 +372,37 @@ la API, el lint, las pruebas y el build de la app, y construye las dos imágenes
 levanta la plataforma completa con `docker compose` y la recorre de punta a punta (carpeta `qa/`).
 Cuando todo eso pasa en `main`, publica las dos imágenes con la etiqueta del commit
 ([Versiones publicadas](#versiones-publicadas)).
+
+### Seguridad de lo que se publica
+
+- **Dependencias de la app.** `npm audit` sobre lo que llega al navegador: una vulnerabilidad alta o
+  crítica rompe la corrida.
+- **Imágenes.** Las dos se escanean con Trivy antes de poder publicarse. La de la API lleva dentro
+  las dependencias de Java y los paquetes del sistema, así que el escaneo cubre las dos cosas. Una
+  vulnerabilidad **crítica con arreglo publicado** rompe la corrida; las altas salen en el resumen
+  de la corrida sin romperla.
+- **Acciones.** Van fijadas al commit de su versión, no a la etiqueta, y Dependabot propone las
+  actualizaciones cada semana, igual que las de npm, Maven y las imágenes base.
+
+Las imágenes se construyen siempre sobre la imagen base del día, que es la que trae los parches del
+sistema, y la de la API aplica además los que la base todavía no tenga.
+
+Cuando el escaneo rompe la corrida sin que nadie haya cambiado el código, es que se publicó una
+vulnerabilidad nueva. Lo que toca, por orden:
+
+1. Mirar en el resumen de la corrida qué paquete es y qué versión la arregla.
+2. Si es una dependencia de Java que maneja Spring Boot, subir Spring Boot; si todavía no hay
+   versión que la traiga, fijar la del paquete en las `<properties>` del `pom.xml`, como están
+   hoy Tomcat y Jackson. Si es del sistema, volver a lanzar la corrida: se construye sobre la imagen
+   base de ese día.
+3. Solo si se revisó y no aplica a Idearium, anotarla en `.trivyignore` con el motivo y la fecha.
+
+### Cobertura de las pruebas
+
+Cada corrida deja en su resumen cuánto del código ejercitan las pruebas: líneas y ramas de la API
+(JaCoCo, unitarias e integración juntas) y de la app (Vitest). No hay un mínimo que rompa la
+corrida: sirve para ver si un cambio grande llega sin pruebas. Al 1 de octubre de 2026 la API está
+en 97 % de líneas y 90 % de ramas, y la app en 80 % y 80 %.
+
+En local, el informe navegable queda en `expoideas-api/target/site/jacoco/index.html` después de
+`./mvnw verify`, y en `expoideas-app/coverage/index.html` después de `npm run test:coverage`.

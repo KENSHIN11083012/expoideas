@@ -476,7 +476,11 @@ Cada push a `main` y cada pull request pasan por GitHub Actions (`.github/workfl
 pruebas y formato de la API, lint, formato, pruebas y build de la app, validación de
 `docker-compose.yml`, construcción de las dos imágenes Docker y, con la plataforma levantada, las
 pruebas de punta a punta. Lo que llega a `main` y pasa todo eso se publica como imágenes con la
-etiqueta del commit.
+etiqueta del commit. Por el camino revisa las dependencias de la app y escanea las dos imágenes en
+busca de vulnerabilidades conocidas, y deja en el resumen de la corrida la cobertura de las pruebas
+(`npm run test:coverage` en la app; `./mvnw verify` deja la de la API en
+`target/site/jacoco/index.html`). Qué hacer cuando el escaneo falla está en
+[docs/despliegue.md](docs/despliegue.md#seguridad-de-lo-que-se-publica).
 
 ### Si algo falla
 

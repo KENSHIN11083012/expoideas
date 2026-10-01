@@ -27,7 +27,16 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,6 +47,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -150,6 +160,10 @@ abstract class IntegrationTest {
 
     @Autowired
     protected UserRepository userRepository;
+
+    /** Para mirar (o tocar) la base sin pasar por la API, cuando la prueba es sobre lo que la base garantiza. */
+    @Autowired
+    protected JdbcTemplate jdbc;
 
     @Autowired
     private CampusRepository campusRepository;
@@ -329,6 +343,32 @@ abstract class IntegrationTest {
 
     protected Response delete(String uri, String token) {
         return send(HttpMethod.DELETE, uri, token, null, null);
+    }
+
+    /**
+     * Lanza las dos peticiones a la vez y devuelve sus respuestas, para lo que
+     * solo falla cuando dos personas (o un doble clic) llegan en el mismo instante.
+     */
+    protected static List<Response> atTheSameTime(Supplier<Response> first, Supplier<Response> second) {
+        CountDownLatch start = new CountDownLatch(1);
+        try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
+            List<Future<Response>> answers = Stream.of(first, second)
+                    .map(request -> pool.submit(() -> {
+                        start.await();
+                        return request.get();
+                    }))
+                    .toList();
+            start.countDown();
+            return answers.stream().map(IntegrationTest::answerOf).toList();
+        }
+    }
+
+    private static Response answerOf(Future<Response> answer) {
+        try {
+            return answer.get(30, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new IllegalStateException("La petición simultánea no terminó", e);
+        }
     }
 
     /**

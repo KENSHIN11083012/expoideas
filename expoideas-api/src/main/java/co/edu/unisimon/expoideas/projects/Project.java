@@ -107,6 +107,7 @@ public class Project {
     public ProjectMember addMember(User user, MemberRole teamRole, MembershipStatus status, LocalDateTime now) {
         ProjectMember member = new ProjectMember();
         member.setProject(this);
+        member.setEditionId(edition.getId());
         member.setUser(user);
         member.setTeamRole(teamRole);
         member.setStatus(status);

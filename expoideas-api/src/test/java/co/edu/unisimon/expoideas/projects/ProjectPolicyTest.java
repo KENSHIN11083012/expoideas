@@ -112,6 +112,7 @@ class ProjectPolicyTest {
 
         @BeforeEach
         void project() {
+            project.setEdition(edition);
             project.setTeacher(teacher);
             project.addMember(ana, MemberRole.LEADER, MembershipStatus.ACCEPTED, TODAY.atStartOfDay());
         }

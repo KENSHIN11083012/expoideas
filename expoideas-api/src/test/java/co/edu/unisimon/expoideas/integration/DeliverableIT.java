@@ -101,6 +101,30 @@ class DeliverableIT extends IntegrationTest {
     }
 
     @Test
+    void aDoubleClickOnASingleFileDeliverableStoresOneFile() {
+        String macondolab = loginAs(Role.MACONDOLAB);
+        int typeId = createType(macondolab, "Póster " + System.nanoTime(), "DOCUMENT", true, 1);
+
+        // Una carrera no sale siempre: se repite para que, sin la protección, alguna vuelta falle.
+        for (int round = 0; round < 5; round++) {
+            Team team = newTeam();
+            int projectId = createProject(team);
+
+            List<Response> answers = atTheSameTime(
+                    () -> uploadPdf(projectId, typeId, team.leaderToken()),
+                    () -> uploadPdf(projectId, typeId, team.leaderToken()));
+
+            assertThat(answers.stream().map(answer -> answer.status().value())).containsExactlyInAnyOrder(200, 409);
+            assertThat(jdbc.queryForObject(
+                            "SELECT COUNT(*) FROM deliverables WHERE project_id = ? AND deliverable_type_id = ?",
+                            Integer.class,
+                            projectId,
+                            typeId))
+                    .isEqualTo(1);
+        }
+    }
+
+    @Test
     void theFormatIsCheckedAgainstTheContentNotTheName() {
         String macondolab = loginAs(Role.MACONDOLAB);
         int typeId = createType(macondolab, "Fotos " + System.nanoTime(), "IMAGE", true, 3);

@@ -1,10 +1,12 @@
 package co.edu.unisimon.expoideas.projects;
 
 import co.edu.unisimon.expoideas.editions.Track;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -17,6 +19,13 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
      */
     @EntityGraph(attributePaths = {"edition", "sector", "prototypeType", "teacher", "members", "members.user"})
     Optional<Project> findWithTeamById(Integer id);
+
+    /**
+     * El proyecto con su fila bloqueada hasta el final de la transacción: quien
+     * llegue después espera aquí. Ver {@link ProjectPolicy#lock(Integer)}.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<Project> findLockedById(Integer id);
 
     /** Los proyectos en los que esa cuenta está en el equipo, invitada o aceptada. */
     @EntityGraph(attributePaths = {"edition", "sector", "prototypeType", "teacher", "members", "members.user"})

@@ -37,6 +37,13 @@ public class ProjectMember {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
+    /**
+     * La edición del proyecto, copiada aquí: con ella la base garantiza un solo
+     * equipo aceptado por persona y edición (ver V15). No cambia nunca.
+     */
+    @Column(name = "edition_id", nullable = false, updatable = false)
+    private Integer editionId;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

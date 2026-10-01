@@ -69,6 +69,8 @@ public class DeliverableService {
      */
     @Transactional
     public List<DeliverableGroupResponse> upload(Integer projectId, Integer typeId, MultipartFile file, String email) {
+        // Antes que nada: dos subidas a la vez contarían los mismos archivos ya entregados.
+        policy.lock(projectId);
         User uploader = policy.account(email);
         Project project = policy.findVisible(projectId, uploader);
         DeliverableType type = requireOpenSlot(project, typeId, uploader);
@@ -93,6 +95,7 @@ public class DeliverableService {
      */
     @Transactional
     public List<DeliverableGroupResponse> submitLink(Integer projectId, DeliverableLinkRequest request, String email) {
+        policy.lock(projectId);
         User author = policy.account(email);
         Project project = policy.findVisible(projectId, author);
         DeliverableType type = requireOpenSlot(project, request.deliverableTypeId(), author);

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,8 @@ public class ProjectTeamService {
     /** Invita a un compañero. Devuelve el proyecto con el equipo ya actualizado. */
     @Transactional
     public ProjectResponse invite(Integer projectId, String email, InvitationRequest request) {
+        // Antes que nada: dos invitaciones a la vez contarían el mismo cupo libre.
+        policy.lock(projectId);
         User actor = policy.account(email);
         Project project = policy.findVisible(projectId, actor);
         policy.requireLeader(project, actor);
@@ -100,7 +103,12 @@ public class ProjectTeamService {
         policy.requireEligibleFor(invitation.getUser(), project.getEdition(), project.getTrack());
 
         invitation.accept(policy.now());
-        memberRepository.save(invitation);
+        try {
+            // Se escribe ya, para que un rechazo de la base salga aquí y no al cerrar la transacción.
+            memberRepository.saveAndFlush(invitation);
+        } catch (DataIntegrityViolationException failure) {
+            throw policy.onTeamSave(failure);
+        }
         return ProjectResponse.from(project, policy.today());
     }
 

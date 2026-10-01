@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 /**
@@ -25,6 +26,9 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class ProjectPolicy {
+
+    /** La restricción de V15 que deja a cada persona en un solo equipo aceptado por edición. */
+    private static final String ONE_TEAM_PER_EDITION = "uk_project_members_one_per_edition";
 
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
@@ -48,6 +52,35 @@ public class ProjectPolicy {
         return userRepository
                 .findByEmail(email)
                 .orElseThrow(() -> new NoSuchElementException("No existe una cuenta con el correo: " + email));
+    }
+
+    /**
+     * Pone en fila a quienes vayan a contar algo del proyecto para decidir si cabe
+     * uno más (integrantes, archivos de un entregable): dos peticiones a la vez
+     * contarían lo mismo y entrarían las dos.
+     *
+     * <p>Tiene que ser lo primero que la transacción lea. MySQL fija lo que una
+     * transacción ve en su primera consulta normal; bloqueando antes, quien espera
+     * ve después lo que guardó la petición anterior. Si el proyecto no existe no
+     * hace nada: de responder 404 se encarga {@link #findVisible}.
+     */
+    public void lock(Integer projectId) {
+        projectRepository.findLockedById(projectId);
+    }
+
+    /**
+     * La base es la última barrera de «un equipo por edición»: dos peticiones que
+     * llegan a la vez pasan las dos {@link #requireNotOnAnotherTeam} y
+     * {@link #requireEligibleFor}, y la restricción de V15 deja guardar una sola.
+     * Aquí ese rechazo se convierte en el mismo conflicto que habría dado la
+     * comprobación; cualquier otro fallo de integridad se devuelve tal cual.
+     */
+    public RuntimeException onTeamSave(DataIntegrityViolationException failure) {
+        String cause = failure.getMostSpecificCause().getMessage();
+        if (cause != null && cause.contains(ONE_TEAM_PER_EDITION)) {
+            return new ConflictException("Ya tienes un proyecto inscrito en esta edición");
+        }
+        return failure;
     }
 
     /** El proyecto con su equipo, o 404. */

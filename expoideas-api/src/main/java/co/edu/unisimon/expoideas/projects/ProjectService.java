@@ -15,6 +15,7 @@ import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -81,7 +82,13 @@ public class ProjectService {
         apply(project, request);
         project.addMember(leader, MemberRole.LEADER, MembershipStatus.ACCEPTED, policy.now());
 
-        return ProjectResponse.from(projectRepository.save(project), policy.today());
+        try {
+            // Se escribe ya, para que un rechazo de la base (un doble clic) salga aquí
+            // y no al cerrar la transacción.
+            return ProjectResponse.from(projectRepository.saveAndFlush(project), policy.today());
+        } catch (DataIntegrityViolationException failure) {
+            throw policy.onTeamSave(failure);
+        }
     }
 
     /** Solo el líder, y solo mientras la inscripción sigue abierta. La cátedra no cambia. */

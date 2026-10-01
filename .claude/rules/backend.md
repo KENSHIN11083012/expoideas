@@ -44,6 +44,21 @@ Se decide en dos sitios, y hay que mirar los dos antes de añadir una ruta:
 - `@SecuredWebMvcTest` (en `support/`): controladores con la `SecurityConfig` real y sin base de
   datos. Es donde se prueba que una ruta rechaza al rol que no toca.
 - `support/TestData`: datos y secreto de prueba compartidos.
+- Para lo que solo falla si dos peticiones llegan a la vez, `IntegrationTest.atTheSameTime(...)` las
+  lanza juntas; se repite unas vueltas, porque una carrera no sale siempre.
+
+## Contar y luego guardar
+
+Una regla del tipo «cabe uno más» (cupo del equipo, archivos de un entregable) no se sostiene solo
+con comprobar y después insertar: dos peticiones a la vez cuentan lo mismo. Hay dos defensas, y
+se usa la que aplique:
+
+- **Una restricción en la base**, cuando la regla se puede escribir como unicidad. Es el caso de
+  «un equipo aceptado por persona y edición» (`V15`); el servicio guarda con `saveAndFlush` y
+  traduce el rechazo con `ProjectPolicy.onTeamSave`.
+- **`ProjectPolicy.lock(projectId)` como primera lectura de la transacción**, cuando hay que contar.
+  Tiene que ir antes que cualquier otra consulta: MySQL fija lo que la transacción ve en su primera
+  lectura normal.
 
 ## Al añadir una tabla
 

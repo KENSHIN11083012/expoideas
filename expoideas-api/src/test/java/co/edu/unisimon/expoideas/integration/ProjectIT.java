@@ -1,6 +1,7 @@
 package co.edu.unisimon.expoideas.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import co.edu.unisimon.expoideas.catalogs.SectorRepository;
 import co.edu.unisimon.expoideas.common.TimeConfig;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 
 /**
  * Inscripción de proyectos y equipo contra MySQL: quién inscribe, quién invita,
@@ -29,6 +31,9 @@ class ProjectIT extends IntegrationTest {
     private static Integer closedEditionId;
 
     private static final String TRACK = "INNPRENDE_I";
+
+    /** Una carrera no sale siempre: se repite para que, sin la protección, alguna vuelta falle. */
+    private static final int ROUNDS = 5;
 
     @Autowired
     private ProjectRepository projectRepository;
@@ -266,6 +271,78 @@ class ProjectIT extends IntegrationTest {
         assertThat(full.json("$.detail").toString()).contains("máximo de 3");
     }
 
+    // ── Lo que solo se rompe cuando dos peticiones llegan a la vez ──────────
+
+    @Test
+    void theDatabaseItselfRefusesASecondAcceptedTeamInTheSameEdition() {
+        String student = createAccount(Role.STUDENT);
+        String token = login(student, PASSWORD);
+        List<Integer> invitations = inviteToTwoProjects(student, token);
+        post("/api/v1/invitations/" + invitations.get(0) + "/acceptance", token, null)
+                .expect(200);
+
+        // Sin pasar por las comprobaciones de la API, como una petición que llegó en el mismo instante.
+        assertThatThrownBy(() ->
+                        jdbc.update("UPDATE project_members SET status = 'ACCEPTED' WHERE id = ?", invitations.get(1)))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void acceptingTwoInvitationsAtOnceLeavesTheStudentOnOneTeam() {
+        for (int round = 0; round < ROUNDS; round++) {
+            String student = createAccount(Role.STUDENT);
+            String token = login(student, PASSWORD);
+            List<Integer> invitations = inviteToTwoProjects(student, token);
+
+            List<Response> answers = atTheSameTime(
+                    () -> post("/api/v1/invitations/" + invitations.get(0) + "/acceptance", token, null),
+                    () -> post("/api/v1/invitations/" + invitations.get(1) + "/acceptance", token, null));
+
+            assertThat(statusesOf(answers)).containsExactlyInAnyOrder(200, 409);
+            assertThat(refusedOf(answers).json("$.detail").toString()).contains("Ya tienes un proyecto");
+            assertThat(acceptedTeamsOf(student)).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void aDoubleClickOnRegisterCreatesOneProject() {
+        for (int round = 0; round < ROUNDS; round++) {
+            Team team = newTeam();
+            Map<String, Object> body = projectBody(team);
+
+            List<Response> answers = atTheSameTime(
+                    () -> post("/api/v1/projects", team.leaderToken(), body),
+                    () -> post("/api/v1/projects", team.leaderToken(), body));
+
+            assertThat(statusesOf(answers)).containsExactlyInAnyOrder(201, 409);
+            assertThat(refusedOf(answers).json("$.detail").toString()).contains("Ya tienes un proyecto");
+            assertThat(acceptedTeamsOf(team.leaderEmail())).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void twoInvitationsAtOnceDoNotExceedTheMaximum() {
+        for (int round = 0; round < ROUNDS; round++) {
+            Team team = newTeam();
+            int projectId = createProject(team);
+            // El máximo es 3: con el líder y esta invitación queda un solo lugar.
+            invite(projectId, team, team.memberEmail());
+            String third = createAccount(Role.STUDENT);
+            String fourth = createAccount(Role.STUDENT);
+            String uri = "/api/v1/projects/" + projectId + "/invitations";
+
+            List<Response> answers = atTheSameTime(
+                    () -> post(uri, team.leaderToken(), Map.of("email", third)),
+                    () -> post(uri, team.leaderToken(), Map.of("email", fourth)));
+
+            assertThat(statusesOf(answers)).containsExactlyInAnyOrder(201, 409);
+            assertThat(refusedOf(answers).json("$.detail").toString()).contains("máximo de 3");
+            assertThat(jdbc.queryForObject(
+                            "SELECT COUNT(*) FROM project_members WHERE project_id = ?", Integer.class, projectId))
+                    .isEqualTo(3);
+        }
+    }
+
     @Test
     void onlyStudentsWithAnAccountAreInvited() {
         Team team = newTeam();
@@ -454,6 +531,33 @@ class ProjectIT extends IntegrationTest {
     private void invite(int projectId, Team team, String email) {
         post("/api/v1/projects/" + projectId + "/invitations", team.leaderToken(), Map.of("email", email))
                 .expect(201);
+    }
+
+    /** Dos equipos distintos invitan a la misma persona; devuelve sus dos invitaciones. */
+    private List<Integer> inviteToTwoProjects(String student, String token) {
+        Team first = newTeam();
+        Team second = newTeam();
+        invite(createProject(first), first, student);
+        invite(createProject(second), second, student);
+        return get("/api/v1/invitations", token).expect(200).json("$[*].id");
+    }
+
+    private static List<Integer> statusesOf(List<Response> answers) {
+        return answers.stream().map(answer -> answer.status().value()).toList();
+    }
+
+    private static Response refusedOf(List<Response> answers) {
+        return answers.stream()
+                .filter(answer -> answer.status().value() == 409)
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private int acceptedTeamsOf(String email) {
+        return jdbc.queryForObject(
+                "SELECT COUNT(*) FROM project_members WHERE user_id = ? AND status = 'ACCEPTED'",
+                Integer.class,
+                idOf(email));
     }
 
     private void approveManually(String email) {

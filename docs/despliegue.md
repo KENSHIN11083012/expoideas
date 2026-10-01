@@ -100,9 +100,10 @@ comprobación de origen correctas).
 
 ## Primer administrador
 
-Las cuentas nuevas nacen como estudiante y el registro exige elegir sede y facultad. En una base
-recién creada solo existen las sedes (Barranquilla y Cúcuta), así que el primer administrador se
-prepara así:
+Las cuentas nuevas nacen como estudiante. El registro pide solo correo y contraseña; el nombre, la
+sede y la facultad se completan en el primer ingreso. En una base recién creada solo existen las
+sedes (Barranquilla y Cúcuta), así que el primer administrador se prepara así. Los dos comandos
+piden una contraseña: es la `DB_PASSWORD` del `.env`.
 
 1. Crear al menos una facultad en MySQL (las demás, con sus programas, las carga luego el
    administrador desde **Catálogos**):
@@ -110,14 +111,16 @@ prepara así:
    docker compose exec mysql mysql --default-character-set=utf8mb4 -uexpoideas -p expoideas \
      -e "INSERT INTO faculties (name) VALUES ('Ingenierías');"
    ```
-2. Registrarse en la plataforma con el correo institucional de quien administrará.
+2. Registrarse en la plataforma con el correo institucional de quien administrará y completar el
+   perfil que pide al entrar.
 3. Asignarle el rol en MySQL:
    ```bash
    docker compose exec mysql mysql --default-character-set=utf8mb4 -uexpoideas -p expoideas \
      -e "UPDATE users SET role = 'ADMIN' WHERE email = 'persona@unisimon.edu.co';"
    ```
-4. Cerrar sesión y volver a entrar. Desde **Usuarios**, ese administrador asigna los demás roles
-   (MacondoLab, docentes, jurados) sin volver a tocar la base de datos.
+4. Volver a la pestaña de la plataforma. La sesión consulta su rol cada minuto, así que el menú de
+   administración aparece sin cerrar sesión. Desde **Usuarios**, ese administrador asigna los demás
+   roles (MacondoLab, profesores, jurados) sin volver a tocar la base de datos.
 
 ## Operación
 

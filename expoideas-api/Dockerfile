@@ -36,6 +36,13 @@ ENV SPRING_PROFILES_ACTIVE=prod \
 # Los archivos subidos deben sobrevivir a una actualización de la imagen.
 VOLUME /data/files
 
+# Qué versión es esta imagen: la etiqueta con la que la publica la integración
+# continua (el commit). Va al final para no invalidar las capas de arriba.
+ARG APP_VERSION=local
+ENV APP_VERSION=$APP_VERSION
+LABEL org.opencontainers.image.title="Idearium API" \
+      org.opencontainers.image.revision=$APP_VERSION
+
 USER expoideas
 EXPOSE 8080
 

@@ -43,6 +43,10 @@ docker compose ps        # los tres servicios deben quedar "healthy" o "running"
 La plataforma queda en `http://servidor:HTTP_PORT/expoideas/`. Si falta una variable
 obligatoria, Compose se niega a arrancar e indica cuál.
 
+Así se compila en el propio servidor, que sirve para probar. Para producción es mejor no compilar
+ahí y usar las imágenes que publica la integración continua: ver
+[Versiones publicadas](#versiones-publicadas).
+
 Datos persistentes (volúmenes de Docker):
 
 | Volumen | Contenido |
@@ -255,17 +259,98 @@ cuentas y el mismo proyecto, y el archivo se descargó idéntico al original.
 En una instalación sin Docker (opción B) los scripts no aplican: la copia es un `mysqldump
 --single-transaction` de la base y un `tar` de la carpeta `FILES_DIR`, hechos en ese orden.
 
+### Versiones publicadas
+
+Cada cambio que llega a `main` y pasa todas las pruebas (incluido el recorrido de punta a punta)
+se publica como dos imágenes, la de la API y la de la app, en el registro de GitHub
+(`ghcr.io/kenshin11083012/expoideas-api` y `expoideas-app`). La **etiqueta** es el commit: siete
+caracteres, como `211162e`. Sale en el resumen de cada corrida de la integración continua
+(«Publicar imágenes») y en la página de paquetes del repositorio.
+
+Desplegar así tiene dos ventajas sobre compilar en el servidor: lo que corre es exactamente lo que
+pasó las pruebas, y volver a la versión anterior es cambiar una etiqueta, no compilar otra vez.
+
+**Preparar el servidor (una vez).** Las imágenes son privadas: el servidor inicia sesión en el
+registro con un token personal de GitHub de quien administre el repositorio, creado con el único
+permiso `read:packages`:
+
+```bash
+docker login ghcr.io -u <usuario-de-github>
+# pide la contraseña: se pega el token
+```
+
+Y en el `.env`, además de lo de siempre:
+
+```
+COMPOSE_FILE=docker-compose.yml:docker-compose.prod.yml
+IDEARIUM_VERSION=<etiqueta>
+```
+
+`COMPOSE_FILE` hace que todos los comandos `docker compose`, y los scripts de copia, usen las
+imágenes publicadas sin tener que recordarlo. Sin `IDEARIUM_VERSION`, Compose se niega a arrancar.
+Hace falta Docker Compose 2.24 o posterior (`docker compose version`). En Windows los dos archivos de
+`COMPOSE_FILE` se separan con `;` en vez de `:`.
+
+**Qué versión está corriendo.** La etiqueta sale en el pie de la app («v. 211162e»), en
+`docker compose images` y, para la API:
+
+```bash
+docker compose exec app wget -qO- http://api:8080/actuator/info
+```
+
+Una imagen compilada en el servidor dice `local`.
+
 ### Actualizar a una versión nueva
 
 ```bash
 scripts/copia.sh
-git pull
-docker compose up -d --build
+# En el .env: IDEARIUM_VERSION=<etiqueta nueva>  (y anotar cuál era la anterior)
+docker compose pull
+docker compose up -d
+docker compose ps
 ```
+
+Solo se recrean la API y la app; MySQL sigue corriendo. Tarda menos de un minuto, durante el cual
+la plataforma no responde. Las pestañas que la gente tenía abiertas se recargan solas al navegar.
 
 La API aplica sola las migraciones pendientes al arrancar. Si una migración falla, la API no
 arranca (`docker compose logs api`). MySQL no revierte cambios de estructura, así que la base
-puede quedar a medias: por eso el respaldo previo es obligatorio y es lo que se restaura.
+puede quedar a medias: por eso la copia previa es obligatoria.
+
+Compilando en el servidor (sin `COMPOSE_FILE`), actualizar sigue siendo `scripts/copia.sh`,
+`git pull` y `docker compose up -d --build`.
+
+### Volver a la versión anterior
+
+Depende de si la versión nueva cambió la base de datos. Se sabe comparando la migración que dice
+la copia que se hizo antes de actualizar (`migracion: V21`, la muestra `scripts/copia.sh` al
+terminar) con la que tiene la base ahora:
+
+```bash
+docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -N -e "SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history WHERE success = 1" "$MYSQL_DATABASE"'
+```
+
+- **Es la misma: la versión nueva no tocó la base.** Basta con la etiqueta anterior. No se pierde
+  nada de lo que la gente hizo mientras tanto.
+
+  ```bash
+  # En el .env: IDEARIUM_VERSION=<etiqueta anterior>
+  docker compose up -d
+  ```
+
+- **Es mayor: la versión nueva aplicó migraciones.** La versión anterior no sabe trabajar con esa
+  base (puede arrancar y fallar después, al guardar). Se vuelve con la etiqueta anterior **y** con
+  la copia, y lo que la gente hizo desde la actualización se pierde: por eso conviene actualizar
+  cuando hay poca actividad y comprobar enseguida.
+
+  ```bash
+  # En el .env: IDEARIUM_VERSION=<etiqueta anterior>
+  docker compose pull
+  scripts/restaurar.sh copias/idearium-<la de antes de actualizar>.tar
+  ```
+
+Si se compila en el servidor, la etiqueta anterior es un commit: `git checkout <commit>` y
+`docker compose up -d --build`, con la misma regla para la base.
 
 ## Seguridad: lista de verificación
 
@@ -273,6 +358,8 @@ puede quedar a medias: por eso el respaldo previo es obligatorio y es lo que se 
 - [ ] `.env` fuera del repositorio, con permisos restringidos y contraseñas únicas.
 - [ ] MySQL y la API sin puertos publicados (solo la app).
 - [ ] `SPRING_PROFILES_ACTIVE=prod` (Swagger apagado).
+- [ ] Imágenes publicadas por la integración continua (`IDEARIUM_VERSION` en el `.env`), no
+      compiladas en el servidor, y anotada la etiqueta anterior antes de cada actualización.
 - [ ] Copias de seguridad programadas (`scripts/copia.sh`), guardadas fuera del servidor, y una
       restauración probada con una copia real (`scripts/restaurar.sh` en una instalación de prueba).
 - [ ] Opcional: antivirus sobre la carpeta de archivos (p. ej. ClamAV). La plataforma ya valida
@@ -283,3 +370,5 @@ puede quedar a medias: por eso el respaldo previo es obligatorio y es lo que se 
 `.github/workflows/ci.yml` ejecuta en cada push a `main` y en cada pull request las pruebas de
 la API, el lint, las pruebas y el build de la app, y construye las dos imágenes Docker. Además
 levanta la plataforma completa con `docker compose` y la recorre de punta a punta (carpeta `qa/`).
+Cuando todo eso pasa en `main`, publica las dos imágenes con la etiqueta del commit
+([Versiones publicadas](#versiones-publicadas)).

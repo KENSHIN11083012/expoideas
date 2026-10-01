@@ -28,6 +28,15 @@ class PlatformIT extends IntegrationTest {
     }
 
     @Test
+    void infoSaysWhichVersionIsRunningAndNothingElse() {
+        // Sin sesión: lo consulta quien opera el servidor. Fuera de una imagen publicada, la versión es «local».
+        Response info = get("/actuator/info", null).expect(200);
+        assertThat(info.<String>json("$.app.name")).isEqualTo("Idearium");
+        assertThat(info.<String>json("$.app.version")).isEqualTo("local");
+        assertThat(info.body()).doesNotContain("java", "os", "git", "password", "secret");
+    }
+
+    @Test
     void otherActuatorEndpointsAreNotExposed() {
         assertThat(get("/actuator/env", null).status().is2xxSuccessful()).isFalse();
         assertThat(get("/actuator/beans", null).status().is2xxSuccessful()).isFalse();

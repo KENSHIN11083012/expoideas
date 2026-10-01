@@ -96,8 +96,7 @@ contraseña.
 
 **De la plataforma**: el rastro de auditoría todavía no tiene pantalla (se consulta por la API), y
 quedan para después de abrir las mejoras del plan que no eran urgentes: paginar los listados,
-avisar antes de descartar un formulario, subir varios archivos a la vez y publicar las imágenes ya
-construidas en vez de compilarlas en el servidor.
+avisar antes de descartar un formulario y subir varios archivos a la vez.
 
 ## Requisitos
 
@@ -313,6 +312,11 @@ El `--build` es lo que reconstruye las imágenes: sin él sigue corriendo la ver
 aplica sola las migraciones pendientes al arrancar; si una falla, la API no arranca y lo dice en
 `docker compose logs api`.
 
+En un servidor de verdad conviene no compilar ahí: la integración continua publica las imágenes de
+cada versión que pasa todas las pruebas, y actualizar o volver a la versión anterior es cambiar una
+etiqueta en el `.env`. Está en [docs/despliegue.md](docs/despliegue.md#versiones-publicadas). La
+versión que corre sale en el pie de la app.
+
 **Apagar y volver a encender**, sin perder nada:
 
 ```bash
@@ -471,7 +475,8 @@ datos reales. Cómo hacerlo está en [qa/README.md](qa/README.md).
 Cada push a `main` y cada pull request pasan por GitHub Actions (`.github/workflows/ci.yml`):
 pruebas y formato de la API, lint, formato, pruebas y build de la app, validación de
 `docker-compose.yml`, construcción de las dos imágenes Docker y, con la plataforma levantada, las
-pruebas de punta a punta.
+pruebas de punta a punta. Lo que llega a `main` y pasa todo eso se publica como imágenes con la
+etiqueta del commit.
 
 ### Si algo falla
 

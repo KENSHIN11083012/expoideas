@@ -6,6 +6,13 @@ import { BrandLogo } from '@/components/brand/BrandLogo';
 import { InstitutionalLogos } from '@/components/brand/InstitutionalLogos';
 
 /**
+ * La versión de la app que está corriendo: la etiqueta de la imagen publicada
+ * (el commit). Es lo primero que se pregunta cuando alguien reporta un fallo.
+ * En desarrollo, o compilada fuera de la integración continua, es «local».
+ */
+const APP_VERSION = import.meta.env.VITE_APP_VERSION || 'local';
+
+/**
  * Pie de página institucional. Solo enlaces que existen: las secciones de
  * INNPRENDE I y II se agregan cuando existan sus pantallas.
  */
@@ -83,7 +90,13 @@ export function SiteFooter() {
             <div className="border-t border-outline-variant/60">
                 <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-xs text-on-surface-variant sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
                     <p>© {year} Universidad Simón Bolívar. Todos los derechos reservados.</p>
-                    <p className="font-mono uppercase tracking-wider">Vigilada Mineducación · Barranquilla y Cúcuta</p>
+                    <p className="font-mono uppercase tracking-wider">
+                        Vigilada Mineducación · Barranquilla y Cúcuta ·{' '}
+                        {/* En minúsculas, como es: la etiqueta se copia tal cual para buscar el commit. */}
+                        <span title="Versión de la plataforma" className="normal-case">
+                            v. {APP_VERSION}
+                        </span>
+                    </p>
                 </div>
             </div>
         </footer>

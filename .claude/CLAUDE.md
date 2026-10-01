@@ -24,6 +24,9 @@ habiendo un `CLAUDE.md`, Claude Code ya no carga `AGENTS.md` por su cuenta.
 - **Para programar**: API en `:8080` (necesita `expoideas-api/config/application-local.properties`)
   y app en http://localhost:5173/expoideas/. Las dos formas chocan en el 8080: o se apaga Docker o
   se cambia `server.port` y `VITE_API_URL`.
+- **Como en producción, sin compilar**: `docker-compose.prod.yml` encima del normal usa las imágenes
+  que publica el CI, por etiqueta (`IDEARIUM_VERSION`). Para probarlo en local se construyen las
+  imágenes con esa misma etiqueta; el procedimiento está en `docs/despliegue.md`.
 - `launch.json` trae las tres para la vista previa: `docker`, `app` y `api` (esta última con
   `mvnw.cmd`, o sea Windows).
 

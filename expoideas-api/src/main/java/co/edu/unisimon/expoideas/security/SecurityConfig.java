@@ -141,6 +141,9 @@ public class SecurityConfig {
                         // Salud para el orquestador: solo dice UP/DOWN, sin detalles.
                         .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**")
                         .permitAll()
+                        // Qué versión corre: solo eso, y Nginx no lo publica hacia fuera.
+                        .requestMatchers(HttpMethod.GET, "/actuator/info")
+                        .permitAll()
                         .requestMatchers(HttpMethod.GET, publicReads())
                         .permitAll()
 

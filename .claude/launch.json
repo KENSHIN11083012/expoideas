@@ -1,0 +1,29 @@
+{
+    "version": "0.0.1",
+    "configurations": [
+        {
+            "name": "docker",
+            "port": 8080,
+            "url": "http://localhost:8080"
+        },
+        {
+            "name": "app",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["--prefix", "expoideas-app", "run", "dev"],
+            "port": 5173
+        },
+        {
+            "name": "api",
+            "runtimeExecutable": "cmd",
+            "runtimeArgs": [
+                "/c",
+                "expoideas-api\\mvnw.cmd",
+                "-f",
+                "expoideas-api\\pom.xml",
+                "spring-boot:run",
+                "-Dspring-boot.run.profiles=local"
+            ],
+            "port": 8080
+        }
+    ]
+}

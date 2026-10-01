@@ -23,6 +23,9 @@ application-local.properties
 # Archivos subidos en desarrollo local
 uploads/
 
+# Claude Code: ajustes personales de cada equipo
+.claude/settings.local.json
+
 # Editor / SO
 .idea/
 .vscode/

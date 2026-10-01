@@ -36,6 +36,7 @@ public class UserAccountService {
     private final PasswordUpdater passwords;
     private final FileService fileService;
     private final Clock clock;
+    private final SessionTokens sessionTokens;
 
     /**
      * Registro público: la cuenta nace como estudiante, con la autorización de
@@ -136,17 +137,19 @@ public class UserAccountService {
 
     /**
      * Cambio de la propia contraseña, verificando la actual. Quita la marca de
-     * contraseña temporal.
+     * contraseña temporal y cierra las sesiones que hubiera abiertas con la
+     * anterior; devuelve el token con el que sigue la de quien hizo el cambio.
      *
      * @throws InvalidFieldsException si la actual no coincide, o la nueva no se confirma o es igual a la actual
      */
     @Transactional
-    public void changePassword(String email, PasswordChangeRequest request) {
+    public String changePassword(String email, PasswordChangeRequest request) {
         User user = findByEmail(email);
         if (!passwords.matches(user, request.currentPassword())) {
             throw new InvalidFieldsException("currentPassword", "La contraseña actual es incorrecta.");
         }
         passwords.replace(user, request.newPassword(), request.confirmPassword(), false);
+        return sessionTokens.issueFor(user);
     }
 
     private User findByEmail(String email) {

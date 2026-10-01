@@ -157,11 +157,30 @@ class AccountIT extends IntegrationTest {
                         "/api/v1/users/me/password",
                         token,
                         Map.of("currentPassword", PASSWORD, "newPassword", nueva, "confirmPassword", nueva))
-                .expect(204);
+                .expect(200);
 
         post("/api/v1/auth/login", null, Map.of("email", email, "password", PASSWORD))
                 .expect(401);
         login(email, nueva);
+    }
+
+    @Test
+    void changingThePasswordClosesTheOtherSessionsAndKeepsThisOne() {
+        String email = createAccount(Role.STUDENT);
+        String before = login(email, PASSWORD);
+        String nueva = "Nueva#2026";
+
+        String renewed = put(
+                        "/api/v1/users/me/password",
+                        before,
+                        Map.of("currentPassword", PASSWORD, "newPassword", nueva, "confirmPassword", nueva))
+                .expect(200)
+                .json("$.token");
+
+        // El token de antes (el de otra pestaña, o el de quien lo hubiera copiado) ya no entra;
+        // quien hizo el cambio sigue con el que le devolvió la respuesta.
+        get("/api/v1/users/me", before).expect(401);
+        get("/api/v1/users/me", renewed).expect(200);
     }
 
     @Test

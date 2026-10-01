@@ -37,6 +37,61 @@ class UserManagementIT extends IntegrationTest {
     }
 
     @Test
+    void resettingAPasswordClosesThatAccountsSessions() {
+        String email = createAccount(Role.STUDENT);
+        String session = login(email, PASSWORD);
+        get("/api/v1/users/me", session).expect(200);
+
+        post(
+                        "/api/v1/admin/users/" + idOf(email) + "/password-reset",
+                        loginAs(Role.MACONDOLAB),
+                        Map.of("newPassword", "Temporal#2026", "confirmPassword", "Temporal#2026"))
+                .expect(204);
+
+        // Se restablece porque la cuenta pudo quedar en otras manos: lo que estuviera abierto se cierra.
+        get("/api/v1/users/me", session).expect(401);
+    }
+
+    @Test
+    void aSuspendedAccountLosesItsSessionAndCannotLogInUntilReactivated() {
+        String macondolab = loginAs(Role.MACONDOLAB);
+        String email = createAccount(Role.STUDENT);
+        String session = login(email, PASSWORD);
+        String account = "/api/v1/admin/users/" + idOf(email);
+
+        Response suspended = post(account + "/suspension", macondolab, null).expect(200);
+        assertThat(suspended.<Boolean>json("$.suspended")).isTrue();
+
+        get("/api/v1/users/me", session).expect(401);
+        Response refused = post("/api/v1/auth/login", null, Map.of("email", email, "password", PASSWORD))
+                .expect(401);
+        assertThat(refused.<String>json("$.detail")).contains("suspendida");
+
+        Response reactivated = post(account + "/reactivation", macondolab, null).expect(200);
+        assertThat(reactivated.<Boolean>json("$.suspended")).isFalse();
+
+        // Vuelve a entrar con su contraseña, pero la sesión que tenía abierta no revive.
+        get("/api/v1/users/me", login(email, PASSWORD)).expect(200);
+        get("/api/v1/users/me", session).expect(401);
+    }
+
+    @Test
+    void suspendingFollowsTheSameRulesAsTheRestOfTheManagement() {
+        String macondolabEmail = createAccount(Role.MACONDOLAB);
+        String macondolab = login(macondolabEmail, PASSWORD);
+        String adminEmail = createAccount(Role.ADMIN);
+
+        // MacondoLab no toca cuentas de gestión, nadie se suspende a sí mismo y el resto no llega a la ruta.
+        post("/api/v1/admin/users/" + idOf(adminEmail) + "/suspension", macondolab, null)
+                .expect(403);
+        post("/api/v1/admin/users/" + idOf(macondolabEmail) + "/suspension", macondolab, null)
+                .expect(403);
+        post("/api/v1/admin/users/" + idOf(createAccount(Role.STUDENT)) + "/suspension", loginAs(Role.TEACHER), null)
+                .expect(403);
+        post("/api/v1/admin/users/999999/suspension", macondolab, null).expect(404);
+    }
+
+    @Test
     void onlyAdminCreatesManagementAccounts() {
         String macondolab = loginAs(Role.MACONDOLAB);
         String admin = loginAs(Role.ADMIN);

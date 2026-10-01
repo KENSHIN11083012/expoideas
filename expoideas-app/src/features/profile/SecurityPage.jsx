@@ -5,6 +5,7 @@ import { ShieldCheck } from 'lucide-react';
 import { applyServerErrors } from '@/lib/validation';
 import { accountApi } from '@/features/auth/api';
 import { passwordChangeSchema } from '@/features/auth/schemas';
+import { useAuth } from '@/features/auth/useAuth';
 import { PageContainer } from '@/components/layout/AppShell';
 import { PasswordFields } from '@/components/forms/PasswordFields';
 import { PageHeader } from '@/components/ui/page-header';
@@ -26,6 +27,7 @@ const TIPS = [
  * cuentas está en Gestión > Usuarios.
  */
 export default function SecurityPage() {
+    const { renewToken } = useAuth();
     const {
         register,
         control,
@@ -37,9 +39,12 @@ export default function SecurityPage() {
 
     const submit = async (values) => {
         try {
-            await accountApi.changePassword(values);
+            const { token } = await accountApi.changePassword(values);
+            renewToken(token);
             reset(EMPTY);
-            toast.success('Tu contraseña se actualizó');
+            toast.success('Tu contraseña se actualizó', {
+                description: 'Cerramos las demás sesiones que tuvieras abiertas.',
+            });
         } catch (error) {
             if (!applyServerErrors(error, setError)) toast.error(error.message);
         }

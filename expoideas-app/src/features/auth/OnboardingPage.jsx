@@ -25,6 +25,7 @@ import { dataConsentSchema, passwordChangeSchema } from './schemas';
 import { useAuth } from './useAuth';
 
 function ChangePasswordStep({ onDone }) {
+    const { renewToken } = useAuth();
     const {
         register,
         control,
@@ -39,7 +40,9 @@ function ChangePasswordStep({ onDone }) {
 
     const submit = async (values) => {
         try {
-            await accountApi.changePassword(values);
+            // La contraseña temporal ya no vale, ni la sesión que se abrió con ella.
+            const { token } = await accountApi.changePassword(values);
+            renewToken(token);
             onDone();
         } catch (error) {
             handleFormError(error, setError);

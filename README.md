@@ -28,8 +28,10 @@ dominio.
   primer ingreso, donde cada cuenta resuelve sus pasos pendientes (cambiar la contraseña temporal,
   aceptar el tratamiento de datos, completar el perfil).
 - Perfil propio: foto, datos personales, seguridad (cambio de contraseña) y consentimiento de datos.
-- Gestión de usuarios: ADMIN y MacondoLab crean, editan, restablecen contraseña y eliminan cuentas, y
-  cargan el [listado de la cátedra](docs/listado.md) para que cada persona se registre con su rol.
+  Cambiar la contraseña cierra las demás sesiones abiertas de esa cuenta.
+- Gestión de usuarios: ADMIN y MacondoLab crean, editan, restablecen contraseña, suspenden y eliminan
+  cuentas, y cargan el [listado de la cátedra](docs/listado.md) para que cada persona se registre
+  con su rol. Una cuenta suspendida no entra, pero conserva sus proyectos, entregas y evaluaciones.
 - Catálogos: sedes, facultades, programas académicos, sectores, keywords y tipos de prototipo.
 - Archivos: subida y descarga, hasta 5 MB, validados por contenido (JPG, PNG, WEBP y PDF; las
   plantillas también en DOCX y PPTX).

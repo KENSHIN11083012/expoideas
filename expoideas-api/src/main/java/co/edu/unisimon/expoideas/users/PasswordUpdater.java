@@ -31,6 +31,8 @@ class PasswordUpdater {
         }
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setMustChangePassword(temporary);
+        // La contraseña anterior pudo estar en otras manos: lo que se abrió con ella se cierra.
+        user.closeSessions();
     }
 
     String hash(String password) {

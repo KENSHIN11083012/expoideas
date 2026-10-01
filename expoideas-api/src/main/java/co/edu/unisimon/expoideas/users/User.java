@@ -85,10 +85,23 @@ public class User {
     @Column(nullable = false)
     private boolean mustChangePassword = false;
 
+    /**
+     * La versión que deben traer los tokens de sesión de esta cuenta para valer.
+     * Subirla ({@link #closeSessions()}) deja fuera a todos los emitidos antes.
+     */
+    @Builder.Default
+    @Column(nullable = false)
+    private int tokenVersion = 0;
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private Role role = Role.STUDENT;
+
+    /** En false la cuenta está suspendida: ni inicia sesión ni usa la que tuviera abierta. */
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean enabled = true;
 
     /** Autorización de tratamiento de datos personales (Ley 1581 de 2012). */
     @Builder.Default
@@ -154,5 +167,20 @@ public class User {
             dataConsent = true;
             dataConsentAt = now;
         }
+    }
+
+    /** Deja sin efecto todos los tokens de sesión emitidos hasta ahora. */
+    public void closeSessions() {
+        tokenVersion++;
+    }
+
+    /** Corta el acceso sin eliminar la cuenta; lo que tuviera abierto se cierra. */
+    public void suspend() {
+        enabled = false;
+        closeSessions();
+    }
+
+    public void reactivate() {
+        enabled = true;
     }
 }

@@ -55,6 +55,18 @@ public class UserAdminController {
         managementService.resetPassword(authentication.getName(), id, request);
     }
 
+    /** Suspende la cuenta: deja de poder entrar y se le cierra la sesión. */
+    @PostMapping("/{id}/suspension")
+    public UserResponse suspend(Authentication authentication, @PathVariable Integer id) {
+        return managementService.suspend(authentication.getName(), id);
+    }
+
+    /** Le devuelve el acceso a una cuenta suspendida. */
+    @PostMapping("/{id}/reactivation")
+    public UserResponse reactivate(Authentication authentication, @PathVariable Integer id) {
+        return managementService.reactivate(authentication.getName(), id);
+    }
+
     /** Solo administradores. */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

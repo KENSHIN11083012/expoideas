@@ -200,6 +200,7 @@ class AuthControllerTest {
                 null,
                 null,
                 null,
-                List.of(OnboardingStep.COMPLETE_PROFILE));
+                List.of(OnboardingStep.COMPLETE_PROFILE),
+                false);
     }
 }

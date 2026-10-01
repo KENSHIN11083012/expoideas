@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import co.edu.unisimon.expoideas.common.ExpoideasProperties;
 import co.edu.unisimon.expoideas.support.TestData;
 import co.edu.unisimon.expoideas.users.Role;
+import co.edu.unisimon.expoideas.users.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -93,6 +94,39 @@ class JwtAuthenticationFilterTest {
                 .compact();
 
         assertThat(filter(expired)).isNull();
+    }
+
+    @Test
+    void aTokenFromBeforeThePasswordChangeDoesNotAuthenticate() throws Exception {
+        User account = TestData.user(1, EMAIL, Role.STUDENT);
+        String before = jwtService.generateToken(new UserPrincipal(account));
+        account.closeSessions();
+        when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(new UserPrincipal(account));
+
+        assertThat(filter(before)).isNull();
+        assertThat(filter(jwtService.generateToken(new UserPrincipal(account)))).isNotNull();
+    }
+
+    @Test
+    void aSuspendedAccountDoesNotAuthenticateEvenWithAValidToken() throws Exception {
+        User account = TestData.user(1, EMAIL, Role.STUDENT);
+        account.setEnabled(false);
+        when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(new UserPrincipal(account));
+
+        assertThat(filter(jwtService.generateToken(new UserPrincipal(account)))).isNull();
+    }
+
+    @Test
+    void aTokenIssuedBeforeSessionVersionsExistedStillWorks() throws Exception {
+        when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal(Role.STUDENT));
+        String withoutVersion = Jwts.builder()
+                .subject(EMAIL)
+                .expiration(Date.from(Instant.now().plusSeconds(60)))
+                .signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(TestData.JWT_SECRET)))
+                .compact();
+
+        // Desplegar esta versión no debe cerrarle la sesión a nadie.
+        assertThat(filter(withoutVersion)).isNotNull();
     }
 
     @Test

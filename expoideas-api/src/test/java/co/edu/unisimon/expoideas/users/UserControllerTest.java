@@ -120,13 +120,16 @@ class UserControllerTest {
     // ── Contraseña y autorización de datos ─────────────────────────────────
 
     @Test
-    void changePasswordIs204() throws Exception {
+    void changingThePasswordAnswersWithTheTokenThatKeepsThisSession() throws Exception {
+        when(accountService.changePassword(eq(EMAIL), any())).thenReturn("token-nuevo");
+
         mockMvc.perform(
                         put("/api/v1/users/me/password")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         "{\"currentPassword\":\"Vieja#2026\",\"newPassword\":\"Nueva#2026\",\"confirmPassword\":\"Nueva#2026\"}"))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("token-nuevo"));
 
         verify(accountService)
                 .changePassword(EMAIL, new PasswordChangeRequest("Vieja#2026", "Nueva#2026", "Nueva#2026"));
@@ -226,6 +229,20 @@ class UserControllerTest {
 
     private static UserResponse response(int id, String photoId) {
         return new UserResponse(
-                id, "Ana", "Pérez", EMAIL, Role.STUDENT, photoId, null, null, null, null, null, null, null, List.of());
+                id,
+                "Ana",
+                "Pérez",
+                EMAIL,
+                Role.STUDENT,
+                photoId,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                List.of(),
+                false);
     }
 }

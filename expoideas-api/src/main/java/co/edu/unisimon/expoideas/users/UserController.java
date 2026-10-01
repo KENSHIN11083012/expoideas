@@ -60,10 +60,13 @@ public class UserController {
         accountService.giveDataConsent(authentication.getName());
     }
 
-    /** Exige la contraseña actual y quita la marca de temporal. */
+    /**
+     * Exige la contraseña actual y quita la marca de temporal. Las demás sesiones
+     * de la cuenta se cierran; esta sigue con el token de la respuesta.
+     */
     @PutMapping("/password")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void changePassword(Authentication authentication, @Valid @RequestBody PasswordChangeRequest request) {
-        accountService.changePassword(authentication.getName(), request);
+    public SessionTokenResponse changePassword(
+            Authentication authentication, @Valid @RequestBody PasswordChangeRequest request) {
+        return new SessionTokenResponse(accountService.changePassword(authentication.getName(), request));
     }
 }

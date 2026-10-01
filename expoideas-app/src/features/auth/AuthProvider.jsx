@@ -97,6 +97,16 @@ export const AuthProvider = ({ children }) => {
         setPendingSteps(steps);
     }, []);
 
+    /**
+     * Cambia solo el token. Al cambiar la contraseña la API cierra las sesiones
+     * abiertas con la anterior y devuelve el token con el que sigue esta: si no
+     * se guarda, la siguiente petición responde 401 y la app cierra la sesión.
+     */
+    const renewToken = useCallback((newToken) => {
+        session.save({ token: newToken });
+        setToken(newToken);
+    }, []);
+
     const completeStep = useCallback(
         (step) => savePendingSteps(pendingSteps.filter((pending) => pending !== step)),
         [pendingSteps, savePendingSteps],
@@ -133,10 +143,11 @@ export const AuthProvider = ({ children }) => {
             isManagement: isManagement(role),
             login,
             logout,
+            renewToken,
             updateUser,
             completeStep,
         };
-    }, [decoded, me, profileFailed, profile, token, pendingSteps, login, logout, updateUser, completeStep]);
+    }, [decoded, me, profileFailed, profile, token, pendingSteps, login, logout, renewToken, updateUser, completeStep]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

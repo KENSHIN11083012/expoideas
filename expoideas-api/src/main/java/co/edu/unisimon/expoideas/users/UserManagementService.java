@@ -164,6 +164,44 @@ public class UserManagementService {
     }
 
     /**
+     * Corta el acceso de una cuenta sin eliminarla: no inicia sesión y la que
+     * tuviera abierta deja de valer. Es lo que queda cuando la cuenta tiene
+     * historia (un equipo, un proyecto a cargo, una evaluación) y no se puede borrar.
+     *
+     * @throws ForbiddenActionException si el actor no puede gestionar la cuenta o es la suya
+     * @throws NoSuchElementException   si la cuenta no existe
+     */
+    @Transactional
+    public UserResponse suspend(String actorEmail, Integer id) {
+        User actor = findByEmail(actorEmail);
+        User user = findById(id);
+        if (actor.getId().equals(user.getId())) {
+            throw new ForbiddenActionException("No puedes suspender tu propia cuenta.");
+        }
+        requireCanManage(actor, user);
+        user.suspend();
+        log.info("Usuario ID {} suspendido por el usuario ID {}", id, actor.getId());
+        return UserResponse.from(user);
+    }
+
+    /**
+     * Devuelve el acceso a una cuenta suspendida. Las sesiones que tenía no
+     * reviven: vuelve a entrar con su contraseña.
+     *
+     * @throws ForbiddenActionException si el actor no puede gestionar la cuenta
+     * @throws NoSuchElementException   si la cuenta no existe
+     */
+    @Transactional
+    public UserResponse reactivate(String actorEmail, Integer id) {
+        User actor = findByEmail(actorEmail);
+        User user = findById(id);
+        requireCanManage(actor, user);
+        user.reactivate();
+        log.info("Usuario ID {} reactivado por el usuario ID {}", id, actor.getId());
+        return UserResponse.from(user);
+    }
+
+    /**
      * Elimina la cuenta con sus archivos. Solo administradores (lo exige SecurityConfig).
      *
      * @throws ForbiddenActionException si es la propia cuenta

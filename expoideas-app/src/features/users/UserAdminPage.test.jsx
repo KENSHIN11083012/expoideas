@@ -11,6 +11,7 @@ import {
     useDeleteUser,
     useResetPassword,
     useSaveTrackApproval,
+    useSetSuspended,
     useTrackApprovals,
     useUpdateUser,
     useUsers,
@@ -24,6 +25,7 @@ vi.mock('./queries', () => ({
     useCreateUser: vi.fn(),
     useUpdateUser: vi.fn(),
     useResetPassword: vi.fn(),
+    useSetSuspended: vi.fn(),
     useDeleteUser: vi.fn(),
     useTrackApprovals: vi.fn(),
     useSaveTrackApproval: vi.fn(),
@@ -64,6 +66,7 @@ let updateUser;
 let deleteUser;
 let createUser;
 let saveApproval;
+let setSuspended;
 
 beforeEach(() => {
     updateUser = mutation();
@@ -73,6 +76,8 @@ beforeEach(() => {
     useUpdateUser.mockReturnValue(updateUser);
     useDeleteUser.mockReturnValue(deleteUser);
     useCreateUser.mockReturnValue(createUser);
+    setSuspended = mutation();
+    useSetSuspended.mockReturnValue(setSuspended);
     useResetPassword.mockReturnValue(mutation());
     useTrackApprovals.mockReturnValue({ data: [], isPending: false, error: null, refetch: vi.fn() });
     useSaveTrackApproval.mockReturnValue(saveApproval);
@@ -125,6 +130,36 @@ describe('Usuarios como administrador', () => {
         await user.click(table.getByRole('button', { name: 'Acciones para Ana María Pérez' }));
 
         expect(await screen.findByRole('menuitem', { name: 'Eliminar usuario' })).toBeInTheDocument();
+    });
+});
+
+describe('Suspender una cuenta', () => {
+    it('pide confirmación, porque corta el acceso de inmediato', async () => {
+        const user = userEvent.setup();
+        const table = renderAs(marta, 'MACONDOLAB');
+
+        await user.click(within(row(table, ana.email)).getByRole('button', { name: /^Acciones para/ }));
+        await user.click(await screen.findByRole('menuitem', { name: /Suspender cuenta/ }));
+
+        expect(setSuspended.mutate).not.toHaveBeenCalled();
+        const dialog = await screen.findByRole('alertdialog');
+        expect(within(dialog).getByText(/no podrá iniciar sesión/)).toBeInTheDocument();
+        await user.click(within(dialog).getByRole('button', { name: 'Suspender' }));
+
+        expect(setSuspended.mutate).toHaveBeenCalledWith({ id: ana.id, suspended: true }, expect.anything());
+    });
+
+    it('una cuenta suspendida lo dice en la lista y se reactiva sin confirmar', async () => {
+        const user = userEvent.setup();
+        const table = renderAs(marta, 'MACONDOLAB', [{ ...ana, suspended: true }, luis]);
+
+        expect(within(row(table, ana.email)).getByText('Suspendida')).toBeInTheDocument();
+        expect(within(row(table, luis.email)).queryByText('Suspendida')).not.toBeInTheDocument();
+
+        await user.click(within(row(table, ana.email)).getByRole('button', { name: /^Acciones para/ }));
+        await user.click(await screen.findByRole('menuitem', { name: /Reactivar cuenta/ }));
+
+        expect(setSuspended.mutate).toHaveBeenCalledWith({ id: ana.id, suspended: false }, expect.anything());
     });
 });
 

@@ -52,15 +52,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 // Nunca registrar la cabecera ni el token: identifican una sesión activa.
-                String email = jwtService.extractEmail(
+                JwtService.Session session = jwtService.parse(
                         header.substring(BEARER_PREFIX.length()).strip());
                 // Las autoridades salen de la BD, no del claim "role" del token: si alguien
                 // pierde un rol, lo pierde en la siguiente petición y no cuando venza el token.
-                UserDetails user = userDetailsService.loadUserByUsername(email);
-                UsernamePasswordAuthenticationToken authentication =
-                        UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                UserDetails user = userDetailsService.loadUserByUsername(session.email());
+                if (stillOpen(session, user)) {
+                    UsernamePasswordAuthenticationToken authentication =
+                            UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } else {
+                    log.debug("La sesión de la petición a {} ya fue cerrada", request.getRequestURI());
+                }
             } catch (JwtException | IllegalArgumentException | UsernameNotFoundException e) {
                 // Token inválido, vencido o cuenta inexistente: se sigue sin autenticar.
                 // Las rutas protegidas responden 401; las públicas siguen funcionando.
@@ -77,5 +81,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Un token bien firmado y sin vencer puede ser de una sesión que ya no vale:
+     * la cuenta está suspendida, o cambió la contraseña después de emitirlo.
+     */
+    private static boolean stillOpen(JwtService.Session session, UserDetails user) {
+        if (!user.isEnabled()) {
+            return false;
+        }
+        return !(user instanceof UserPrincipal principal) || principal.getTokenVersion() == session.tokenVersion();
     }
 }

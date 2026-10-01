@@ -27,6 +27,15 @@ export const useUpdateUser = () => {
     return useMutation({ mutationFn: ({ id, changes }) => usersApi.update(id, changes), onSuccess: upsert });
 };
 
+/** Suspende o reactiva: `{ id, suspended }`, con el estado en el que debe quedar la cuenta. */
+export const useSetSuspended = () => {
+    const upsert = useUpsertInList();
+    return useMutation({
+        mutationFn: ({ id, suspended }) => (suspended ? usersApi.suspend(id) : usersApi.reactivate(id)),
+        onSuccess: upsert,
+    });
+};
+
 export const useResetPassword = () => useMutation({ mutationFn: ({ id, passwords }) => usersApi.resetPassword(id, passwords) });
 
 const rosterKey = ['roster'];

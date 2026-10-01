@@ -88,6 +88,19 @@ class UserAdminControllerTest {
         verify(managementService, never()).delete(any(), any());
     }
 
+    @Test
+    @WithMockUser(username = EMAIL, roles = "MACONDOLAB")
+    void managementSuspendsAndReactivatesAnAccount() throws Exception {
+        when(managementService.suspend(EMAIL, 5)).thenReturn(response(5, Role.STUDENT));
+        when(managementService.reactivate(EMAIL, 5)).thenReturn(response(5, Role.STUDENT));
+
+        mockMvc.perform(post("/api/v1/admin/users/5/suspension")).andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/admin/users/5/reactivation")).andExpect(status().isOk());
+
+        verify(managementService).suspend(EMAIL, 5);
+        verify(managementService).reactivate(EMAIL, 5);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"STUDENT", "TEACHER", "JUDGE"})
     void otherRolesDoNotReachManagement(String role) throws Exception {
@@ -182,6 +195,7 @@ class UserAdminControllerTest {
                 null,
                 null,
                 null,
-                List.of());
+                List.of(),
+                false);
     }
 }

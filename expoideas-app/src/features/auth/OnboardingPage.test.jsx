@@ -17,6 +17,7 @@ vi.mock('@/features/profile/queries', () => ({ useUpdateProfile: vi.fn() }));
 vi.mock('@/features/catalogs/queries', () => ({ useAffiliationCatalogs: vi.fn() }));
 
 const TestSession = createContext(null);
+const renewToken = vi.fn();
 
 /** Sesión con estado real: completar un paso lo quita de la lista, como AuthProvider. */
 function Session({ initialPendingSteps, role, user = { fullName: 'Marta Ríos' }, children }) {
@@ -28,6 +29,7 @@ function Session({ initialPendingSteps, role, user = { fullName: 'Marta Ríos' }
         pendingSteps,
         completeStep: (step) => setPendingSteps((steps) => steps.filter((s) => s !== step)),
         logout: vi.fn(),
+        renewToken,
     };
     return <TestSession.Provider value={value}>{children}</TestSession.Provider>;
 }
@@ -59,6 +61,7 @@ const updateProfile = { mutateAsync: vi.fn() };
 
 beforeEach(() => {
     updateProfile.mutateAsync.mockReset();
+    renewToken.mockReset();
     useUpdateProfile.mockReturnValue(updateProfile);
     useAffiliationCatalogs.mockReturnValue({
         campuses: [{ id: 1, name: 'Barranquilla' }],
@@ -72,7 +75,7 @@ beforeEach(() => {
 describe('Primer ingreso', () => {
     it('una cuenta nueva cambia la contraseña, autoriza sus datos y llega al inicio', async () => {
         const user = userEvent.setup();
-        accountApi.changePassword.mockResolvedValue(null);
+        accountApi.changePassword.mockResolvedValue({ token: 'token-nuevo' });
         accountApi.giveDataConsent.mockResolvedValue(null);
         renderOnboarding(['CHANGE_PASSWORD', 'DATA_CONSENT']);
 
@@ -87,6 +90,8 @@ describe('Primer ingreso', () => {
         });
         expect(await screen.findByText('Primer ingreso · Paso 2 de 2')).toBeInTheDocument();
         expect(screen.getByRole('heading', { name: 'Autoriza el tratamiento de tus datos' })).toBeInTheDocument();
+        // El cambio cerró la sesión de la contraseña temporal: se sigue con el token que devolvió la API.
+        expect(renewToken).toHaveBeenCalledWith('token-nuevo');
 
         await user.click(screen.getByRole('checkbox'));
         await user.click(screen.getByRole('button', { name: /Aceptar y continuar/ }));

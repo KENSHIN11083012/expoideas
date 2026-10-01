@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.CannotCreateTransactionException;
@@ -49,6 +50,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         // Mismo mensaje para usuario inexistente y contraseña incorrecta:
         // distinguirlos permitiría enumerar cuentas.
         return problem(HttpStatus.UNAUTHORIZED, "Credenciales inválidas");
+    }
+
+    /**
+     * Cuenta suspendida por la gestión. Se dice sin rodeos: quien intenta entrar
+     * tiene que saber a quién acudir, y el registro ya deja ver si un correo tiene cuenta.
+     */
+    @ExceptionHandler(DisabledException.class)
+    public ProblemDetail handleSuspended() {
+        return problem(
+                HttpStatus.UNAUTHORIZED, "Tu cuenta está suspendida. Comunícate con la coordinación de la cátedra.");
     }
 
     @ExceptionHandler(AuthenticationException.class)

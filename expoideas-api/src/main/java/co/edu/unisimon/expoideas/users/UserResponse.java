@@ -13,6 +13,7 @@ import java.util.List;
  *
  * <p>La adscripción viaja con nombre (para mostrar) e id (para los formularios).
  * {@code photoId} es el identificador público de la foto (GET /api/v1/files/{id}).
+ * {@code suspended} dice si la gestión le cortó el acceso.
  */
 public record UserResponse(
         Integer id,
@@ -28,7 +29,8 @@ public record UserResponse(
         String faculty,
         Integer academicProgramId,
         String academicProgram,
-        List<OnboardingStep> pendingSteps) {
+        List<OnboardingStep> pendingSteps,
+        boolean suspended) {
 
     /** Requiere las relaciones cargadas (grafo {@link User#WITH_PROFILE} o dentro de la transacción). */
     public static UserResponse from(User user) {
@@ -49,6 +51,7 @@ public record UserResponse(
                 faculty != null ? faculty.getName() : null,
                 program != null ? program.getId() : null,
                 program != null ? program.getName() : null,
-                user.pendingSteps());
+                user.pendingSteps(),
+                !user.isEnabled());
     }
 }

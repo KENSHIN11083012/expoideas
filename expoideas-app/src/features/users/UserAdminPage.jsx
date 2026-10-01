@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AffiliationDialog, NewUserDialog, PasswordResetDialog, TrackApprovalsDialog } from './UserDialogs';
 import { RosterPanel } from './RosterPanel';
 import { UserList } from './UserList';
-import { useDeleteUser, useUpdateUser, useUsers } from './queries';
+import { useDeleteUser, useSetSuspended, useUpdateUser, useUsers } from './queries';
 
 /** Lo que implica cada rol de gestión, para confirmarlo antes de otorgarlo. */
 const MANAGEMENT_SCOPE = {
@@ -39,12 +39,14 @@ export default function UserAdminPage() {
     const { data: users = [], isPending, isFetching, error, refetch } = useUsers();
     const updateUser = useUpdateUser();
     const deleteUser = useDeleteUser();
+    const setSuspended = useSetSuspended();
 
     const [search, setSearch] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
     const [dialog, setDialog] = useState(null); // { type: 'new' | 'affiliation' | 'password', user? }
     const [roleGrant, setRoleGrant] = useState(null); // { user, role }
     const [toDelete, setToDelete] = useState(null);
+    const [toSuspend, setToSuspend] = useState(null);
     const deferredSearch = useDeferredValue(search);
 
     const filtered = useMemo(() => {
@@ -72,6 +74,23 @@ export default function UserAdminPage() {
     // Otorgar un rol de gestión se confirma; los demás cambios se aplican directo.
     const onRoleChange = (user, role) => (isManagement(role) ? setRoleGrant({ user, role }) : changeRole(user, role));
 
+    const changeSuspension = (user, suspended) =>
+        setSuspended.mutate(
+            { id: user.id, suspended },
+            {
+                onSuccess: () =>
+                    toast.success(
+                        suspended
+                            ? `La cuenta de ${user.firstName} quedó suspendida`
+                            : `${user.firstName} ya puede volver a entrar`,
+                    ),
+                onError: (suspensionError) => toast.error(suspensionError.message),
+            },
+        );
+
+    // Suspender corta el acceso de inmediato: se confirma. Reactivar se aplica directo.
+    const onSetSuspended = (user, suspended) => (suspended ? setToSuspend(user) : changeSuspension(user, false));
+
     const confirmDelete = () =>
         deleteUser.mutate(toDelete.id, {
             onSuccess: () => toast.success(`${toDelete.firstName} ${toDelete.lastName} fue eliminado`),
@@ -85,7 +104,7 @@ export default function UserAdminPage() {
             <PageHeader
                 eyebrow="Gestión"
                 title="Usuarios"
-                description="Consulta las cuentas, asigna roles, crea cuentas para jurados y restablece contraseñas."
+                description="Consulta las cuentas, asigna roles, crea cuentas para jurados, restablece contraseñas y suspende accesos."
                 actions={
                     <>
                         <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
@@ -174,6 +193,7 @@ export default function UserAdminPage() {
                                 onEditAffiliation: (user) => setDialog({ type: 'affiliation', user }),
                                 onTrackApprovals: (user) => setDialog({ type: 'approvals', user }),
                                 onResetPassword: (user) => setDialog({ type: 'password', user }),
+                                onSetSuspended,
                                 onDelete: setToDelete,
                             }}
                         />
@@ -193,6 +213,15 @@ export default function UserAdminPage() {
                 confirmLabel="Dar el rol"
                 onConfirm={() => changeRole(roleGrant.user, roleGrant.role)}
                 onClose={() => setRoleGrant(null)}
+            />
+
+            <ConfirmDialog
+                open={Boolean(toSuspend)}
+                title={`¿Suspender la cuenta de ${toSuspend?.firstName} ${toSuspend?.lastName}?`}
+                description={`${toSuspend?.email} no podrá iniciar sesión y se cerrará la que tenga abierta. Sus proyectos, entregas y evaluaciones se conservan, y puedes reactivarla cuando quieras.`}
+                confirmLabel="Suspender"
+                onConfirm={() => changeSuspension(toSuspend, true)}
+                onClose={() => setToSuspend(null)}
             />
 
             <ConfirmDialog

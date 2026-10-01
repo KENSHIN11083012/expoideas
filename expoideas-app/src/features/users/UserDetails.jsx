@@ -1,4 +1,4 @@
-import { Award, Ellipsis, GraduationCap, KeyRound, Trash2 } from 'lucide-react';
+import { Award, Ban, Ellipsis, GraduationCap, KeyRound, Trash2, UserCheck } from 'lucide-react';
 import { ROLES, ROLE_LABELS, assignableRoles, canManage, isManagement, requiresAffiliation, roleLabel } from '@/lib/roles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -52,6 +52,16 @@ export function OnboardingBadge({ user, className }) {
     );
 }
 
+/** La gestión le cortó el acceso: no inicia sesión hasta que la reactiven. */
+export function SuspendedBadge({ user, className }) {
+    if (!user.suspended) return null;
+    return (
+        <Badge variant="dark" mono className={className}>
+            Suspendida
+        </Badge>
+    );
+}
+
 /** Facultad arriba; sede y programa debajo. La gestión y los jurados no tienen adscripción. */
 export function AffiliationSummary({ user }) {
     if (!requiresAffiliation(user.role)) {
@@ -68,7 +78,16 @@ export function AffiliationSummary({ user }) {
 }
 
 /** Menú de acciones sobre una cuenta que el rol de la sesión puede gestionar. */
-export function UserActions({ user, actor, isOwn, onEditAffiliation, onTrackApprovals, onResetPassword, onDelete }) {
+export function UserActions({
+    user,
+    actor,
+    isOwn,
+    onEditAffiliation,
+    onTrackApprovals,
+    onResetPassword,
+    onSetSuspended,
+    onDelete,
+}) {
     if (!canManage(actor, user.role)) return null;
 
     return (
@@ -92,6 +111,15 @@ export function UserActions({ user, actor, isOwn, onEditAffiliation, onTrackAppr
                 <DropdownMenuItem onSelect={() => onResetPassword(user)} disabled={isOwn}>
                     <KeyRound /> Restablecer contraseña
                 </DropdownMenuItem>
+                {user.suspended ? (
+                    <DropdownMenuItem onSelect={() => onSetSuspended(user, false)}>
+                        <UserCheck /> Reactivar cuenta
+                    </DropdownMenuItem>
+                ) : (
+                    <DropdownMenuItem onSelect={() => onSetSuspended(user, true)} disabled={isOwn}>
+                        <Ban /> Suspender cuenta
+                    </DropdownMenuItem>
+                )}
                 {actor === ROLES.ADMIN && (
                     <>
                         <DropdownMenuSeparator />

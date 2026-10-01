@@ -7,6 +7,7 @@ export const authApi = {
 
 /** Pasos del primer ingreso; también los usa la página de Seguridad. */
 export const accountApi = {
+    /** Devuelve `{ token }`: el cambio cierra las sesiones anteriores y esta sigue con ese token. */
     changePassword: (body) => put('/users/me/password', body),
     giveDataConsent: () => put('/users/me/data-consent', { dataConsent: true }),
 };

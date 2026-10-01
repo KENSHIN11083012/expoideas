@@ -100,7 +100,8 @@ class UserAccountServiceTest {
                 new AffiliationResolver(lookup),
                 new PasswordUpdater(passwordEncoder),
                 fileService,
-                CLOCK);
+                CLOCK,
+                user -> "token-de-" + user.getTokenVersion());
         lenient().when(rosterRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
         lenient().when(campusRepository.findById(1)).thenReturn(Optional.of(barranquilla));
@@ -263,6 +264,19 @@ class UserAccountServiceTest {
 
             assertThat(ana.isMustChangePassword()).isFalse();
             assertThat(ana.getPasswordHash()).isEqualTo("hash-nuevo");
+        }
+
+        @Test
+        void changingItClosesTheOpenSessionsAndReturnsATokenForThisOne() {
+            when(passwordEncoder.matches("Temporal#2026", "hash-actual")).thenReturn(true);
+            int before = ana.getTokenVersion();
+
+            String token = service.changePassword(
+                    EMAIL, new PasswordChangeRequest("Temporal#2026", "Propia#2026", "Propia#2026"));
+
+            // Los tokens de antes llevan la versión anterior; el que se devuelve, la nueva.
+            assertThat(ana.getTokenVersion()).isEqualTo(before + 1);
+            assertThat(token).isEqualTo("token-de-" + (before + 1));
         }
 
         @Test

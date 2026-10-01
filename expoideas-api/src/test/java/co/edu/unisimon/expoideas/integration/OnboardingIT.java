@@ -54,11 +54,13 @@ class OnboardingIT extends IntegrationTest {
         Response blocked = delete("/api/v1/users/me/photo", token).expect(403);
         assertThat(blocked.<List<String>>json("$.pendingSteps")).containsExactly("CHANGE_PASSWORD", "DATA_CONSENT");
 
-        put(
+        // Cambiar la contraseña cierra la sesión con la que se entró: se sigue con el token de la respuesta.
+        token = put(
                         "/api/v1/users/me/password",
                         token,
                         Map.of("currentPassword", TEMPORAL, "newPassword", DEFINITIVA, "confirmPassword", DEFINITIVA))
-                .expect(204);
+                .expect(200)
+                .json("$.token");
         Response stillBlocked = delete("/api/v1/users/me/photo", token).expect(403);
         assertThat(stillBlocked.<List<String>>json("$.pendingSteps")).containsExactly("DATA_CONSENT");
 

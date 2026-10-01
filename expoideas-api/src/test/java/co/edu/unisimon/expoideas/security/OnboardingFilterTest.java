@@ -95,7 +95,7 @@ class OnboardingFilterTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         "{\"currentPassword\":\"Temporal#2026\",\"newPassword\":\"Propia#2026\",\"confirmPassword\":\"Propia#2026\"}"))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         mockMvc.perform(put("/api/v1/users/me/data-consent")
                         .with(newAccount())
                         .contentType(MediaType.APPLICATION_JSON)

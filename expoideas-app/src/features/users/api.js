@@ -8,6 +8,9 @@ export const usersApi = {
     /** Rol y adscripción. */
     update: (id, body) => put(`/admin/users/${id}`, body),
     resetPassword: (id, body) => post(`/admin/users/${id}/password-reset`, body),
+    /** Corta el acceso sin eliminar la cuenta, o se lo devuelve. */
+    suspend: (id) => post(`/admin/users/${id}/suspension`),
+    reactivate: (id) => post(`/admin/users/${id}/reactivation`),
     remove: (id) => del(`/admin/users/${id}`),
     /** Aprobaciones de cátedra: las que nacen de un proyecto y las manuales. */
     listApprovals: (userId) => get(`/admin/track-approvals?userId=${userId}`),

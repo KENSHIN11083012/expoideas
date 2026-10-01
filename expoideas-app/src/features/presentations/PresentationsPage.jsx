@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarClock, CalendarPlus, Pencil, X } from 'lucide-react';
+import { BellRing, CalendarClock, CalendarPlus, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { ROUTES } from '@/lib/routes';
 import { TRACK_LIST, trackLabel } from '@/lib/tracks';
 import { useEditions } from '@/features/editions/queries';
+import { useRemindJurors } from '@/features/evaluations/queries';
 import { useProjectDirectory } from '@/features/projects/directory';
 import { PageContainer } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/ui/page-header';
@@ -69,8 +70,9 @@ export default function PresentationsPage() {
     const projects = useProjectDirectory(filters);
     const agenda = usePresentationAgenda(selectedEdition, track);
     const schedule = useSchedulePresentation(selectedEdition, track);
+    const remind = useRemindJurors();
     const [dialog, setDialog] = useState(null); // { row }
-    const [confirm, setConfirm] = useState(null); // row
+    const [confirm, setConfirm] = useState(null); // row | 'reminder'
 
     const rows = useMemo(() => {
         const byProject = new Map((agenda.data ?? []).map((item) => [item.projectId, item]));
@@ -99,12 +101,36 @@ export default function PresentationsPage() {
         }
     };
 
+    /** Un correo a cada jurado con lo que le falta por calificar en esta cátedra. */
+    const sendReminders = async () => {
+        setConfirm(null);
+        try {
+            const sent = await remind.mutateAsync({ editionId: selectedEdition, track });
+            toast.success(
+                sent.jurors === 0
+                    ? 'Ningún jurado tiene proyectos pendientes'
+                    : `Avisamos a ${sent.jurors} ${sent.jurors === 1 ? 'jurado' : 'jurados'} por ${sent.projects} ${sent.projects === 1 ? 'proyecto' : 'proyectos'} sin calificar`,
+            );
+        } catch (remindError) {
+            toast.error(remindError.message);
+        }
+    };
+
     return (
         <PageContainer>
             <PageHeader
                 eyebrow="Gestión"
                 title="Sustentaciones"
                 description="Asigna fecha, hora y lugar a cada proyecto. El equipo y el profesor del grupo reciben el aviso por correo."
+                actions={
+                    <Button
+                        variant="outline"
+                        onClick={() => setConfirm('reminder')}
+                        disabled={!selectedEdition || remind.isPending}
+                    >
+                        <BellRing /> Recordar a los jurados
+                    </Button>
+                }
             />
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -239,7 +265,15 @@ export default function PresentationsPage() {
             )}
 
             <ConfirmDialog
-                open={Boolean(confirm)}
+                open={confirm === 'reminder'}
+                title="¿Recordar a los jurados?"
+                description={`Cada jurado de ${trackLabel(track)} con proyectos sin calificar recibirá un correo con su lista. No se escribe a quien ya terminó.`}
+                confirmLabel="Enviar recordatorio"
+                onConfirm={sendReminders}
+                onClose={() => setConfirm(null)}
+            />
+            <ConfirmDialog
+                open={Boolean(confirm) && confirm !== 'reminder'}
                 title="¿Quitar la sustentación?"
                 description={`"${confirm?.title ?? ''}" queda sin fecha. No se envía ningún correo: avisa al equipo por tu cuenta.`}
                 confirmLabel="Quitar"

@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -13,19 +14,24 @@ import co.edu.unisimon.expoideas.common.ForbiddenActionException;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
 import co.edu.unisimon.expoideas.editions.Track;
 import co.edu.unisimon.expoideas.evaluations.EvaluationRequest.ScoreRequest;
+import co.edu.unisimon.expoideas.notifications.EvaluationReminderEvent;
 import co.edu.unisimon.expoideas.projects.Project;
 import co.edu.unisimon.expoideas.projects.ProjectPolicy;
+import co.edu.unisimon.expoideas.projects.ProjectRepository;
 import co.edu.unisimon.expoideas.support.TestData;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 /** Quién califica, qué se le exige a una evaluación y cómo sale la nota. */
 @ExtendWith(MockitoExtension.class)
@@ -45,6 +51,12 @@ class EvaluationServiceTest {
     @Mock
     private EvaluatorRule evaluatorRule;
 
+    @Mock
+    private ProjectRepository projectRepository;
+
+    @Mock
+    private ApplicationEventPublisher events;
+
     private EvaluationService service;
     private Project project;
     private Rubric rubric;
@@ -57,7 +69,8 @@ class EvaluationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new EvaluationService(rubricRepository, evaluationRepository, policy, evaluatorRule);
+        service = new EvaluationService(
+                rubricRepository, evaluationRepository, projectRepository, policy, evaluatorRule, events);
         project = mock(Project.class);
         lenient().when(project.getId()).thenReturn(PROJECT);
         lenient().when(project.getTrack()).thenReturn(Track.INNPRENDE_I);
@@ -216,6 +229,60 @@ class EvaluationServiceTest {
                 .isInstanceOf(ForbiddenActionException.class);
     }
 
+    @Test
+    void listsGetTheGradeOfEveryProjectAtOnce() {
+        Project other = mock(Project.class);
+        when(other.getId()).thenReturn(11);
+        when(evaluatorRule.evaluatorsByProject(List.of(project, other)))
+                .thenReturn(Map.of(PROJECT, List.of(marta, pedro), 11, List.of(marta)));
+        when(evaluationRepository.findByProjectIdInOrderByCreatedAtAsc(List.of(PROJECT, 11)))
+                .thenReturn(List.of(evaluation(marta, 13, 23), evaluation(pedro, 12, 22)));
+
+        Map<Integer, ProjectGrade> grades = service.gradesOf(List.of(project, other));
+
+        // Marta 4.5 y Pedro 3.8: 4.2 con los dos jurados; el otro proyecto no tiene nada todavía.
+        assertThat(grades.get(PROJECT)).isEqualTo(new ProjectGrade(new BigDecimal("4.2"), GradeScale.GOOD, 2, 2));
+        assertThat(grades.get(11)).isEqualTo(new ProjectGrade(null, null, 1, 0));
+        assertThat(service.gradesOf(List.of())).isEmpty();
+    }
+
+    @Test
+    void theReminderGoesOnceToEachJurorWithTheirPendingProjects() {
+        Project other = mock(Project.class);
+        when(other.getId()).thenReturn(11);
+        when(other.getTitle()).thenReturn("Riego inteligente");
+        when(project.getTitle()).thenReturn("BioSensor");
+        when(projectRepository.search(5, Track.INNPRENDE_I, null, null, null, null))
+                .thenReturn(List.of(project, other));
+        when(evaluatorRule.evaluatorsByProject(List.of(project, other)))
+                .thenReturn(Map.of(PROJECT, List.of(marta, pedro), 11, List.of(marta)));
+        // Marta ya calificó BioSensor; le falta Riego. A Pedro le falta BioSensor.
+        when(evaluationRepository.findByProjectIdInOrderByCreatedAtAsc(List.of(PROJECT, 11)))
+                .thenReturn(List.of(evaluation(marta, 13, 23)));
+
+        ReminderResponse sent = service.remind(5, Track.INNPRENDE_I);
+
+        assertThat(sent).isEqualTo(new ReminderResponse(2, 2));
+        ArgumentCaptor<Object> published = ArgumentCaptor.forClass(Object.class);
+        verify(events, times(2)).publishEvent(published.capture());
+        assertThat(published.getAllValues())
+                .containsExactlyInAnyOrder(
+                        new EvaluationReminderEvent(marta.getEmail(), marta.fullName(), List.of("Riego inteligente")),
+                        new EvaluationReminderEvent(pedro.getEmail(), pedro.fullName(), List.of("BioSensor")));
+    }
+
+    @Test
+    void withNothingPendingNobodyGetsMail() {
+        when(projectRepository.search(5, Track.INNPRENDE_I, null, null, null, null))
+                .thenReturn(List.of(project));
+        when(evaluatorRule.evaluatorsByProject(List.of(project))).thenReturn(Map.of(PROJECT, List.of(marta)));
+        when(evaluationRepository.findByProjectIdInOrderByCreatedAtAsc(List.of(PROJECT)))
+                .thenReturn(List.of(evaluation(marta, 13, 23)));
+
+        assertThat(service.remind(5, Track.INNPRENDE_I)).isEqualTo(new ReminderResponse(0, 0));
+        verify(events, never()).publishEvent(any());
+    }
+
     // ── Datos de apoyo ──────────────────────────────────────────────────────
 
     /** Un criterio con id {@code number} y niveles con ids {@code number}1, {@code number}2... */
@@ -257,6 +324,7 @@ class EvaluationServiceTest {
 
     private Evaluation evaluation(User juror, int firstLevel, int secondLevel) {
         Evaluation evaluation = Evaluation.of(project, juror);
+        evaluation.setId(juror.getId() * 100);
         evaluation.score(rubric.getCriteria().get(0), level(rubric, firstLevel), "Observación");
         evaluation.score(rubric.getCriteria().get(1), level(rubric, secondLevel), "Observación");
         return evaluation;

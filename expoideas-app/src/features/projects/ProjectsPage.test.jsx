@@ -93,6 +93,17 @@ describe('Listado para la gestión', () => {
         await waitFor(() => expect(lastFilters()).toMatchObject({ track: 'INNPRENDE_II', sectorId: '3' }));
     });
 
+    it('muestra la nota del proyecto y cuántos jurados van, o un guion si nadie ha calificado', () => {
+        const graded = { ...summary, grade: 4.3, scale: 'GOOD', jurors: 3, evaluated: 2 };
+        renderPage({ projects: [graded, { ...summary, id: 11, title: 'Riego', grade: null, jurors: 1, evaluated: 0 }] });
+
+        const table = within(screen.getByRole('table'));
+        expect(table.getByText('4.3')).toBeInTheDocument();
+        expect(table.getByText('· Bueno')).toBeInTheDocument();
+        expect(table.getByText('2 de 3 jurados')).toBeInTheDocument();
+        expect(table.getByTitle('Ningún jurado ha calificado')).toBeInTheDocument();
+    });
+
     it('muestra el resultado y filtra por él', async () => {
         renderPage({
             projects: [
@@ -103,7 +114,8 @@ describe('Listado para la gestión', () => {
         const table = within(screen.getByRole('table'));
 
         expect(table.getByText('Aprobado')).toBeInTheDocument();
-        expect(table.getAllByText('—')).toHaveLength(1);
+        // El guion del resultado; los de la nota llevan título y se cuentan aparte.
+        expect(table.getAllByText('—').filter((cell) => !cell.title)).toHaveLength(1);
 
         await userEvent.selectOptions(screen.getByLabelText('Resultado'), 'NOT_APPROVED');
         await waitFor(() => expect(lastFilters()).toMatchObject({ result: 'NOT_APPROVED' }));

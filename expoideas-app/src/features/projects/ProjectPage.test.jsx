@@ -13,6 +13,9 @@ vi.mock('@/features/auth/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('@/features/presentations/queries', () => ({ useProjectPresentation: vi.fn() }));
 vi.mock('@/features/jury/JurorsPanel', () => ({ JurorsPanel: () => <section>Panel de jurados</section> }));
 vi.mock('@/features/jury/queries', () => ({ useJuryProjects: vi.fn() }));
+vi.mock('@/features/evaluations/ProjectEvaluations', () => ({
+    ProjectEvaluations: () => <section>Panel de evaluación</section>,
+}));
 vi.mock('./queries', () => ({
     useProject: vi.fn(),
     useInviteMember: vi.fn(),
@@ -251,6 +254,24 @@ describe('Los jurados', () => {
         renderPage(project, { role: 'TEACHER', userId: 7 });
 
         expect(screen.queryByText('Panel de jurados')).not.toBeInTheDocument();
+    });
+
+    it('la evaluación la ven el profesor del grupo y la gestión, no el equipo ni un jurado', () => {
+        renderPage(project, { role: 'TEACHER', userId: 7 });
+        expect(screen.getByText('Panel de evaluación')).toBeInTheDocument();
+        screen.getByText('Panel de evaluación').closest('main, body');
+
+        renderPage(project, { role: 'MACONDOLAB', userId: 9 });
+        expect(screen.getAllByText('Panel de evaluación')).toHaveLength(2);
+    });
+
+    it('ni el equipo ni un jurado ven la evaluación', () => {
+        renderPage(project, { role: 'STUDENT', userId: 1 });
+        expect(screen.queryByText('Panel de evaluación')).not.toBeInTheDocument();
+
+        useJuryProjects.mockReturnValue({ data: [project] });
+        renderPage(project, { role: 'JUDGE', userId: 8 });
+        expect(screen.queryByText('Panel de evaluación')).not.toBeInTheDocument();
     });
 
     it('un jurado vuelve a Evaluar desde la ficha', () => {

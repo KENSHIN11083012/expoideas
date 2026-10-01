@@ -13,6 +13,8 @@ este documento es la referencia para leerlas y para revisar cambios.
 - Califican los jurados asignados al proyecto, y cada uno puede corregir lo que guardó. Si la gestión
   quita a un jurado, su evaluación se conserva pero deja de contar.
 - Las notas las ven el profesor del grupo y la gestión; cada jurado, solo la suya.
+- La gestión puede recordar por correo, desde «Sustentaciones», a los jurados de una cátedra lo que les
+  falta por calificar. No hay envíos automáticos: no está definido cuándo.
 - Escala institucional (Art. 62 del Estatuto Estudiantil): Deficiente 0,0–2,9 · Aceptable 3,0–3,9 ·
   Bueno 4,0–4,4 · Muy bueno 4,5–4,9 · Excelente 5,0.
 

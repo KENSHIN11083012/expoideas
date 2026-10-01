@@ -59,6 +59,9 @@ public class SecurityConfig {
     /** Jurados de un proyecto: los asigna y consulta la gestión. Cada jurado ve los suyos en /jury/projects. */
     private static final String JURORS = "/api/v1/projects/*/jurors/**";
 
+    /** Recordatorio por correo a los jurados con evaluaciones pendientes: lo manda la gestión. */
+    private static final String EVALUATION_REMINDERS = "/api/v1/evaluations/reminders";
+
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final HandlerExceptionResolver exceptionResolver;
@@ -105,8 +108,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, EDITIONS)
                         .hasRole("MACONDOLAB")
 
-                        // Jurados: los asigna la gestión.
+                        // Jurados: los asigna la gestión, y ella les recuerda lo pendiente.
                         .requestMatchers(JURORS)
+                        .hasRole("MACONDOLAB")
+                        .requestMatchers(HttpMethod.POST, EVALUATION_REMINDERS)
                         .hasRole("MACONDOLAB")
 
                         // Sustentaciones: las programa la gestión.

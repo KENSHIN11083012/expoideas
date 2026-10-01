@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -110,6 +111,31 @@ class EvaluationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.grade").value(4.5))
                 .andExpect(jsonPath("$.jurors").value(2));
+    }
+
+    @Test
+    @WithMockUser(roles = "MACONDOLAB")
+    void managementRemindsTheJurors() throws Exception {
+        when(evaluationService.remind(1, Track.INNPRENDE_I)).thenReturn(new ReminderResponse(2, 3));
+
+        mockMvc.perform(post("/api/v1/evaluations/reminders")
+                        .param("editionId", "1")
+                        .param("track", "INNPRENDE_I"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.jurors").value(2))
+                .andExpect(jsonPath("$.projects").value(3));
+        mockMvc.perform(post("/api/v1/evaluations/reminders").param("editionId", "1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = JUROR, roles = "JUDGE")
+    void aJurorDoesNotSendReminders() throws Exception {
+        mockMvc.perform(post("/api/v1/evaluations/reminders")
+                        .param("editionId", "1")
+                        .param("track", "INNPRENDE_I"))
+                .andExpect(status().isForbidden());
+        verifyNoInteractions(evaluationService);
     }
 
     @Test

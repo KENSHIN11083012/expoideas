@@ -4,6 +4,8 @@ import co.edu.unisimon.expoideas.common.ForbiddenActionException;
 import co.edu.unisimon.expoideas.deliverables.DeliverableProgressService;
 import co.edu.unisimon.expoideas.deliverables.DeliverableProgressService.Progress;
 import co.edu.unisimon.expoideas.editions.Track;
+import co.edu.unisimon.expoideas.evaluations.EvaluationService;
+import co.edu.unisimon.expoideas.evaluations.ProjectGrade;
 import co.edu.unisimon.expoideas.projects.Project;
 import co.edu.unisimon.expoideas.projects.ProjectPolicy;
 import co.edu.unisimon.expoideas.projects.ProjectRepository;
@@ -29,15 +31,19 @@ public class ProjectDirectoryService {
 
     private final ProjectRepository projectRepository;
     private final DeliverableProgressService progressService;
+    private final EvaluationService evaluationService;
     private final ProjectPolicy policy;
 
     @Transactional(readOnly = true)
     public List<ProjectSummaryResponse> list(String email, ProjectFilter filter) {
         List<Project> projects = find(email, filter);
         Map<Integer, Progress> progress = progressService.of(projects);
+        Map<Integer, ProjectGrade> grades = evaluationService.gradesOf(projects);
         return projects.stream()
-                .map(project ->
-                        ProjectSummaryResponse.of(project, progress.getOrDefault(project.getId(), new Progress(0, 0))))
+                .map(project -> ProjectSummaryResponse.of(
+                        project,
+                        progress.getOrDefault(project.getId(), new Progress(0, 0)),
+                        grades.getOrDefault(project.getId(), ProjectGrade.NONE)))
                 .toList();
     }
 

@@ -6,11 +6,13 @@ import { useProjectDirectory } from '@/features/projects/directory';
 import { openEdition } from '@/test/fixtures';
 import { apiError, renderWithProviders } from '@/test/utils';
 import PresentationsPage from './PresentationsPage';
+import { useRemindJurors } from '@/features/evaluations/queries';
 import { usePresentationAgenda, useSchedulePresentation } from './queries';
 
 vi.mock('@/features/editions/queries', () => ({ useEditions: vi.fn() }));
 vi.mock('@/features/projects/directory', () => ({ useProjectDirectory: vi.fn() }));
 vi.mock('./queries', () => ({ usePresentationAgenda: vi.fn(), useSchedulePresentation: vi.fn() }));
+vi.mock('@/features/evaluations/queries', () => ({ useRemindJurors: vi.fn() }));
 
 const bioSensor = { id: 10, title: 'BioSensor', leader: 'Ana María Pérez', teacher: 'Carlos Mendoza', track: 'INNPRENDE_I' };
 const riego = { id: 11, title: 'Riego inteligente', leader: 'Luis Gómez', teacher: 'Carlos Mendoza', track: 'INNPRENDE_I' };
@@ -27,6 +29,7 @@ const appointment = {
 };
 
 let schedule;
+let remind;
 
 const renderPage = ({ projects = [bioSensor, riego], agenda = [appointment] } = {}) => {
     useEditions.mockReturnValue({ data: [openEdition], isPending: false });
@@ -39,6 +42,8 @@ const renderPage = ({ projects = [bioSensor, riego], agenda = [appointment] } = 
 beforeEach(() => {
     schedule = { mutateAsync: vi.fn().mockResolvedValue({}), isPending: false };
     useSchedulePresentation.mockReturnValue(schedule);
+    remind = { mutateAsync: vi.fn().mockResolvedValue({ jurors: 2, projects: 3 }), isPending: false };
+    useRemindJurors.mockReturnValue(remind);
 });
 
 describe('La agenda de sustentaciones', () => {
@@ -109,6 +114,19 @@ describe('La agenda de sustentaciones', () => {
         await user.click(confirm.getByRole('button', { name: 'Quitar' }));
 
         await waitFor(() => expect(schedule.mutateAsync).toHaveBeenCalledWith({ projectId: 10 }));
+    });
+
+    it('recuerda a los jurados de la cátedra elegida, después de confirmar', async () => {
+        renderPage();
+
+        await userEvent.click(screen.getByRole('button', { name: /Recordar a los jurados/ }));
+        const dialog = within(screen.getByRole('alertdialog'));
+        expect(dialog.getByText(/INNPRENDE I · Despegue/)).toBeInTheDocument();
+        expect(remind.mutateAsync).not.toHaveBeenCalled();
+
+        await userEvent.click(dialog.getByRole('button', { name: 'Enviar recordatorio' }));
+
+        await waitFor(() => expect(remind.mutateAsync).toHaveBeenCalledWith({ editionId: '1', track: 'INNPRENDE_I' }));
     });
 
     it('sin proyectos en la cátedra lo dice', () => {

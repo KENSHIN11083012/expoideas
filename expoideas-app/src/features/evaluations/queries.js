@@ -4,6 +4,7 @@ import { evaluationApi } from './api';
 const rubricKey = (track) => ['rubric', track];
 const evaluationKey = (projectId) => ['evaluation', String(projectId)];
 const myEvaluationsKey = ['my-evaluations'];
+const resultsKey = (projectId) => ['project-evaluations', String(projectId)];
 
 /** La rúbrica de una cátedra. Cambia solo con un despliegue: no hace falta volver a pedirla. */
 export const useRubric = (track) =>
@@ -25,6 +26,18 @@ export const useMyEvaluation = (projectId) =>
 /** Todo lo que ya califiqué, para marcar en «Evaluar» qué proyectos faltan. */
 export const useMyEvaluations = () => useQuery({ queryKey: myEvaluationsKey, queryFn: evaluationApi.allMine });
 
+/** La nota de un proyecto con el detalle de cada jurado. */
+export const useProjectEvaluations = (projectId) =>
+    useQuery({
+        queryKey: resultsKey(projectId),
+        queryFn: () => evaluationApi.results(projectId),
+        enabled: Boolean(projectId),
+    });
+
+/** Recuerda a los jurados de una cátedra lo que les falta por calificar. */
+export const useRemindJurors = () =>
+    useMutation({ mutationFn: ({ editionId, track }) => evaluationApi.remind(editionId, track) });
+
 /** Guarda o corrige mi evaluación y actualiza lo que ya estaba en pantalla. */
 export const useSaveEvaluation = (projectId) => {
     const queryClient = useQueryClient();
@@ -33,6 +46,7 @@ export const useSaveEvaluation = (projectId) => {
         onSuccess: (saved) => {
             queryClient.setQueryData(evaluationKey(projectId), saved);
             queryClient.invalidateQueries({ queryKey: myEvaluationsKey });
+            queryClient.invalidateQueries({ queryKey: resultsKey(projectId) });
         },
     });
 };

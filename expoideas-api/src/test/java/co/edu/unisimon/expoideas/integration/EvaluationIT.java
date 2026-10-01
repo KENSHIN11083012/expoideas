@@ -3,6 +3,7 @@ package co.edu.unisimon.expoideas.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import co.edu.unisimon.expoideas.users.Role;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,7 +46,7 @@ class EvaluationIT extends IntegrationTest {
     }
 
     @Test
-    void aJurorEvaluatesCorrectsAndTheTeacherSeesTheGrade() {
+    void aJurorEvaluatesCorrectsAndTheTeacherSeesTheGrade() throws Exception {
         String macondolab = loginAs(Role.MACONDOLAB);
         String leaderEmail = createAccount(Role.STUDENT);
         String leader = login(leaderEmail, PASSWORD);
@@ -101,6 +102,43 @@ class EvaluationIT extends IntegrationTest {
         assertThat(half.<Integer>json("$.jurors")).isEqualTo(2);
         List<Integer> pending = half.json("$.pending[*].userId");
         assertThat(pending).containsExactly(idOf(pedroEmail));
+
+        // El listado y el CSV de la gestión llevan la nota y cuántos jurados van.
+        String directory = "/api/v1/projects?editionId=" + openEdition() + "&track=INNPRENDE_I";
+        List<Double> listed = get(directory, macondolab).expect(200).json("$[?(@.id == " + projectId + ")].grade");
+        assertThat(listed).containsExactly(5.0);
+        List<Integer> evaluated =
+                get(directory, macondolab).expect(200).json("$[?(@.id == " + projectId + ")].evaluated");
+        assertThat(evaluated).containsExactly(1);
+        String csv = new String(
+                get("/api/v1/projects/export?editionId=" + openEdition(), macondolab)
+                        .expect(200)
+                        .bytes(),
+                StandardCharsets.UTF_8);
+        assertThat(csv).contains("Nota;Jurados que calificaron").contains(";5.0;1 de 2;");
+
+        // La gestión recuerda: solo a Pedro, que es quien tiene este proyecto pendiente.
+        Response reminded = post(
+                        "/api/v1/evaluations/reminders?editionId=" + openEdition() + "&track=INNPRENDE_I",
+                        macondolab,
+                        null)
+                .expect(200);
+        assertThat(reminded.<Integer>json("$.jurors")).isGreaterThanOrEqualTo(1);
+        String mail = body(awaitMail(pedroEmail, "Tienes proyectos por calificar"));
+        assertThat(mail)
+                .contains("Prueba TEACHER")
+                .contains("- Proyecto por evaluar")
+                .contains("/jurado/proyectos");
+        assertThat(MAIL.getReceivedMessages()).noneMatch(message -> {
+            try {
+                return message.getSubject().startsWith("Tienes proyectos")
+                        && message.getAllRecipients()[0].toString().equalsIgnoreCase(martaEmail);
+            } catch (Exception e) {
+                return false;
+            }
+        });
+        post("/api/v1/evaluations/reminders?editionId=" + openEdition() + "&track=INNPRENDE_I", pedro, null)
+                .expect(403);
 
         // El segundo jurado marca que el equipo no asistió: 0.0, y el promedio baja a 2.5.
         Response absent = put(mine, pedro, Map.of("absent", true)).expect(200);

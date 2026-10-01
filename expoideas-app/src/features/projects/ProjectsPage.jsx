@@ -10,6 +10,7 @@ import { useAuth } from '@/features/auth/useAuth';
 import { CATALOG_PATHS } from '@/features/catalogs/api';
 import { useCatalogItems } from '@/features/catalogs/queries';
 import { useEditions } from '@/features/editions/queries';
+import { formatGrade, scaleLabel } from '@/features/evaluations/grades';
 import { PageContainer } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/ui/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +47,28 @@ function DeliverablesBadge({ project }) {
     );
 }
 
+/** La nota del proyecto (promedio de los jurados que ya calificaron) y cuántos van. */
+function GradeCell({ project }) {
+    if (project.grade == null) {
+        return (
+            <span className="text-on-surface-variant" title="Ningún jurado ha calificado">
+                —
+            </span>
+        );
+    }
+    return (
+        <span className="flex flex-col">
+            <span>
+                <strong className="text-on-surface">{formatGrade(project.grade)}</strong>
+                <span className="text-on-surface-variant"> · {scaleLabel(project.scale)}</span>
+            </span>
+            <span className="text-xs text-on-surface-variant">
+                {project.evaluated} de {project.jurors} {project.jurors === 1 ? 'jurado' : 'jurados'}
+            </span>
+        </span>
+    );
+}
+
 /** Integrantes aceptados, resaltando al grupo que no llega al mínimo. */
 function TeamCount({ project }) {
     const short = project.members < project.minMembers;
@@ -79,6 +102,9 @@ function ProjectRow({ project }) {
             </td>
             <td className="px-5 py-3">
                 <DeliverablesBadge project={project} />
+            </td>
+            <td className="px-5 py-3">
+                <GradeCell project={project} />
             </td>
             <td className="px-5 py-3">
                 <ResultBadge project={project} />
@@ -128,6 +154,12 @@ function ProjectCard({ project }) {
                     <div className="flex gap-2">
                         <dt className="text-on-surface-variant">Líder:</dt>
                         <dd className="text-on-surface">{project.leader}</dd>
+                    </div>
+                    <div className="flex gap-2">
+                        <dt className="text-on-surface-variant">Nota:</dt>
+                        <dd>
+                            <GradeCell project={project} />
+                        </dd>
                     </div>
                 </dl>
                 <div className="flex flex-wrap items-center justify-between gap-2 border-t border-outline-variant/50 pt-3">
@@ -303,6 +335,9 @@ export default function ProjectsPage() {
                                     </th>
                                     <th scope="col" className="px-5 py-3">
                                         Entregables
+                                    </th>
+                                    <th scope="col" className="px-5 py-3">
+                                        Nota
                                     </th>
                                     <th scope="col" className="px-5 py-3">
                                         Resultado

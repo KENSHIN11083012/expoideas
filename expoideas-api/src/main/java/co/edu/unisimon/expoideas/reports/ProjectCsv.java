@@ -29,6 +29,8 @@ final class ProjectCsv {
             "Mínimo de integrantes",
             "Entregables obligatorios",
             "Entregados",
+            "Nota",
+            "Jurados que calificaron",
             "Resultado",
             "Inscrito el");
 
@@ -50,6 +52,8 @@ final class ProjectCsv {
                             String.valueOf(project.minMembers()),
                             String.valueOf(project.requiredDeliverables()),
                             String.valueOf(project.deliveredDeliverables()),
+                            project.grade() == null ? "" : project.grade().toPlainString(),
+                            project.jurors() == 0 ? "" : project.evaluated() + " de " + project.jurors(),
                             resultLabel(project.result()),
                             project.createdAt() == null ? "" : DATE.format(project.createdAt())));
         }

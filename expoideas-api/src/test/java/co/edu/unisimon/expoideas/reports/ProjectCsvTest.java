@@ -3,7 +3,9 @@ package co.edu.unisimon.expoideas.reports;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import co.edu.unisimon.expoideas.editions.Track;
+import co.edu.unisimon.expoideas.evaluations.GradeScale;
 import co.edu.unisimon.expoideas.projects.ProjectResult;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -20,7 +22,7 @@ class ProjectCsvTest {
         assertThat(lines[0]).startsWith(ProjectCsv.BOM + "Edición;Cátedra;Proyecto");
         assertThat(lines[1])
                 .isEqualTo("Expoideas 2026-2;INNPRENDE I · Despegue;BioSensor IoT;Agroindustria y alimentos;"
-                        + "Prototipo digital;Carlos Mendoza;Ana Pérez;3;2;2;1;Aprobado;2026-11-04");
+                        + "Prototipo digital;Carlos Mendoza;Ana Pérez;3;2;2;1;4.3;2 de 3;Aprobado;2026-11-04");
     }
 
     @Test
@@ -29,9 +31,9 @@ class ProjectCsvTest {
         String row = csv.split("\n")[1];
 
         assertThat(row).contains("\"Riego; inteligente\"").contains("\"Moda y \"\"textil\"\"\"");
-        // Las comillas protegen el punto y coma: la fila sigue teniendo 13 columnas.
+        // Las comillas protegen el punto y coma: la fila sigue teniendo 15 columnas.
         assertThat(row.replaceAll("\"[^\"]*(\"\"[^\"]*)*\"", "X").split(";", -1))
-                .hasSize(13);
+                .hasSize(15);
     }
 
     @Test
@@ -54,6 +56,10 @@ class ProjectCsvTest {
                 2,
                 2,
                 1,
+                new BigDecimal("4.3"),
+                GradeScale.GOOD,
+                3,
+                2,
                 ProjectResult.APPROVED,
                 LocalDateTime.of(2026, 11, 4, 9, 30));
     }

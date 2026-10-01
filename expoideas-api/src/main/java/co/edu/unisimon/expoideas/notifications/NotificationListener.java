@@ -4,6 +4,7 @@ import co.edu.unisimon.expoideas.common.ExpoideasProperties;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -101,6 +102,24 @@ public class NotificationListener {
         for (String recipient : event.recipients()) {
             deliver(recipient, subject, body);
         }
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    public void onEvaluationReminder(EvaluationReminderEvent event) {
+        String subject = "Tienes proyectos por calificar";
+        String list = event.projectTitles().stream().map(title -> "- " + title).collect(Collectors.joining("\n"));
+        String body = """
+                Hola, %s.
+
+                Te falta calificar con la rúbrica:
+                %s
+
+                Entra a Idearium y, en Evaluar, abre cada proyecto para calificarlo.%s
+
+                Cátedra UNISIMÓN INNPRENDE · MacondoLab
+                """.formatted(event.fullName(), list, appLink("/jurado/proyectos"));
+        deliver(event.email(), subject, body);
     }
 
     private void deliver(String to, String subject, String body) {

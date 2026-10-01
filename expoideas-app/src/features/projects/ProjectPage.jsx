@@ -19,6 +19,7 @@ import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { ProjectDeliverables } from '@/features/deliverables/ProjectDeliverables';
+import { ProjectEvaluations } from '@/features/evaluations/ProjectEvaluations';
 import { JurorsPanel } from '@/features/jury/JurorsPanel';
 import { useJuryProjects } from '@/features/jury/queries';
 import { canBeJuror } from '@/features/jury/schemas';
@@ -342,6 +343,9 @@ export default function ProjectPage() {
                     </section>
 
                     <ProjectDeliverables project={project} isMember={me?.status === 'ACCEPTED'} />
+
+                    {/* Las notas las ven el profesor del grupo y la gestión; el equipo y los jurados, no. */}
+                    {(isManagement || isTeacher) && <ProjectEvaluations project={project} />}
 
                     {isManagement && <JurorsPanel projectId={project.id} />}
                 </div>

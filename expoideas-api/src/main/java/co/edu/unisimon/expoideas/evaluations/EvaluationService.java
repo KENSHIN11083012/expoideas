@@ -6,10 +6,13 @@ import co.edu.unisimon.expoideas.common.InvalidFieldsException;
 import co.edu.unisimon.expoideas.editions.Track;
 import co.edu.unisimon.expoideas.evaluations.EvaluationRequest.ScoreRequest;
 import co.edu.unisimon.expoideas.evaluations.ProjectEvaluationsResponse.PendingJuror;
+import co.edu.unisimon.expoideas.notifications.EvaluationReminderEvent;
 import co.edu.unisimon.expoideas.projects.Project;
 import co.edu.unisimon.expoideas.projects.ProjectPolicy;
+import co.edu.unisimon.expoideas.projects.ProjectRepository;
 import co.edu.unisimon.expoideas.users.User;
-import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,6 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +36,10 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>Si la gestión quita a un jurado, su evaluación se conserva pero deja de
  * contar; vuelve a contar si lo asignan otra vez.
+ *
+ * <p>Los listados de gestión piden la nota de muchos proyectos de una vez
+ * ({@link #gradesOf}); la gestión también puede recordar por correo a los
+ * jurados lo que les falta ({@link #remind}).
  */
 @Slf4j
 @Service
@@ -40,8 +48,10 @@ public class EvaluationService {
 
     private final RubricRepository rubricRepository;
     private final EvaluationRepository evaluationRepository;
+    private final ProjectRepository projectRepository;
     private final ProjectPolicy policy;
     private final EvaluatorRule evaluatorRule;
+    private final ApplicationEventPublisher events;
 
     /** @throws NoSuchElementException si esa cátedra todavía no tiene rúbrica */
     @Transactional(readOnly = true)
@@ -120,27 +130,101 @@ public class EvaluationService {
         }
 
         List<User> jurors = evaluatorRule.evaluatorsOf(project);
-        Set<Integer> jurorIds = jurors.stream().map(User::getId).collect(Collectors.toSet());
-        // Solo cuentan las de quienes siguen asignados.
-        List<Evaluation> counted = evaluationRepository.findByProjectIdOrderByCreatedAtAsc(projectId).stream()
-                .filter(evaluation -> jurorIds.contains(evaluation.getJuror().getId()))
-                .toList();
+        List<Evaluation> counted = counted(evaluationRepository.findByProjectIdOrderByCreatedAtAsc(projectId), jurors);
         Set<Integer> done = counted.stream()
                 .map(evaluation -> evaluation.getJuror().getId())
                 .collect(Collectors.toSet());
 
-        Optional<BigDecimal> grade =
-                GradeScale.average(counted.stream().map(Evaluation::grade).toList());
+        ProjectGrade grade = ProjectGrade.of(counted, jurors.size());
         return new ProjectEvaluationsResponse(
                 projectId,
-                grade.orElse(null),
-                grade.map(GradeScale::of).orElse(null),
+                grade.grade(),
+                grade.scale(),
                 jurors.size(),
                 counted.stream().map(EvaluationResponse::from).toList(),
                 jurors.stream()
                         .filter(juror -> !done.contains(juror.getId()))
                         .map(PendingJuror::from)
                         .toList());
+    }
+
+    /** La nota de cada proyecto de la lista, por su id, con dos consultas para todos. */
+    @Transactional(readOnly = true)
+    public Map<Integer, ProjectGrade> gradesOf(Collection<Project> projects) {
+        if (projects.isEmpty()) {
+            return Map.of();
+        }
+        Map<Integer, List<User>> jurorsByProject = evaluatorRule.evaluatorsByProject(projects);
+        Map<Integer, List<Evaluation>> evaluationsByProject = evaluationsByProject(projects);
+
+        Map<Integer, ProjectGrade> grades = new HashMap<>();
+        for (Project project : projects) {
+            List<User> jurors = jurorsByProject.getOrDefault(project.getId(), List.of());
+            List<Evaluation> counted = counted(evaluationsByProject.getOrDefault(project.getId(), List.of()), jurors);
+            grades.put(project.getId(), ProjectGrade.of(counted, jurors.size()));
+        }
+        return grades;
+    }
+
+    /**
+     * Escribe a cada jurado de esa cátedra y edición que tenga proyectos sin
+     * calificar, con la lista de lo que le falta. Los correos salen tras el
+     * commit, en otro hilo.
+     */
+    @Transactional(readOnly = true)
+    public ReminderResponse remind(Integer editionId, Track track) {
+        List<Project> projects = projectRepository.search(editionId, track, null, null, null, null);
+        Map<Integer, List<User>> jurorsByProject = evaluatorRule.evaluatorsByProject(projects);
+        Map<Integer, List<Evaluation>> evaluationsByProject = evaluationsByProject(projects);
+
+        Map<Integer, User> jurors = new LinkedHashMap<>();
+        Map<Integer, List<String>> pendingTitles = new LinkedHashMap<>();
+        int pendingProjects = 0;
+        for (Project project : projects) {
+            Set<Integer> done = evaluationsByProject.getOrDefault(project.getId(), List.of()).stream()
+                    .map(evaluation -> evaluation.getJuror().getId())
+                    .collect(Collectors.toSet());
+            boolean pending = false;
+            for (User juror : jurorsByProject.getOrDefault(project.getId(), List.of())) {
+                if (!done.contains(juror.getId())) {
+                    jurors.putIfAbsent(juror.getId(), juror);
+                    pendingTitles
+                            .computeIfAbsent(juror.getId(), id -> new ArrayList<>())
+                            .add(project.getTitle());
+                    pending = true;
+                }
+            }
+            if (pending) {
+                pendingProjects++;
+            }
+        }
+
+        pendingTitles.forEach((jurorId, titles) -> {
+            User juror = jurors.get(jurorId);
+            events.publishEvent(new EvaluationReminderEvent(juror.getEmail(), juror.fullName(), titles));
+        });
+        log.info(
+                "Edición {} / {}: recordatorio de evaluación a {} jurados por {} proyectos",
+                editionId,
+                track,
+                pendingTitles.size(),
+                pendingProjects);
+        return new ReminderResponse(pendingTitles.size(), pendingProjects);
+    }
+
+    private Map<Integer, List<Evaluation>> evaluationsByProject(Collection<Project> projects) {
+        List<Integer> ids = projects.stream().map(Project::getId).toList();
+        return evaluationRepository.findByProjectIdInOrderByCreatedAtAsc(ids).stream()
+                .collect(Collectors.groupingBy(
+                        evaluation -> evaluation.getProject().getId(), LinkedHashMap::new, Collectors.toList()));
+    }
+
+    /** Solo cuentan las evaluaciones de quienes siguen asignados. */
+    private static List<Evaluation> counted(List<Evaluation> evaluations, List<User> jurors) {
+        Set<Integer> jurorIds = jurors.stream().map(User::getId).collect(Collectors.toSet());
+        return evaluations.stream()
+                .filter(evaluation -> jurorIds.contains(evaluation.getJuror().getId()))
+                .toList();
     }
 
     /** El proyecto, si esa cuenta lo ve y además lo califica. A quien no lo ve, como si no existiera. */

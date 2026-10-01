@@ -64,10 +64,18 @@ Detalle: [docs/rubricas.md](../../docs/rubricas.md), [docs/listado.md](../../doc
 
 ## Sin definir: se pregunta, no se rellena
 
-- Los tipos de prototipo de INNPRENDE II y qué evidencia pide cada uno.
-- Logos y paleta de Idearium (el monograma y los colores de ahora son provisionales).
-- Sectores definitivos (los cargados son provisionales).
-- Ranking, premios por sector, criterios de desempate y vitrina pública: fuera del piloto.
-- Si la invitación al equipo se sigue aceptando o queda automática: en la reunión se dijeron las dos.
-- Rúbrica del póster: la tabla y el encabezado del documento no coinciden; se cargó la tabla.
-- Envíos automáticos de recordatorio a jurados: no está definido cuándo.
+La lista completa, con lo que la plataforma hace mientras tanto y lo que cambiaría, está en
+[docs/decisiones-macondolab.md](../../docs/decisiones-macondolab.md). En corto:
+
+- **De las notas:** los valores de la rúbrica del póster (la tabla y el encabezado no coinciden; se
+  cargó la tabla), si los criterios llevan pesos (hoy, promedio simple), el doble redondeo de la
+  nota del proyecto y si se puede publicar con jurados pendientes (hoy, sí).
+- **De la inscripción:** los tipos de prototipo de INNPRENDE II y su evidencia, los sectores
+  definitivos, si el mínimo de integrantes obliga a algo (hoy solo se muestra) y si la invitación
+  al equipo se acepta o queda automática.
+- **Del cierre:** si un resultado se puede cambiar cuando el estudiante ya se inscribió en
+  INNPRENDE II (hoy, sí) y cuándo se recuerda solo a los jurados (hoy, nunca: lo envía la gestión).
+- **Fuera del piloto:** logos y paleta, ranking, premios, desempate y vitrina pública.
+
+Lo que falta saber de TI (servidor, HTTPS, correo, copias) está en
+[docs/preguntas-ti.md](../../docs/preguntas-ti.md).

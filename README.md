@@ -79,22 +79,25 @@ dominio.
 Lo que pidió MacondoLab y el orden en que se construyó, fase a fase, está en la
 [reunión de septiembre de 2026](docs/reunion-2026-09.md). Sigue pendiente:
 
-**De MacondoLab**
+**De MacondoLab**: quince decisiones del programa, en
+[docs/decisiones-macondolab.md](docs/decisiones-macondolab.md), cada una con lo que la plataforma
+hace mientras tanto. Las que conviene cerrar antes de la primera evaluación son las de las notas:
+los valores de la rúbrica del póster, si los criterios pesan distinto, cómo se redondea y si se
+puede publicar con jurados pendientes. Antes de abrir inscripciones: los tipos de prototipo de
+INNPRENDE II, los sectores, el mínimo de integrantes, la invitación a los equipos y el listado de la
+cátedra. Ranking, premios y vitrina pública siguen fuera del piloto.
 
-- Los tipos de prototipo de INNPRENDE II y qué evidencia pide cada uno. El mecanismo está hecho: los
-  carga la gestión en **Catálogos** y en los entregables.
-- Identidad visual de Idearium: los nombres ya están puestos; faltan los logos y la paleta (el
-  monograma y los colores de ahora son provisionales).
-- Dos confirmaciones: las diferencias de la rúbrica del póster ([docs/rubricas.md](docs/rubricas.md))
-  y si la invitación a un equipo se sigue aceptando o pasa a ser automática.
-- Sin definir, y por eso fuera del piloto: ranking y premios por sector, y la vitrina pública.
+**De TI**: dieciséis preguntas, en [docs/preguntas-ti.md](docs/preguntas-ti.md), cada una con su
+respuesta y lo que depende de ella. Ninguna tiene respuesta todavía. Las que frenan la salida a
+producción son el servidor y si admite Docker, la URL pública y el HTTPS, quién despliega y con
+cuánta antelación, a dónde van las copias y las políticas de protección de datos. El servidor de
+correo no frena, pero sin él no hay avisos, ni verificación del correo, ni recuperación de
+contraseña.
 
-**De TI** (las preguntas completas están en [docs/preguntas-ti.md](docs/preguntas-ti.md))
-
-- El servidor, la URL pública y el certificado HTTPS.
-- El servidor de correo (SMTP) para los avisos.
-- El listado de la cátedra para la precarga: mientras no llegue, todos se registran como estudiantes
-  y la gestión asigna los roles a mano.
+**De la plataforma**: el rastro de auditoría todavía no tiene pantalla (se consulta por la API), y
+quedan para después de abrir las mejoras del plan que no eran urgentes: paginar los listados,
+avisar antes de descartar un formulario, subir varios archivos a la vez y publicar las imágenes ya
+construidas en vez de compilarlas en el servidor.
 
 ## Requisitos
 
@@ -512,9 +515,10 @@ expoideas-api/src/main/java/co/edu/unisimon/expoideas/
   presentations/ Agenda de sustentaciones
   jury/         Jurados asignados a cada proyecto
   evaluations/  Rúbricas, evaluación de cada jurado y nota del proyecto
-  notifications/ Avisos por correo
+  notifications/ Avisos por correo, con reintentos
   reports/      Directorio de proyectos y exportación a CSV
   files/        Almacenamiento y metadatos de archivos subidos
+  audit/        Rastro de quién hizo qué, sobre qué y cuándo
   common/       Manejo de errores y configuración centralizada (ExpoideasProperties)
 
 expoideas-app/src/
@@ -522,6 +526,9 @@ expoideas-app/src/
               deliverables, presentations, jury, evaluations, home, errors
   components/ ui/ (primitivos), layout/, forms/ (compartidos entre features)
   lib/        apiClient, rutas (routes.js), roles, cátedras (tracks.js), validaciones, sesión
+
+qa/           Pruebas de punta a punta: sembrado, recorrido de la API y Playwright
+scripts/      Copia de seguridad y restauración
 ```
 
 ## Roles y permisos
@@ -547,8 +554,8 @@ jurado a un profesor o a una cuenta de gestión.
   referencia real del orden en que avanzó cada fase.
 - Formato automático y obligatorio en CI: Prettier en el frontend, Spotless con
   palantir-java-format en el backend (ver comandos arriba).
-- Desarrollo por fases: los cambios grandes se dividen en fases pequeñas, cada una en su rama,
-  probada y revisada antes de fusionarse a `main`.
+- Desarrollo por fases: los cambios grandes se dividen en fases pequeñas, cada una probada y revisada
+  antes de entrar a `main` como un commit.
 
 Las reglas completas —incluidas las del backend, las del frontend y lo que necesita permiso
 explícito— están en **[AGENTS.md](AGENTS.md)**, escrito tanto para agentes de IA como para quien

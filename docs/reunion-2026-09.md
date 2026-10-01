@@ -65,3 +65,7 @@ Otros puntos de la reunión:
 
 - Invitaciones al equipo: ¿la persona invitada sigue teniendo que aceptar, o queda asociada al
   proyecto automáticamente? En la reunión se dijeron las dos cosas.
+
+Estas y las demás decisiones abiertas del programa se llevan desde octubre de 2026 en una sola
+lista, con lo que la plataforma hace mientras tanto:
+[decisiones-macondolab.md](decisiones-macondolab.md).

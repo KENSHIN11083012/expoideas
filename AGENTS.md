@@ -11,8 +11,9 @@ archivo en lo de proceso; y si algo no está en ninguno, se pregunta antes de in
 
 Idearium (antes Expoideas; el repositorio y los paquetes conservan ese nombre) es la plataforma de
 la Cátedra INNPRENDE de la Universidad Simón Bolívar, con MacondoLab:
-inscripción de proyectos, entregables y —cuando MacondoLab defina las rúbricas— evaluación por
-jurados. Son dos aplicaciones en un mismo repositorio:
+inscripción de proyectos, entregables, sustentaciones y evaluación por jurados con rúbrica. Son dos
+aplicaciones en un mismo repositorio, más las pruebas de punta a punta (`qa/`) y los scripts de
+operación (`scripts/`):
 
 - `expoideas-api`: Spring Boot 4 · Java 25 · MySQL 8.4 · Flyway.
 - `expoideas-app`: React 19 · Vite · Tailwind 4 · TanStack Query.
@@ -46,17 +47,20 @@ responsabilidad es de quien hace el commit.
 (`spring.servlet.multipart.max-file-size`), en la validación y en la interfaz. No se sube sin que TI
 lo autorice.
 
-**6. Lo que no está definido, no se inventa.** Rúbricas, pesos de evaluación, criterios de premios,
-si habrá jurados externos: todo eso lo debe MacondoLab y está listado en el apartado **Qué falta**
-del [README](README.md#qué-falta). Ante una duda de dominio se pregunta; no se rellena con datos de
-ejemplo que luego alguien confunde con lo acordado.
+**6. Lo que no está definido, no se inventa.** Los pesos de la evaluación, los tipos de prototipo,
+los criterios de premios: lo que MacondoLab todavía no ha decidido está en
+[docs/decisiones-macondolab.md](docs/decisiones-macondolab.md), con lo que la plataforma hace
+mientras tanto, y lo que falta saber de TI, en [docs/preguntas-ti.md](docs/preguntas-ti.md). Ante
+una duda de dominio se pregunta; no se rellena con datos de ejemplo que luego alguien confunde con
+lo acordado. Cuando llega una respuesta, se anota en esa lista en el mismo commit que la construye.
 
 ## Cómo se trabaja
 
 - **Por fases pequeñas.** Un cambio grande se parte en fases; cada una se construye, se prueba y se
   revisa con el usuario antes de pasar a la siguiente.
-- **Rama por fase**, fusionada a `main` cuando está revisada. Los arreglos menores pueden ir directos
-  a `main` si el usuario lo pide así.
+- **Sobre `main`, un commit por fase.** Hoy trabaja una sola persona y cada fase entra a `main`
+  cuando pasa la verificación completa. No se crean ramas salvo que el usuario lo pida; si el equipo
+  crece, esta regla se revisa.
 - **Commits en [Conventional Commits](https://www.conventionalcommits.org/)**: `feat`, `fix`,
   `refactor`, `test`, `chore`, `docs`, `style`. El cuerpo explica *por qué*, no repite el diff. El
   historial es la referencia real del orden en que avanzó el proyecto.
@@ -77,12 +81,21 @@ ejemplo que luego alguien confunde con lo acordado.
 ## Convenciones del backend
 
 - **Un paquete por área** (`auth`, `users`, `catalogs`, `editions`, `projects`, `deliverables`,
-  `reports`, `files`, `security`, `common`), no por capa técnica. Cada paquete agrupa su entidad,
-  repositorio, servicio, controlador y DTOs.
+  `presentations`, `jury`, `evaluations`, `notifications`, `reports`, `files`, `audit`,
+  `security`, `common`), no por capa técnica. Cada paquete agrupa su entidad, repositorio,
+  servicio, controlador y DTOs.
 - **Los módulos no se meten en las entidades de otro.** Cuando uno necesita algo de otro, se hace por
   un contrato pequeño: una interfaz de regla que el otro módulo implementa
-  (`PrivateFileAccessRule`, `AccountDeletionRule`, `DeliverableAccessRule`) o un evento de Spring
-  (`ProjectDeletedEvent`). Así `files` no sabe qué es un proyecto y `users` no sabe qué es un equipo.
+  (`PrivateFileAccessRule`, `AccountDeletionRule`, `ProjectVisibilityRule`, `EvaluatorRule`) o un
+  evento de Spring (`ProjectDeletedEvent`, los de correo, `AuditableAction`). Así `files` no sabe
+  qué es un proyecto y `users` no sabe qué es un equipo.
+- **Lo que hay que poder explicar después deja rastro.** Cambiar un rol, restablecer una contraseña,
+  publicar notas, corregir una evaluación, borrar algo: el servicio publica un `AuditableAction`
+  dentro de su transacción y el paquete `audit` lo guarda. Una acción nueva de ese tipo lleva la
+  suya.
+- **Contar y luego guardar no basta.** Una regla del tipo «cabe uno más» se defiende con una
+  restricción en la base o con `ProjectPolicy.lock` como primera lectura de la transacción: dos
+  peticiones a la vez cuentan lo mismo.
 - **Los controladores nunca devuelven entidades.** Se usan `record`s `XxxRequest` y `XxxResponse`; la
   validación va con anotaciones de Jakarta en el request.
 - **Los errores siguen Problem Details (RFC 9457).** Se lanzan las excepciones de `common`
@@ -106,6 +119,9 @@ ejemplo que luego alguien confunde con lo acordado.
   los componentes.
 - **Los datos del servidor pasan por TanStack Query**; los formularios, por react-hook-form con zod.
   Los errores de campo de la API (`fields`) se pintan en el campo que corresponde.
+- **Un formulario largo no se pierde.** Una página con formulario solo se reemplaza por el error si no
+  hay datos o la API niega el acceso (`blockingError`), y lo que cuesta rehacer se guarda como
+  borrador en el navegador, como la rúbrica del jurado.
 - **Las validaciones son espejo de las de la API** (`lib/validation.js` frente a
   `ValidationPatterns.java`). Si cambia una, cambia la otra.
 - **Las pruebas consultan por rol y por texto**, como lo haría quien usa la aplicación, no por
@@ -135,8 +151,8 @@ recorrido en el mismo commit.
 |---|---|
 | Qué hace la plataforma y cómo levantarla | [README.md](README.md) |
 | Instalar y operar en el servidor | [docs/despliegue.md](docs/despliegue.md) |
-| Lo pendiente con TI (servidor, red, copias) | [docs/preguntas-ti.md](docs/preguntas-ti.md) |
-| Lo pendiente con MacondoLab (rúbricas, premios) | «Qué falta», en el [README](README.md#qué-falta) |
+| Lo pendiente con TI (servidor, red, correo, copias), con su respuesta | [docs/preguntas-ti.md](docs/preguntas-ti.md) |
+| Lo que MacondoLab tiene que decidir, y qué hace la plataforma mientras | [docs/decisiones-macondolab.md](docs/decisiones-macondolab.md) |
 | Lo acordado en la reunión de septiembre de 2026 | [docs/reunion-2026-09.md](docs/reunion-2026-09.md) |
 | Las rúbricas de evaluación y cómo se calcula la nota | [docs/rubricas.md](docs/rubricas.md) |
 | El formato del listado de la cátedra | [docs/listado.md](docs/listado.md) |

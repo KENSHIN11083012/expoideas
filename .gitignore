@@ -26,6 +26,12 @@ uploads/
 # Copias de seguridad (scripts/copia.sh): llevan datos reales
 copias/
 
+# Pruebas de punta a punta (qa/): cuentas generadas por el sembrado e informes de Playwright
+qa/credenciales*
+qa/fixtures/
+qa/e2e/test-results/
+qa/e2e/playwright-report/
+
 # Claude Code: ajustes personales de cada equipo
 .claude/settings.local.json
 

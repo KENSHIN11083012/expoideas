@@ -459,9 +459,16 @@ Las pruebas de integración de la API (`*IT`) levantan la aplicación completa c
 que Testcontainers arranca en Docker. **Necesitan Docker encendido**; se descargan la imagen la
 primera vez y crean y destruyen su propia base: no tocan la tuya.
 
+**De punta a punta.** La carpeta `qa/` recorre la plataforma entera levantada con Docker, primero
+por la API y después desde un navegador (Playwright): registro y primer ingreso, permisos por rol,
+inscripción y equipo, entregables, jurados, calificación con la rúbrica y publicación de notas. Crea
+cuentas y datos de prueba, así que se corre contra una instalación aparte, nunca contra una con
+datos reales. Cómo hacerlo está en [qa/README.md](qa/README.md).
+
 Cada push a `main` y cada pull request pasan por GitHub Actions (`.github/workflows/ci.yml`):
 pruebas y formato de la API, lint, formato, pruebas y build de la app, validación de
-`docker-compose.yml` y construcción de las dos imágenes Docker.
+`docker-compose.yml`, construcción de las dos imágenes Docker y, con la plataforma levantada, las
+pruebas de punta a punta.
 
 ### Si algo falla
 

@@ -46,9 +46,12 @@ cd ..\expoideas-app; npm run lint; npm run format:check; npm test; npm run build
 - **La siguiente migración es `V22__`.** Antes de crearla, mirar la última en `db/migration/`.
 - **Espejos API ↔ app.** `Role.java` ↔ `lib/roles.js`, `Track.java` ↔ `lib/tracks.js`,
   `ValidationPatterns.java` ↔ `lib/validation.js`. Se cambian los dos lados en el mismo commit.
-- **Secretos locales.** `.env`, `application-local.properties`, `uploads/` y, si existe, la carpeta
-  local `qa/` (sin versionar, con credenciales de prueba) no se leen ni se suben.
-  `settings.json` niega su lectura.
+- **Secretos locales.** `.env`, `application-local.properties`, `uploads/` y las cuentas de prueba
+  que genera el sembrado (`qa/credenciales*`) no se leen ni se suben. `settings.json` niega su
+  lectura.
+- **Pruebas de punta a punta.** `qa/` (sembrado, humo de la API y Playwright) se corre contra una
+  instalación desechable, con `QA_CREDS` apuntando fuera del repositorio para no pisar las
+  credenciales locales del usuario: ver [qa/README.md](../qa/README.md).
 - **Copias de seguridad.** `scripts/copia.sh` deja en `copias/` paquetes con datos reales: tampoco
   se leen ni se suben (la carpeta está en el `.gitignore`). `scripts/restaurar.sh` borra la base y
   los archivos de la instalación que indique `COMPOSE_PROJECT_NAME`: solo se ejecuta contra una

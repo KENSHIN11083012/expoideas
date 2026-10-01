@@ -120,8 +120,14 @@ ejemplo que luego alguien confunde con lo acordado.
 (cd expoideas-app && npm run lint && npm run format:check && npm test && npm run build)
 ```
 
-Es exactamente lo que corre el CI (`.github/workflows/ci.yml`). Las `*IT` necesitan Docker
-encendido. Si algo de esto falla, el cambio no está listo, aunque «funcione».
+Es lo que corre el CI (`.github/workflows/ci.yml`). Las `*IT` necesitan Docker encendido. Si
+algo de esto falla, el cambio no está listo, aunque «funcione».
+
+El CI corre además las pruebas de punta a punta de `qa/`, con la plataforma levantada con Docker.
+Cuando un cambio toca lo que una persona ve o puede hacer (una pantalla, una etiqueta, una ruta, un
+permiso), se corren antes de subirlo, contra una instalación desechable y nunca contra una con datos
+reales: [qa/README.md](qa/README.md) dice cómo. Si el cambio rompe un recorrido, se arregla el
+recorrido en el mismo commit.
 
 ## Dónde mirar
 
@@ -134,4 +140,5 @@ encendido. Si algo de esto falla, el cambio no está listo, aunque «funcione».
 | Lo acordado en la reunión de septiembre de 2026 | [docs/reunion-2026-09.md](docs/reunion-2026-09.md) |
 | Las rúbricas de evaluación y cómo se calcula la nota | [docs/rubricas.md](docs/rubricas.md) |
 | El formato del listado de la cátedra | [docs/listado.md](docs/listado.md) |
+| Las pruebas de punta a punta y sus cuentas de prueba | [qa/README.md](qa/README.md) |
 | Cómo se llega al estado actual | El historial de commits, en orden |

@@ -70,6 +70,57 @@ jobs:
           MYSQL_ROOT_PASSWORD: placeholder
           JWT_SECRET: placeholder
 
+  # La plataforma entera levantada como en producción (MySQL, API y Nginx con la app)
+  # y recorrida de punta a punta: lo que las pruebas de cada proyecto no ven.
+  e2e:
+    name: De punta a punta
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [api, app]
+    steps:
+      - uses: actions/checkout@v7
+      # Secretos al azar que solo viven lo que dura esta corrida.
+      - name: Crear el .env
+        run: |
+          {
+            echo "DB_PASSWORD=$(openssl rand -hex 16)"
+            echo "MYSQL_ROOT_PASSWORD=$(openssl rand -hex 16)"
+            echo "JWT_SECRET=$(openssl rand -base64 32)"
+          } > .env
+      # --wait espera a que los tres servicios pasen su comprobación de salud.
+      - name: Levantar la plataforma
+        run: docker compose up -d --build --wait --wait-timeout 300
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: qa/e2e/package-lock.json
+      - name: Cuentas de prueba
+        run: node qa/seed.mjs
+      - name: Recorrido de la API por rol
+        run: node qa/smoke.mjs
+      - name: Instalar Playwright
+        working-directory: qa/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Recorrido en el navegador
+        working-directory: qa/e2e
+        run: npx playwright test
+      - name: Logs de la plataforma
+        if: failure()
+        run: docker compose logs --no-color --tail 300
+      # Capturas y trazas de lo que falló. Las cuentas son de esta corrida y ya no existen.
+      - name: Guardar el informe de Playwright
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: informe-playwright
+          path: |
+            qa/e2e/playwright-report/
+            qa/e2e/test-results/
+          retention-days: 7
+
   docker:
     name: Imágenes Docker
     runs-on: ubuntu-latest

@@ -281,4 +281,5 @@ puede quedar a medias: por eso el respaldo previo es obligatorio y es lo que se 
 ## Integración continua
 
 `.github/workflows/ci.yml` ejecuta en cada push a `main` y en cada pull request las pruebas de
-la API, el lint, las pruebas y el build de la app, y construye las dos imágenes Docker.
+la API, el lint, las pruebas y el build de la app, y construye las dos imágenes Docker. Además
+levanta la plataforma completa con `docker compose` y la recorre de punta a punta (carpeta `qa/`).

@@ -15,6 +15,9 @@ final class ProjectCsv {
     static final String BOM = "﻿";
 
     private static final String SEPARATOR = ";";
+    /** Con cualquiera de estos al principio, Excel y compañía evalúan la celda en vez de mostrarla. */
+    private static final String FORMULA_STARTS = "=+-@\t\r";
+
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private static final List<String> HEADERS = List.of(
@@ -77,9 +80,16 @@ final class ProjectCsv {
         return row.toString();
     }
 
-    /** Entre comillas si trae separadores, comillas o saltos de línea. */
+    /**
+     * Entre comillas si trae separadores, comillas o saltos de línea. Antes, una
+     * celda que la hoja de cálculo abriría como fórmula se convierte en texto con
+     * un apóstrofo delante: el título y los nombres los escribe el estudiante.
+     */
     private static String escape(String value) {
         String text = value == null ? "" : value;
+        if (!text.isEmpty() && FORMULA_STARTS.indexOf(text.charAt(0)) >= 0) {
+            text = "'" + text;
+        }
         if (text.contains(SEPARATOR) || text.contains("\"") || text.contains("\n") || text.contains("\r")) {
             return '"' + text.replace("\"", "\"\"") + '"';
         }

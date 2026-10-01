@@ -37,6 +37,27 @@ class ProjectCsvTest {
     }
 
     @Test
+    void aValueThatWouldStartAFormulaIsWrittenAsText() {
+        String csv = ProjectCsv.of(List.of(
+                project("=HYPERLINK(\"http://malo.example\";\"Ver\")", "+57 300"),
+                project("@SUM(1)", "-1+1"),
+                project("\tcmd", "Salud")));
+        String[] rows = csv.split("\n");
+
+        // El título y los nombres los escribe el estudiante: nunca deben abrirse como fórmula.
+        assertThat(rows[1]).contains(";\"'=HYPERLINK(\"\"http://malo.example\"\";\"\"Ver\"\")\";'+57 300;");
+        assertThat(rows[2]).contains(";'@SUM(1);'-1+1;");
+        assertThat(rows[3]).contains(";'\tcmd;Salud;");
+    }
+
+    @Test
+    void aNumberOrADashInsideTheTextStaysAsItIs() {
+        String row = ProjectCsv.of(List.of(project("Agro-Tech 4.0", "I+D"))).split("\n")[1];
+
+        assertThat(row).contains(";Agro-Tech 4.0;I+D;").contains(";4.3;2 de 3;");
+    }
+
+    @Test
     void anEmptyListIsJustTheHeader() {
         assertThat(ProjectCsv.of(List.of()).split("\n")).hasSize(1);
     }

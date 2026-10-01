@@ -7,10 +7,13 @@ import co.edu.unisimon.expoideas.editions.Edition;
 import co.edu.unisimon.expoideas.editions.Track;
 import co.edu.unisimon.expoideas.users.User;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 
 /** El equipo de un proyecto: quién es el líder y cuántos lugares están tomados. */
 class ProjectTest {
+
+    private static final LocalDateTime NOW = LocalDateTime.of(2026, 9, 30, 22, 15);
 
     @Test
     void theLeaderAndTheInvitedPeopleMakeUpTheTeam() {
@@ -18,8 +21,8 @@ class ProjectTest {
         User leader = account(1);
         User invited = account(2);
 
-        project.addMember(leader, MemberRole.LEADER, MembershipStatus.ACCEPTED);
-        ProjectMember invitation = project.addMember(invited, MemberRole.MEMBER, MembershipStatus.INVITED);
+        project.addMember(leader, MemberRole.LEADER, MembershipStatus.ACCEPTED, NOW);
+        ProjectMember invitation = project.addMember(invited, MemberRole.MEMBER, MembershipStatus.INVITED, NOW);
 
         assertThat(project.leader().getUser()).isEqualTo(leader);
         assertThat(project.memberOf(invited)).contains(invitation);
@@ -31,20 +34,20 @@ class ProjectTest {
     @Test
     void acceptingAnInvitationLeavesItsDate() {
         Project project = project();
-        ProjectMember invitation = project.addMember(account(2), MemberRole.MEMBER, MembershipStatus.INVITED);
+        ProjectMember invitation = project.addMember(account(2), MemberRole.MEMBER, MembershipStatus.INVITED, NOW);
         assertThat(invitation.getRespondedAt()).isNull();
 
-        invitation.accept();
+        invitation.accept(NOW);
 
         assertThat(invitation.isAccepted()).isTrue();
-        assertThat(invitation.getRespondedAt()).isNotNull();
+        assertThat(invitation.getRespondedAt()).isEqualTo(NOW);
     }
 
     @Test
     void leavingFreesTheSeat() {
         Project project = project();
-        project.addMember(account(1), MemberRole.LEADER, MembershipStatus.ACCEPTED);
-        ProjectMember member = project.addMember(account(2), MemberRole.MEMBER, MembershipStatus.ACCEPTED);
+        project.addMember(account(1), MemberRole.LEADER, MembershipStatus.ACCEPTED, NOW);
+        ProjectMember member = project.addMember(account(2), MemberRole.MEMBER, MembershipStatus.ACCEPTED, NOW);
 
         project.removeMember(member);
 
@@ -61,7 +64,7 @@ class ProjectTest {
     @Test
     void aProjectWithoutALeaderIsABug() {
         Project project = project();
-        project.addMember(account(2), MemberRole.MEMBER, MembershipStatus.ACCEPTED);
+        project.addMember(account(2), MemberRole.MEMBER, MembershipStatus.ACCEPTED, NOW);
 
         assertThatThrownBy(project::leader).isInstanceOf(IllegalStateException.class);
     }

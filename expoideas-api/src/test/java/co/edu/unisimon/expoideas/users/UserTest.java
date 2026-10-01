@@ -55,13 +55,12 @@ class UserTest {
     void consentKeepsTheOriginalDate() {
         User user = User.builder().build();
 
-        user.giveDataConsent();
-        LocalDateTime first = user.getDataConsentAt();
-        user.giveDataConsent();
+        LocalDateTime first = LocalDateTime.of(2026, 9, 1, 10, 0);
+        user.giveDataConsent(first);
+        user.giveDataConsent(first.plusDays(1));
 
         assertThat(user.isDataConsent()).isTrue();
-        assertThat(first).isNotNull();
-        assertThat(user.getDataConsentAt()).isSameAs(first);
+        assertThat(user.getDataConsentAt()).isEqualTo(first);
     }
 
     /** El registro solo pide correo y contraseña: el resto se completa en el primer ingreso. */

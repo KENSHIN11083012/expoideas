@@ -5,18 +5,20 @@ import co.edu.unisimon.expoideas.projects.Project;
 import co.edu.unisimon.expoideas.users.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * Un archivo que un equipo subió, o un enlace que registró, para uno de los
@@ -26,6 +28,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "deliverables")
 public class Deliverable {
 
@@ -59,13 +62,7 @@ public class Deliverable {
     @JoinColumn(name = "uploaded_by", nullable = false)
     private User uploadedBy;
 
+    @CreatedDate
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private LocalDateTime uploadedAt;
-
-    @PrePersist
-    void onCreate() {
-        if (uploadedAt == null) {
-            uploadedAt = LocalDateTime.now();
-        }
-    }
 }

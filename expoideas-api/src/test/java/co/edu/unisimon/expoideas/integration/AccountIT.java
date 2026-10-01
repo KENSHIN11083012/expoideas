@@ -2,7 +2,10 @@ package co.edu.unisimon.expoideas.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import co.edu.unisimon.expoideas.common.TimeConfig;
 import co.edu.unisimon.expoideas.users.Role;
+import co.edu.unisimon.expoideas.users.User;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +62,21 @@ class AccountIT extends IntegrationTest {
         assertThat(me.<String>json("$.campus")).isNotBlank();
         assertThat(me.<String>json("$.faculty")).startsWith("Facultad ");
         assertThat(me.<String>json("$.academicProgram")).startsWith("Programa ");
+    }
+
+    @Test
+    void aNewAccountIsStampedWithTheTimeInColombiaNotTheServers() {
+        // Las pruebas corren en UTC, como el servidor: lo guardado debe ser la hora de Colombia.
+        LocalDateTime before = LocalDateTime.now(TimeConfig.ZONE).minusMinutes(1);
+        String email = uniqueEmail("hora");
+
+        Response created = register(email).expect(201);
+
+        LocalDateTime after = LocalDateTime.now(TimeConfig.ZONE).plusMinutes(1);
+        assertThat(LocalDateTime.parse(created.<String>json("$.createdAt"))).isBetween(before, after);
+        User saved = userRepository.findByEmail(email).orElseThrow();
+        assertThat(saved.getCreatedAt()).isBetween(before, after);
+        assertThat(saved.getDataConsentAt()).isBetween(before, after);
     }
 
     @Test

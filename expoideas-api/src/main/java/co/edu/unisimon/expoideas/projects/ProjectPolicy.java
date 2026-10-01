@@ -9,6 +9,7 @@ import co.edu.unisimon.expoideas.users.User;
 import co.edu.unisimon.expoideas.users.UserRepository;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,11 @@ public class ProjectPolicy {
 
     public LocalDate today() {
         return LocalDate.now(clock);
+    }
+
+    /** La hora de Colombia, para dejar constancia de cuándo pasó algo. */
+    public LocalDateTime now() {
+        return LocalDateTime.now(clock);
     }
 
     /** La cuenta de quien hace la petición. */

@@ -22,11 +22,14 @@ import co.edu.unisimon.expoideas.catalogs.PrototypeTypeRepository;
 import co.edu.unisimon.expoideas.catalogs.SectorRepository;
 import co.edu.unisimon.expoideas.common.ConflictException;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
+import co.edu.unisimon.expoideas.common.TimeConfig;
 import co.edu.unisimon.expoideas.files.FileFormat;
 import co.edu.unisimon.expoideas.files.FileService;
 import co.edu.unisimon.expoideas.files.FileVisibility;
 import co.edu.unisimon.expoideas.files.StoredFile;
 import co.edu.unisimon.expoideas.support.TestData;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,6 +74,9 @@ class UserAccountServiceTest {
     @Mock
     private RosterRepository rosterRepository;
 
+    /** Las 03:15 UTC del 1 de octubre: en Colombia todavía es 30 de septiembre, 22:15. */
+    private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-01T03:15:00Z"), TimeConfig.ZONE);
+
     private UserAccountService service;
 
     private final Campus barranquilla = new Campus(1, "Barranquilla");
@@ -93,7 +99,8 @@ class UserAccountServiceTest {
                 rosterRepository,
                 new AffiliationResolver(lookup),
                 new PasswordUpdater(passwordEncoder),
-                fileService);
+                fileService,
+                CLOCK);
         lenient().when(rosterRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
         lenient().when(campusRepository.findById(1)).thenReturn(Optional.of(barranquilla));
@@ -302,7 +309,7 @@ class UserAccountServiceTest {
             service.giveDataConsent(EMAIL);
 
             assertThat(ana.isDataConsent()).isTrue();
-            assertThat(ana.getDataConsentAt()).isNotNull();
+            assertThat(ana.getDataConsentAt()).isEqualTo(LocalDateTime.of(2026, 9, 30, 22, 15));
         }
 
         @Test

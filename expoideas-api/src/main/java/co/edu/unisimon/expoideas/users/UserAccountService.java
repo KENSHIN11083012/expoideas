@@ -6,6 +6,8 @@ import co.edu.unisimon.expoideas.files.FileFormat;
 import co.edu.unisimon.expoideas.files.FileService;
 import co.edu.unisimon.expoideas.files.FileVisibility;
 import co.edu.unisimon.expoideas.files.StoredFile;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,7 @@ public class UserAccountService {
     private final AffiliationResolver affiliation;
     private final PasswordUpdater passwords;
     private final FileService fileService;
+    private final Clock clock;
 
     /**
      * Registro público: la cuenta nace como estudiante, con la autorización de
@@ -63,7 +66,7 @@ public class UserAccountService {
     }
 
     private UserResponse register(User user) {
-        user.giveDataConsent();
+        user.giveDataConsent(LocalDateTime.now(clock));
 
         User saved = userRepository.save(user);
         log.info("Usuario registrado con ID {}", saved.getId());
@@ -126,7 +129,7 @@ public class UserAccountService {
     public void giveDataConsent(String email) {
         User user = findByEmail(email);
         if (!user.isDataConsent()) {
-            user.giveDataConsent();
+            user.giveDataConsent(LocalDateTime.now(clock));
             log.info("Usuario ID {} autorizó el tratamiento de datos", user.getId());
         }
     }

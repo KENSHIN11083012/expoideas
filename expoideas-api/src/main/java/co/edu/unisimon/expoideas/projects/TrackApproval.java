@@ -4,6 +4,7 @@ import co.edu.unisimon.expoideas.editions.Track;
 import co.edu.unisimon.expoideas.users.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -12,12 +13,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * Constancia de que una persona aprobó una cátedra. Nace al aprobar su
@@ -28,6 +30,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "track_approvals")
 public class TrackApproval {
 
@@ -53,6 +56,7 @@ public class TrackApproval {
     @JoinColumn(name = "approved_by")
     private User approvedBy;
 
+    @CreatedDate
     @Column(name = "approved_at", nullable = false, updatable = false)
     private LocalDateTime approvedAt;
 
@@ -63,12 +67,5 @@ public class TrackApproval {
         approval.setProject(project);
         approval.setApprovedBy(approvedBy);
         return approval;
-    }
-
-    @PrePersist
-    void onCreate() {
-        if (approvedAt == null) {
-            approvedAt = LocalDateTime.now();
-        }
     }
 }

@@ -7,6 +7,7 @@ import co.edu.unisimon.expoideas.files.StoredFile;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -17,7 +18,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedAttributeNode;
 import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.NamedSubgraph;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,6 +27,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * Cuenta de la plataforma: identidad, rol, adscripción académica y estado del
@@ -41,6 +43,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "users")
 @NamedEntityGraph(
         name = User.WITH_PROFILE,
@@ -109,6 +112,7 @@ public class User {
     @ManyToOne(fetch = FetchType.LAZY)
     private StoredFile photo;
 
+    @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -145,17 +149,10 @@ public class User {
     }
 
     /** Deja constancia de la autorización de datos; si ya estaba, conserva la fecha original. */
-    public void giveDataConsent() {
+    public void giveDataConsent(LocalDateTime now) {
         if (!dataConsent) {
             dataConsent = true;
-            dataConsentAt = LocalDateTime.now();
-        }
-    }
-
-    @PrePersist
-    void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
+            dataConsentAt = now;
         }
     }
 }

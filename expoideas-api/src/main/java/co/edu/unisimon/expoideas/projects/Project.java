@@ -9,6 +9,7 @@ import co.edu.unisimon.expoideas.users.User;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -19,7 +20,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,6 +29,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * Un proyecto inscrito en una cátedra de una edición. La edición y la cátedra no
@@ -38,6 +40,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "projects")
 public class Project {
 
@@ -87,6 +90,7 @@ public class Project {
     private LocalDateTime resultSetAt;
 
     @Setter(AccessLevel.NONE)
+    @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -96,25 +100,28 @@ public class Project {
     @OrderBy("teamRole, invitedAt")
     private List<ProjectMember> members = new ArrayList<>();
 
-    /** Agrega a alguien al equipo con ese papel y estado, y devuelve la fila. */
-    public ProjectMember addMember(User user, MemberRole teamRole, MembershipStatus status) {
+    /**
+     * Agrega a alguien al equipo con ese papel y estado, y devuelve la fila. Quien
+     * entra ya aceptado (el líder) lleva {@code now} como fecha de respuesta.
+     */
+    public ProjectMember addMember(User user, MemberRole teamRole, MembershipStatus status, LocalDateTime now) {
         ProjectMember member = new ProjectMember();
         member.setProject(this);
         member.setUser(user);
         member.setTeamRole(teamRole);
         member.setStatus(status);
         if (status == MembershipStatus.ACCEPTED) {
-            member.setRespondedAt(LocalDateTime.now());
+            member.setRespondedAt(now);
         }
         members.add(member);
         return member;
     }
 
     /** Deja constancia del resultado y de quién lo puso. */
-    public void setResult(ProjectResult result, User actor) {
+    public void setResult(ProjectResult result, User actor, LocalDateTime now) {
         this.result = result;
         this.resultSetBy = actor;
-        this.resultSetAt = LocalDateTime.now();
+        this.resultSetAt = now;
     }
 
     /** Los integrantes que aceptaron: los que cuentan para el resultado. */
@@ -155,12 +162,5 @@ public class Project {
         return edition.track(track)
                 .orElseThrow(() -> new IllegalStateException(
                         "La edición " + edition.getId() + " no tiene configurada la cátedra " + track));
-    }
-
-    @PrePersist
-    void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
     }
 }

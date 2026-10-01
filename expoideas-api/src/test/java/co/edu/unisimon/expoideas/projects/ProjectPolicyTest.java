@@ -113,7 +113,7 @@ class ProjectPolicyTest {
         @BeforeEach
         void project() {
             project.setTeacher(teacher);
-            project.addMember(ana, MemberRole.LEADER, MembershipStatus.ACCEPTED);
+            project.addMember(ana, MemberRole.LEADER, MembershipStatus.ACCEPTED, TODAY.atStartOfDay());
         }
 
         @Test

@@ -53,6 +53,11 @@ public class ProjectDirectoryService {
         return ProjectCsv.of(list(email, filter));
     }
 
+    /** Nombre del archivo exportado, con la fecha de hoy en Colombia. */
+    public String exportFilename() {
+        return "proyectos-" + policy.today() + ".csv";
+    }
+
     private List<Project> find(String email, ProjectFilter filter) {
         User viewer = policy.account(email);
         Integer teacherId = filter.teacherId();

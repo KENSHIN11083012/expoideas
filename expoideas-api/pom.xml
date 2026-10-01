@@ -18,6 +18,9 @@
 		<jjwt.version>0.13.0</jjwt.version>
 		<spotless.version>3.10.2</spotless.version>
 		<palantir-java-format.version>2.98.0</palantir-java-format.version>
+		<!-- Las pruebas corren en UTC, como el contenedor del servidor: una fecha que salga
+		     de la zona de la máquina y no del Clock de TimeConfig se nota en cualquier equipo. -->
+		<argLine>-Duser.timezone=UTC</argLine>
 	</properties>
 	<dependencies>
 		<dependency>

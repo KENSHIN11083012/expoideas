@@ -13,6 +13,7 @@ import co.edu.unisimon.expoideas.projects.Project;
 import co.edu.unisimon.expoideas.projects.ProjectPolicy;
 import co.edu.unisimon.expoideas.projects.ProjectRepository;
 import co.edu.unisimon.expoideas.users.User;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -102,7 +103,7 @@ public class EvaluationService {
                 .orElseGet(() -> Evaluation.of(project, juror));
 
         if (request.isAbsent()) {
-            evaluation.markAbsent();
+            evaluation.markAbsent(policy.now());
         } else {
             apply(rubric, request.scoresOrEmpty(), evaluation);
         }
@@ -332,7 +333,8 @@ public class EvaluationService {
             throw new InvalidFieldsException(errors);
         }
 
-        chosen.forEach((criterion, level) -> evaluation.score(criterion, level, comments.get(criterion.getId())));
+        LocalDateTime now = policy.now();
+        chosen.forEach((criterion, level) -> evaluation.score(criterion, level, comments.get(criterion.getId()), now));
     }
 
     /** Sin espacios alrededor; vacía es lo mismo que no escribirla. */

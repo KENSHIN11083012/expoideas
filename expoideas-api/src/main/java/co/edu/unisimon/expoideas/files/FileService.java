@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.HexFormat;
 import java.util.List;
@@ -46,6 +47,7 @@ public class FileService {
 
     private final FileRepository fileRepository;
     private final FileStorage storage;
+    private final Clock clock;
 
     /** Permisos que aportan otros módulos (entregables, galería...). Puede estar vacía. */
     private final List<PrivateFileAccessRule> accessRules;
@@ -70,7 +72,7 @@ public class FileService {
                         () -> invalid("Formato no permitido. Usa un archivo " + FileFormat.describe(allowed) + "."));
 
         String uuid = UUID.randomUUID().toString();
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         String path = "%d/%02d/%s.%s".formatted(today.getYear(), today.getMonthValue(), uuid, format.extension());
 
         storage.save(path, content);

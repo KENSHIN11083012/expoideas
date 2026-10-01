@@ -3,6 +3,7 @@ package co.edu.unisimon.expoideas.editions;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -18,6 +19,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * Una vuelta de la Expo, con sus fechas: "Expoideas 2026-2". Los proyectos se
@@ -31,6 +34,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "editions")
 public class Edition {
 
@@ -51,7 +55,8 @@ public class Edition {
     private LocalDate submissionClosesOn;
 
     @Setter(AccessLevel.NONE)
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     /** Las dos cátedras con su configuración; viven y mueren con la edición. */

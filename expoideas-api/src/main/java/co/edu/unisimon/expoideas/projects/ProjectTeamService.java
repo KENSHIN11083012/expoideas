@@ -63,7 +63,7 @@ public class ProjectTeamService {
             throw new InvalidFieldsException(EMAIL, notEligible.getMessage());
         }
 
-        project.addMember(invitee, MemberRole.MEMBER, MembershipStatus.INVITED);
+        project.addMember(invitee, MemberRole.MEMBER, MembershipStatus.INVITED, policy.now());
         ProjectResponse response = ProjectResponse.from(projectRepository.save(project), policy.today());
         // El correo sale después del commit; si la invitación no se guarda, no hay aviso.
         events.publishEvent(new TeamInvitationEvent(
@@ -99,7 +99,7 @@ public class ProjectTeamService {
                 "Ya tienes un proyecto inscrito en esta cátedra");
         policy.requireEligibleFor(invitation.getUser(), project.getEdition(), project.getTrack());
 
-        invitation.accept();
+        invitation.accept(policy.now());
         memberRepository.save(invitation);
         return ProjectResponse.from(project, policy.today());
     }

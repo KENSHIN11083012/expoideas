@@ -10,10 +10,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
+import co.edu.unisimon.expoideas.common.TimeConfig;
 import co.edu.unisimon.expoideas.security.UserPrincipal;
 import co.edu.unisimon.expoideas.support.TestData;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -24,9 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mock.web.MockMultipartFile;
@@ -52,16 +53,18 @@ class FileServiceTest {
      * Sin permisos de otros módulos: aquí solo se prueban el propietario y la
      * gestión. La regla de los entregables tiene sus pruebas de integración.
      */
-    @Spy
-    private List<PrivateFileAccessRule> accessRules = List.of();
+    private final List<PrivateFileAccessRule> accessRules = List.of();
 
-    @InjectMocks
+    /** Las 03:15 UTC del 1 de octubre: en Colombia todavía es septiembre. */
+    private final Clock clock = Clock.fixed(Instant.parse("2026-10-01T03:15:00Z"), TimeConfig.ZONE);
+
     private FileService service;
 
     private final User ana = TestData.user(1, EMAIL, Role.STUDENT);
 
     @BeforeEach
     void startTransaction() {
+        service = new FileService(fileRepository, storage, clock, accessRules);
         // Los métodos exigen transacción: aquí se simula para poder terminarla a mano.
         TransactionSynchronizationManager.initSynchronization();
         lenient().when(fileRepository.save(any(StoredFile.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -92,7 +95,8 @@ class FileServiceTest {
         assertThat(file.getSizeBytes()).isEqualTo(TestData.PNG.length);
         assertThat(file.getSha256()).hasSize(64);
         assertThat(file.getOriginalName()).isEqualTo("mi foto.png");
-        assertThat(file.getStoragePath()).matches("\\d{4}/\\d{2}/" + file.getUuid() + "\\.png");
+        // La carpeta es el mes en Colombia, no el del servidor.
+        assertThat(file.getStoragePath()).isEqualTo("2026/09/" + file.getUuid() + ".png");
         assertThat(file.getOwner()).isSameAs(ana);
         verify(storage).save(file.getStoragePath(), TestData.PNG);
     }

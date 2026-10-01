@@ -4,7 +4,6 @@ import co.edu.unisimon.expoideas.editions.Track;
 import co.edu.unisimon.expoideas.projects.ProjectResult;
 import co.edu.unisimon.expoideas.reports.ProjectDirectoryService.ProjectFilter;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ContentDisposition;
@@ -54,7 +53,7 @@ public class ProjectDirectoryController {
             @RequestParam(required = false) String search) {
         String csv = directoryService.export(
                 authentication.getName(), new ProjectFilter(editionId, track, teacherId, sectorId, result, search));
-        String filename = "proyectos-" + LocalDate.now() + ".csv";
+        String filename = directoryService.exportFilename();
 
         return ResponseEntity.ok()
                 .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))

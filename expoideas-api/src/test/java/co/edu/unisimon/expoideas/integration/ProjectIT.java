@@ -3,6 +3,7 @@ package co.edu.unisimon.expoideas.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import co.edu.unisimon.expoideas.catalogs.SectorRepository;
+import co.edu.unisimon.expoideas.common.TimeConfig;
 import co.edu.unisimon.expoideas.editions.EditionRepository;
 import co.edu.unisimon.expoideas.editions.Track;
 import co.edu.unisimon.expoideas.projects.MemberRole;
@@ -11,6 +12,7 @@ import co.edu.unisimon.expoideas.projects.Project;
 import co.edu.unisimon.expoideas.projects.ProjectRepository;
 import co.edu.unisimon.expoideas.users.Role;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -467,6 +469,7 @@ class ProjectIT extends IntegrationTest {
      * API ya no se puede inscribir nada ahí, que es justo lo que se quiere probar.
      */
     private int finishedProject(Team team, String thirdEmail, String title) {
+        LocalDateTime now = LocalDateTime.now(TimeConfig.ZONE);
         Project project = new Project();
         project.setEdition(editionRepository.findWithTracksById(closedEdition()).orElseThrow());
         project.setTrack(Track.INNPRENDE_I);
@@ -477,13 +480,18 @@ class ProjectIT extends IntegrationTest {
         project.addMember(
                 userRepository.findByEmail(team.leaderEmail()).orElseThrow(),
                 MemberRole.LEADER,
-                MembershipStatus.ACCEPTED);
+                MembershipStatus.ACCEPTED,
+                now);
         project.addMember(
                 userRepository.findByEmail(team.memberEmail()).orElseThrow(),
                 MemberRole.MEMBER,
-                MembershipStatus.ACCEPTED);
+                MembershipStatus.ACCEPTED,
+                now);
         project.addMember(
-                userRepository.findByEmail(thirdEmail).orElseThrow(), MemberRole.MEMBER, MembershipStatus.ACCEPTED);
+                userRepository.findByEmail(thirdEmail).orElseThrow(),
+                MemberRole.MEMBER,
+                MembershipStatus.ACCEPTED,
+                now);
         return projectRepository.save(project).getId();
     }
 

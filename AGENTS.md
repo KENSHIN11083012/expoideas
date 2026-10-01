@@ -89,8 +89,11 @@ ejemplo que luego alguien confunde con lo acordado.
   (`ConflictException`, `ForbiddenActionException`, `InvalidFieldsException`) y las traduce
   `GlobalExceptionHandler`. El mensaje para el usuario va en `detail`, y los de validación, campo a
   campo, en `fields`.
-- **Las fechas límite se comparan con el `Clock` inyectado**, no con `LocalDate.now()` suelto: está
-  fijado a `America/Bogota` en `TimeConfig` y es lo que permite probar los plazos.
+- **Toda fecha sale del `Clock` inyectado**, no de `LocalDate.now()` ni `LocalDateTime.now()`
+  sueltos: está fijado a `America/Bogota` en `TimeConfig`, así que los plazos y las horas guardadas
+  son las de Colombia aunque el servidor esté en otra zona. Las entidades no leen el reloj: la
+  creación y la modificación llevan `@CreatedDate` y `@LastModifiedDate`, y el resto de las horas
+  las recibe del servicio. `ClockUsageTest` falla si reaparece un `now()` sin reloj.
 - **Pruebas**: unitarias con JUnit 5, Mockito y AssertJ para la lógica; `*IT` con Testcontainers
   (MySQL 8.4 real) para los recorridos completos. Un cambio de comportamiento sin prueba que falle
   si se revierte no está terminado.

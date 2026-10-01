@@ -79,7 +79,7 @@ public class ProjectService {
         project.setEdition(edition);
         project.setTrack(request.track());
         apply(project, request);
-        project.addMember(leader, MemberRole.LEADER, MembershipStatus.ACCEPTED);
+        project.addMember(leader, MemberRole.LEADER, MembershipStatus.ACCEPTED, policy.now());
 
         return ProjectResponse.from(projectRepository.save(project), policy.today());
     }
@@ -101,7 +101,7 @@ public class ProjectService {
         policy.requireTeacherOrManagement(project, actor);
         policy.requireSubmissionClosed(project.getEdition());
 
-        project.setResult(request.result(), actor);
+        project.setResult(request.result(), actor, policy.now());
         if (request.result() == ProjectResult.APPROVED) {
             for (User member : project.acceptedMembers()) {
                 if (!approvalRepository.existsByUserIdAndTrack(member.getId(), project.getTrack())) {

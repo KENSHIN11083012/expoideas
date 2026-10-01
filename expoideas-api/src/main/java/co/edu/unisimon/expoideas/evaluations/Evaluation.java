@@ -5,6 +5,7 @@ import co.edu.unisimon.expoideas.users.User;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -12,7 +13,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -22,6 +22,9 @@ import java.util.Optional;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * La calificación que un jurado le pone a un proyecto: un nivel por criterio de
@@ -32,6 +35,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "evaluations")
 public class Evaluation {
 
@@ -51,9 +55,11 @@ public class Evaluation {
     @Column(nullable = false)
     private boolean absent;
 
+    @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
@@ -68,17 +74,17 @@ public class Evaluation {
     }
 
     /** El equipo no asistió: se quitan los niveles que hubiera. */
-    public void markAbsent() {
+    public void markAbsent(LocalDateTime now) {
         absent = true;
         scores.clear();
-        touch();
+        touch(now);
     }
 
     /**
      * Pone o cambia el nivel de un criterio. Se actualiza la fila que ya existe
      * en vez de borrar y crear: solo hay una por criterio.
      */
-    public void score(RubricCriterion criterion, RubricLevel level, String comment) {
+    public void score(RubricCriterion criterion, RubricLevel level, String comment, LocalDateTime now) {
         absent = false;
         EvaluationScore score = scoreOf(criterion).orElseGet(() -> {
             EvaluationScore created = new EvaluationScore();
@@ -89,7 +95,7 @@ public class Evaluation {
         });
         score.setLevel(level);
         score.setComment(comment);
-        touch();
+        touch(now);
     }
 
     public Optional<EvaluationScore> scoreOf(RubricCriterion criterion) {
@@ -108,14 +114,11 @@ public class Evaluation {
         return GradeScale.average(values).orElse(new BigDecimal("0.0"));
     }
 
-    private void touch() {
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PrePersist
-    void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-        createdAt = now;
+    /**
+     * Los niveles son filas aparte: sin tocar la evaluación, cambiar solo un nivel
+     * no actualizaría su fecha.
+     */
+    private void touch(LocalDateTime now) {
         updatedAt = now;
     }
 }

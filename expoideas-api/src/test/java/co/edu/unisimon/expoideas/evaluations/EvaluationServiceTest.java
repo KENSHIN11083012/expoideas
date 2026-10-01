@@ -22,6 +22,7 @@ import co.edu.unisimon.expoideas.support.TestData;
 import co.edu.unisimon.expoideas.users.Role;
 import co.edu.unisimon.expoideas.users.User;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -57,6 +58,8 @@ class EvaluationServiceTest {
     @Mock
     private ApplicationEventPublisher events;
 
+    private static final LocalDateTime NOW = LocalDateTime.of(2026, 11, 20, 10, 30);
+
     private EvaluationService service;
     private Project project;
     private Rubric rubric;
@@ -79,6 +82,7 @@ class EvaluationServiceTest {
         rubric = rubric(criterion(1, "0.0", "3.0", "4.0"), criterion(2, "1.5", "4.5", "5.0"));
         lenient().when(rubricRepository.findByTrack(Track.INNPRENDE_I)).thenReturn(Optional.of(rubric));
         lenient().when(evaluationRepository.save(any())).thenAnswer(call -> call.getArgument(0));
+        lenient().when(policy.now()).thenReturn(NOW);
         for (User user : List.of(marta, pedro, carlos, coordination, ana)) {
             lenient().when(policy.account(user.getEmail())).thenReturn(user);
             lenient().when(policy.findVisible(PROJECT, user)).thenReturn(project);
@@ -155,8 +159,8 @@ class EvaluationServiceTest {
     @Test
     void ifTheTeamDidNotShowUpTheEvaluationIsZeroWithoutLevels() {
         Evaluation existing = Evaluation.of(project, marta);
-        existing.score(rubric.getCriteria().get(0), level(rubric, 13), null);
-        existing.score(rubric.getCriteria().get(1), level(rubric, 23), null);
+        existing.score(rubric.getCriteria().get(0), level(rubric, 13), null, NOW);
+        existing.score(rubric.getCriteria().get(1), level(rubric, 23), null, NOW);
         when(evaluationRepository.findByProjectIdAndJurorId(PROJECT, 8)).thenReturn(Optional.of(existing));
 
         EvaluationResponse saved = service.save(PROJECT, marta.getEmail(), new EvaluationRequest(true, null));
@@ -170,7 +174,7 @@ class EvaluationServiceTest {
     @Test
     void correctingChangesTheSameRowsInsteadOfAddingMore() {
         Evaluation existing = Evaluation.of(project, marta);
-        existing.markAbsent();
+        existing.markAbsent(NOW);
         when(evaluationRepository.findByProjectIdAndJurorId(PROJECT, 8)).thenReturn(Optional.of(existing));
 
         service.save(PROJECT, marta.getEmail(), scores(score(1, 12), score(2, 22)));
@@ -325,8 +329,8 @@ class EvaluationServiceTest {
     private Evaluation evaluation(User juror, int firstLevel, int secondLevel) {
         Evaluation evaluation = Evaluation.of(project, juror);
         evaluation.setId(juror.getId() * 100);
-        evaluation.score(rubric.getCriteria().get(0), level(rubric, firstLevel), "Observación");
-        evaluation.score(rubric.getCriteria().get(1), level(rubric, secondLevel), "Observación");
+        evaluation.score(rubric.getCriteria().get(0), level(rubric, firstLevel), "Observación", NOW);
+        evaluation.score(rubric.getCriteria().get(1), level(rubric, secondLevel), "Observación", NOW);
         return evaluation;
     }
 

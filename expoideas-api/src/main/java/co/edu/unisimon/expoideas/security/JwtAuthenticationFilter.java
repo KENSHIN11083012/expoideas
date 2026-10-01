@@ -1,5 +1,6 @@
 package co.edu.unisimon.expoideas.security;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,8 +13,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 /**
  * Autentica la petición con el token de la cabecera Authorization. No es un
@@ -27,10 +30,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final HandlerExceptionResolver exceptionResolver;
 
-    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+    public JwtAuthenticationFilter(
+            JwtService jwtService, UserDetailsService userDetailsService, HandlerExceptionResolver exceptionResolver) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.exceptionResolver = exceptionResolver;
     }
 
     @Override
@@ -55,11 +61,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-            } catch (Exception e) {
+            } catch (JwtException | IllegalArgumentException | UsernameNotFoundException e) {
                 // Token inválido, vencido o cuenta inexistente: se sigue sin autenticar.
                 // Las rutas protegidas responden 401; las públicas siguen funcionando.
                 SecurityContextHolder.clearContext();
                 log.debug("No se pudo autenticar la petición a {}: {}", request.getRequestURI(), e.getMessage());
+            } catch (RuntimeException e) {
+                // Cualquier otra cosa (la base no responde) no dice nada sobre la sesión. Seguir
+                // sin autenticar acabaría en un 401, y con un 401 la app cierra la sesión: se
+                // responde el fallo tal cual y la petición no sigue.
+                SecurityContextHolder.clearContext();
+                exceptionResolver.resolveException(request, response, null, e);
+                return;
             }
         }
 

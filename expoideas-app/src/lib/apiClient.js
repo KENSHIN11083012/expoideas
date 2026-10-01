@@ -24,6 +24,8 @@ const MESSAGES_BY_STATUS = {
     404: 'El recurso no fue encontrado.',
     409: 'El recurso ya existe.',
     413: 'El archivo supera el tamaño máximo permitido de 5 MB.',
+    // Lo responde Nginx, sin cuerpo JSON, cuando frena los intentos de acceso en serie.
+    429: 'Demasiados intentos seguidos. Espera un momento y vuelve a intentarlo.',
 };
 
 /**

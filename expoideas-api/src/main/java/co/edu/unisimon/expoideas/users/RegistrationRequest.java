@@ -1,5 +1,6 @@
 package co.edu.unisimon.expoideas.users;
 
+import co.edu.unisimon.expoideas.common.Password;
 import co.edu.unisimon.expoideas.common.ValidationPatterns;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
@@ -22,8 +23,7 @@ public record RegistrationRequest(
                 message = ValidationPatterns.INSTITUTIONAL_EMAIL_MESSAGE)
         String email,
 
-        @NotBlank(message = "La contraseña es obligatoria")
-        @Pattern(regexp = ValidationPatterns.PASSWORD, message = ValidationPatterns.PASSWORD_MESSAGE)
+        @NotBlank(message = "La contraseña es obligatoria") @Password
         String password,
 
         @NotNull(message = "Debes indicar si autorizas el tratamiento de tus datos")

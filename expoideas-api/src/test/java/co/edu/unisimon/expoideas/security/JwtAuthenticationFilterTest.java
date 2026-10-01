@@ -1,7 +1,12 @@
 package co.edu.unisimon.expoideas.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import co.edu.unisimon.expoideas.common.ExpoideasProperties;
@@ -16,6 +21,7 @@ import java.util.Date;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -23,6 +29,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 class JwtAuthenticationFilterTest {
 
@@ -30,6 +38,7 @@ class JwtAuthenticationFilterTest {
 
     private JwtService jwtService;
     private UserDetailsService userDetailsService;
+    private HandlerExceptionResolver exceptionResolver;
     private JwtAuthenticationFilter filter;
 
     @BeforeEach
@@ -37,7 +46,8 @@ class JwtAuthenticationFilterTest {
         ExpoideasProperties properties = TestData.properties(Path.of("uploads"));
         jwtService = new JwtService(properties);
         userDetailsService = mock(UserDetailsService.class);
-        filter = new JwtAuthenticationFilter(jwtService, userDetailsService);
+        exceptionResolver = mock(HandlerExceptionResolver.class);
+        filter = new JwtAuthenticationFilter(jwtService, userDetailsService, exceptionResolver);
     }
 
     @AfterEach
@@ -86,6 +96,31 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
+    void anAccountThatNoLongerExistsDoesNotAuthenticateAndTheRequestGoesOn() throws Exception {
+        when(userDetailsService.loadUserByUsername(EMAIL)).thenThrow(new UsernameNotFoundException("no está"));
+        MockFilterChain chain = new MockFilterChain();
+
+        assertThat(filter(jwtService.generateToken(principal(Role.STUDENT)), chain))
+                .isNull();
+        // Sigue sin sesión: las rutas protegidas responderán 401 y las públicas, lo suyo.
+        assertThat(chain.getRequest()).isNotNull();
+        verifyNoInteractions(exceptionResolver);
+    }
+
+    @Test
+    void aDatabaseOutageIsNotMistakenForAnExpiredSession() throws Exception {
+        DataAccessResourceFailureException outage = new DataAccessResourceFailureException("sin conexión");
+        when(userDetailsService.loadUserByUsername(EMAIL)).thenThrow(outage);
+        MockFilterChain chain = new MockFilterChain();
+
+        assertThat(filter(jwtService.generateToken(principal(Role.STUDENT)), chain))
+                .isNull();
+        // Con un 401 la app cerraría la sesión de todos: el fallo se responde aquí y la petición no sigue.
+        verify(exceptionResolver).resolveException(any(), any(), isNull(), eq(outage));
+        assertThat(chain.getRequest()).isNull();
+    }
+
+    @Test
     void theTokenCarriesTheRoleForTheFrontend() {
         String token = jwtService.generateToken(principal(Role.MACONDOLAB));
 
@@ -99,9 +134,13 @@ class JwtAuthenticationFilterTest {
     }
 
     private Authentication filter(String token) throws Exception {
+        return filter(token, new MockFilterChain());
+    }
+
+    private Authentication filter(String token, MockFilterChain chain) throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/admin/users");
         request.addHeader("Authorization", "Bearer " + token);
-        filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+        filter.doFilter(request, new MockHttpServletResponse(), chain);
         return SecurityContextHolder.getContext().getAuthentication();
     }
 

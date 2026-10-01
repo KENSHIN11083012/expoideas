@@ -1,6 +1,7 @@
 package co.edu.unisimon.expoideas.auth;
 
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -18,6 +19,7 @@ import co.edu.unisimon.expoideas.users.UserResponse;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -49,6 +51,18 @@ class AuthControllerTest {
                         .content("{\"email\":\"" + EMAIL + "\",\"password\":\"Mala#2026\"}"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.detail").value("Credenciales inválidas"));
+    }
+
+    @Test
+    void whenTheDatabaseDoesNotAnswerItIs503AndNotASessionProblem() throws Exception {
+        when(authService.login(any())).thenThrow(new DataAccessResourceFailureException("sin conexión"));
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"" + EMAIL + "\",\"password\":\"Segura#2026\"}"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value(containsString("no está disponible")));
     }
 
     @Test
@@ -118,6 +132,28 @@ class AuthControllerTest {
                         .content(registration(EMAIL, "123456", true)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields.password").exists());
+    }
+
+    @Test
+    void aPasswordThatDoesNotFitInBCryptIsRejectedAsAFieldError() throws Exception {
+        // 40 eñes son 42 caracteres pero 82 bytes, y BCrypt solo lee 72.
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registration(EMAIL, "ñ".repeat(40) + "-1", true)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.password").exists());
+
+        verifyNoInteractions(accountService);
+    }
+
+    @Test
+    void aPasswordOfExactly72BytesIsAccepted() throws Exception {
+        when(accountService.register(any())).thenReturn(registered());
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registration(EMAIL, "ñ".repeat(35) + "-1", true)))
+                .andExpect(status().isCreated());
     }
 
     @Test

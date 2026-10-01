@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.NonTransientDataAccessResourceException;
+import org.springframework.dao.TransientDataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -16,6 +18,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -87,6 +90,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
         log.warn("Conflicto de integridad: {}", ex.getMostSpecificCause().getMessage());
         return problem(HttpStatus.CONFLICT, "Ya existe un registro con esos datos");
+    }
+
+    /**
+     * La base de datos no responde (caída, sin conexiones, consulta que no vuelve).
+     * Es un 503 y no un 500: el problema es pasajero y no de la petición, y la app
+     * no debe confundirlo con una sesión vencida.
+     */
+    @ExceptionHandler({
+        TransientDataAccessException.class,
+        NonTransientDataAccessResourceException.class,
+        CannotCreateTransactionException.class
+    })
+    public ProblemDetail handleDatabaseUnavailable(Exception ex) {
+        log.error("La base de datos no responde", ex);
+        return problem(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "La plataforma no está disponible en este momento. Intenta de nuevo en unos minutos.");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

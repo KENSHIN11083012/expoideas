@@ -57,9 +57,16 @@ proxy o balanceador de TI con el certificado de la universidad, que debe reenvia
 
 - `X-Forwarded-Proto: https`
 - `X-Forwarded-Host: <dominio público>`
+- `X-Forwarded-For`, con la dirección del cliente al final
 
-Con esas cabeceras la API responde como si la petición hubiera llegado por HTTPS (HSTS, URLs y
+Con las dos primeras la API responde como si la petición hubiera llegado por HTTPS (HSTS, URLs y
 comprobación de origen correctas).
+
+La tercera la usa el Nginx de la app para frenar los intentos en serie contra el inicio de sesión y
+el registro: por cada dirección admite una petición por segundo sostenida y ráfagas de hasta 30, y
+al resto responde 429. Toma la **última** dirección de la cabecera, que es la que vio el proxy. Si
+el proxy no la envía, todas las personas llegan con la dirección del proxy y comparten ese mismo
+cupo: en una hora pico de inscripciones se quedarían cortas.
 
 ## Opción B: sin Docker
 

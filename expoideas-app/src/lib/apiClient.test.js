@@ -60,6 +60,15 @@ describe('apiClient', () => {
         });
     });
 
+    it('un 429 de Nginx, que llega sin JSON, se explica como demasiados intentos', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429, headers: { get: () => 'text/html' } }));
+
+        await expect(request('/auth/login')).rejects.toMatchObject({
+            status: 429,
+            message: 'Demasiados intentos seguidos. Espera un momento y vuelve a intentarlo.',
+        });
+    });
+
     it('sin red lanza un error con estado 0', async () => {
         vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
 

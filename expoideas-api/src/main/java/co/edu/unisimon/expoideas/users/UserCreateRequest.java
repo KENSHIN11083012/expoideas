@@ -1,10 +1,9 @@
 package co.edu.unisimon.expoideas.users;
 
-import co.edu.unisimon.expoideas.common.ValidationPatterns;
+import co.edu.unisimon.expoideas.common.Password;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -26,8 +25,7 @@ public record UserCreateRequest(
         @Size(max = 150, message = "El correo no puede exceder 150 caracteres")
         String email,
 
-        @NotBlank(message = "La contraseña es obligatoria")
-        @Pattern(regexp = ValidationPatterns.PASSWORD, message = ValidationPatterns.PASSWORD_MESSAGE)
+        @NotBlank(message = "La contraseña es obligatoria") @Password
         String password,
 
         @NotNull(message = "El rol es obligatorio") Role role,

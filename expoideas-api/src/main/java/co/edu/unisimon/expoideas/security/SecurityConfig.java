@@ -153,7 +153,7 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, e) ->
                                 exceptionResolver.resolveException(request, response, null, e)))
                 .addFilterBefore(
-                        new JwtAuthenticationFilter(jwtService, userDetailsService),
+                        new JwtAuthenticationFilter(jwtService, userDetailsService, exceptionResolver),
                         UsernamePasswordAuthenticationFilter.class)
                 // Con la sesión ya resuelta: bloquea todo menos el primer ingreso si está pendiente.
                 .addFilterAfter(new OnboardingFilter(exceptionResolver, publicReads()), JwtAuthenticationFilter.class);

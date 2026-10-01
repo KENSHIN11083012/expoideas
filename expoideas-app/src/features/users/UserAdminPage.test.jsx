@@ -18,6 +18,7 @@ import {
 
 vi.mock('@/features/auth/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('@/features/catalogs/queries', () => ({ useAffiliationCatalogs: vi.fn() }));
+vi.mock('./RosterPanel', () => ({ RosterPanel: () => <section>Panel del listado</section> }));
 vi.mock('./queries', () => ({
     useUsers: vi.fn(),
     useCreateUser: vi.fn(),

@@ -130,4 +130,5 @@ encendido. Si algo de esto falla, el cambio no está listo, aunque «funcione».
 | Lo pendiente con MacondoLab (rúbricas, premios) | «Qué falta», en el [README](README.md#qué-falta) |
 | Lo acordado en la reunión de septiembre de 2026 | [docs/reunion-2026-09.md](docs/reunion-2026-09.md) |
 | Las rúbricas de evaluación y cómo se calcula la nota | [docs/rubricas.md](docs/rubricas.md) |
+| El formato del listado de la cátedra | [docs/listado.md](docs/listado.md) |
 | Cómo se llega al estado actual | El historial de commits, en orden |

@@ -12,7 +12,9 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback';
 import { NativeSelect } from '@/components/ui/native-select';
 import { SearchInput } from '@/components/ui/search-input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AffiliationDialog, NewUserDialog, PasswordResetDialog, TrackApprovalsDialog } from './UserDialogs';
+import { RosterPanel } from './RosterPanel';
 import { UserList } from './UserList';
 import { useDeleteUser, useUpdateUser, useUsers } from './queries';
 
@@ -96,77 +98,88 @@ export default function UserAdminPage() {
                 }
             />
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <SearchInput
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Buscar por nombre o correo"
-                    label="Buscar usuarios"
-                    className="flex-1"
-                />
-                <NativeSelect
-                    value={roleFilter}
-                    onChange={(event) => setRoleFilter(event.target.value)}
-                    aria-label="Filtrar por rol"
-                    className="sm:w-52"
-                >
-                    <option value="">Todos los roles</option>
-                    {Object.values(ROLES).map((role) => (
-                        <option key={role} value={role}>
-                            {ROLE_LABELS[role]}
-                        </option>
-                    ))}
-                </NativeSelect>
-                {!isPending && (
-                    <Badge variant="outline" mono className="self-start sm:self-center" aria-live="polite">
-                        {filtered.length} de {users.length}
-                    </Badge>
-                )}
-            </div>
+            <Tabs defaultValue="cuentas">
+                <TabsList aria-label="Usuarios">
+                    <TabsTrigger value="cuentas">Cuentas</TabsTrigger>
+                    <TabsTrigger value="listado">Listado de la cátedra</TabsTrigger>
+                </TabsList>
+                <TabsContent value="listado" className="pt-6">
+                    <RosterPanel />
+                </TabsContent>
+                <TabsContent value="cuentas" className="flex flex-col gap-6 pt-6">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <SearchInput
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            placeholder="Buscar por nombre o correo"
+                            label="Buscar usuarios"
+                            className="flex-1"
+                        />
+                        <NativeSelect
+                            value={roleFilter}
+                            onChange={(event) => setRoleFilter(event.target.value)}
+                            aria-label="Filtrar por rol"
+                            className="sm:w-52"
+                        >
+                            <option value="">Todos los roles</option>
+                            {Object.values(ROLES).map((role) => (
+                                <option key={role} value={role}>
+                                    {ROLE_LABELS[role]}
+                                </option>
+                            ))}
+                        </NativeSelect>
+                        {!isPending && (
+                            <Badge variant="outline" mono className="self-start sm:self-center" aria-live="polite">
+                                {filtered.length} de {users.length}
+                            </Badge>
+                        )}
+                    </div>
 
-            {error ? (
-                <ErrorState title="No pudimos cargar los usuarios" error={error} onRetry={refetch} />
-            ) : isPending ? (
-                <LoadingUsers />
-            ) : filtered.length === 0 ? (
-                <EmptyState
-                    icon={hasFilters ? UserX : Users}
-                    title={hasFilters ? 'Sin resultados' : 'Aún no hay usuarios'}
-                    description={
-                        hasFilters
-                            ? 'Prueba con otro nombre, correo o rol.'
-                            : 'Las cuentas aparecerán aquí cuando alguien se registre.'
-                    }
-                    action={
-                        hasFilters && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    setSearch('');
-                                    setRoleFilter('');
-                                }}
-                            >
-                                Limpiar filtros
-                            </Button>
-                        )
-                    }
-                />
-            ) : (
-                <UserList
-                    users={filtered}
-                    actor={actor}
-                    isOwn={isOwn}
-                    isBusy={isBusy}
-                    handlers={{
-                        onRoleChange,
-                        onEditAffiliation: (user) => setDialog({ type: 'affiliation', user }),
-                        onTrackApprovals: (user) => setDialog({ type: 'approvals', user }),
-                        onResetPassword: (user) => setDialog({ type: 'password', user }),
-                        onDelete: setToDelete,
-                    }}
-                />
-            )}
+                    {error ? (
+                        <ErrorState title="No pudimos cargar los usuarios" error={error} onRetry={refetch} />
+                    ) : isPending ? (
+                        <LoadingUsers />
+                    ) : filtered.length === 0 ? (
+                        <EmptyState
+                            icon={hasFilters ? UserX : Users}
+                            title={hasFilters ? 'Sin resultados' : 'Aún no hay usuarios'}
+                            description={
+                                hasFilters
+                                    ? 'Prueba con otro nombre, correo o rol.'
+                                    : 'Las cuentas aparecerán aquí cuando alguien se registre.'
+                            }
+                            action={
+                                hasFilters && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            setSearch('');
+                                            setRoleFilter('');
+                                        }}
+                                    >
+                                        Limpiar filtros
+                                    </Button>
+                                )
+                            }
+                        />
+                    ) : (
+                        <UserList
+                            users={filtered}
+                            actor={actor}
+                            isOwn={isOwn}
+                            isBusy={isBusy}
+                            handlers={{
+                                onRoleChange,
+                                onEditAffiliation: (user) => setDialog({ type: 'affiliation', user }),
+                                onTrackApprovals: (user) => setDialog({ type: 'approvals', user }),
+                                onResetPassword: (user) => setDialog({ type: 'password', user }),
+                                onDelete: setToDelete,
+                            }}
+                        />
+                    )}
+                </TabsContent>
+            </Tabs>
 
             {dialog?.type === 'new' && <NewUserDialog actor={actor} onClose={closeDialog} />}
             {dialog?.type === 'affiliation' && <AffiliationDialog user={dialog.user} onClose={closeDialog} />}

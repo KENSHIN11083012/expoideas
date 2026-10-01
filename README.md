@@ -60,12 +60,13 @@ cargadas como datos y el tablero donde cada jurado asignado califica, arrastrand
 criterio a su nivel o tocándolo (con «no asistió» y observación obligatoria por debajo de 3.0). La
 nota del proyecto (promedio de sus jurados) la ven el profesor del grupo y la gestión en la ficha,
 en el listado y en el CSV, y la gestión puede recordar por correo a los jurados lo que les falta.
+Y la precarga: la gestión carga el [listado de la cátedra](docs/listado.md) y cada persona se
+registra con su rol.
 
 - Los tipos de prototipo de INNPRENDE II y qué evidencia pide cada uno (los carga la gestión en
   Catálogos y en los entregables; falta que MacondoLab los defina).
 - Identidad visual de Idearium: los nombres ya están puestos; faltan los logos y la paleta (el
   monograma y los colores de ahora son provisionales).
-- Precarga del listado de la cátedra para asignar roles al registrarse (falta el listado).
 
 Sin definir por MacondoLab, y por eso fuera del piloto: ranking y premios por sector, y la vitrina
 pública (ver [docs/preguntas-ti.md](docs/preguntas-ti.md) para lo pendiente de infraestructura).

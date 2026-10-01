@@ -29,6 +29,23 @@ export const useUpdateUser = () => {
 
 export const useResetPassword = () => useMutation({ mutationFn: ({ id, passwords }) => usersApi.resetPassword(id, passwords) });
 
+const rosterKey = ['roster'];
+
+/** El listado de la cátedra. */
+export const useRoster = () => useQuery({ queryKey: rosterKey, queryFn: usersApi.listRoster });
+
+const useRosterMutation = (mutationFn) => {
+    const queryClient = useQueryClient();
+    return useMutation({ mutationFn, onSuccess: () => queryClient.invalidateQueries({ queryKey: rosterKey }) });
+};
+
+/** Carga un CSV y devuelve el resumen de la carga. */
+export const useImportRoster = () => useRosterMutation(usersApi.importRoster);
+
+export const useRemoveRosterEntry = () => useRosterMutation(usersApi.removeRosterEntry);
+
+export const useClearRoster = () => useRosterMutation(usersApi.clearRoster);
+
 const approvalsKey = (userId) => ['track-approvals', String(userId)];
 
 /** Aprobaciones de cátedra de una persona. */

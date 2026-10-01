@@ -98,13 +98,20 @@ function DataConsentStep({ onDone }) {
  * de Mi perfil, sin datos previos: el registro solo pidió correo y contraseña.
  */
 function CompleteProfileStep({ onDone }) {
-    const { role } = useAuth();
+    const { role, user } = useAuth();
     const withAffiliation = requiresAffiliation(role);
     const update = useUpdateProfile();
+    // Si el listado de la cátedra traía el nombre, viene puesto y se puede corregir.
     const form = useForm({
         resolver: zodResolver(withAffiliation ? profileSchema : personalDataSchema),
         mode: 'onTouched',
-        defaultValues: { firstName: '', lastName: '', campusId: '', facultyId: '', academicProgramId: '' },
+        defaultValues: {
+            firstName: user?.firstName ?? '',
+            lastName: user?.lastName ?? '',
+            campusId: '',
+            facultyId: '',
+            academicProgramId: '',
+        },
     });
     const {
         register,

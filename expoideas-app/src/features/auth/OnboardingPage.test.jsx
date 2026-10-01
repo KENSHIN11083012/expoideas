@@ -19,12 +19,12 @@ vi.mock('@/features/catalogs/queries', () => ({ useAffiliationCatalogs: vi.fn() 
 const TestSession = createContext(null);
 
 /** Sesión con estado real: completar un paso lo quita de la lista, como AuthProvider. */
-function Session({ initialPendingSteps, role, children }) {
+function Session({ initialPendingSteps, role, user = { fullName: 'Marta Ríos' }, children }) {
     const [pendingSteps, setPendingSteps] = useState(initialPendingSteps);
     const value = {
         token: 'token',
         role,
-        user: { fullName: 'Marta Ríos' },
+        user,
         pendingSteps,
         completeStep: (step) => setPendingSteps((steps) => steps.filter((s) => s !== step)),
         logout: vi.fn(),
@@ -32,10 +32,10 @@ function Session({ initialPendingSteps, role, children }) {
     return <TestSession.Provider value={value}>{children}</TestSession.Provider>;
 }
 
-function renderOnboarding(pendingSteps, role = 'JUDGE') {
+function renderOnboarding(pendingSteps, role = 'JUDGE', user = undefined) {
     useAuth.mockImplementation(() => useContext(TestSession));
     render(
-        <Session initialPendingSteps={pendingSteps} role={role}>
+        <Session initialPendingSteps={pendingSteps} role={role} user={user}>
             <MemoryRouter initialEntries={[ROUTES.ONBOARDING]}>
                 <Routes>
                     <Route path={ROUTES.ONBOARDING} element={<OnboardingPage />} />
@@ -176,6 +176,29 @@ describe('Paso «Completa tu perfil»', () => {
             academicProgramId: 5,
         });
         expect(await screen.findByText('Inicio')).toBeInTheDocument();
+    });
+
+    it('si el listado de la cátedra traía el nombre, viene puesto y se puede corregir', async () => {
+        const user = userEvent.setup();
+        updateProfile.mutateAsync.mockResolvedValue({ firstName: 'Carlos', lastName: 'Mendoza', pendingSteps: [] });
+        renderOnboarding(['COMPLETE_PROFILE'], 'TEACHER', {
+            fullName: 'Carlos Mendoza',
+            firstName: 'Carlos',
+            lastName: 'Mendoza',
+        });
+
+        expect(screen.getByLabelText(/^Nombres/)).toHaveValue('Carlos');
+        expect(screen.getByLabelText(/^Apellidos/)).toHaveValue('Mendoza');
+
+        await user.clear(screen.getByLabelText(/^Nombres/));
+        await user.type(screen.getByLabelText(/^Nombres/), 'Carlos Andrés');
+        await user.selectOptions(screen.getByLabelText(/^Sede/), '1');
+        await user.selectOptions(screen.getByLabelText(/^Facultad/), '2');
+        await user.click(screen.getByRole('button', { name: /Guardar y continuar/ }));
+
+        expect(updateProfile.mutateAsync).toHaveBeenCalledWith(
+            expect.objectContaining({ firstName: 'Carlos Andrés', lastName: 'Mendoza', campusId: 1, facultyId: 2 }),
+        );
     });
 
     it('a un estudiante le exige sede y facultad antes de enviar', async () => {

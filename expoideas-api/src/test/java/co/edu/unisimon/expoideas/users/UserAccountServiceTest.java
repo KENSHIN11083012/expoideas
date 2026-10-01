@@ -68,6 +68,9 @@ class UserAccountServiceTest {
     @Mock
     private FileService fileService;
 
+    @Mock
+    private RosterRepository rosterRepository;
+
     private UserAccountService service;
 
     private final Campus barranquilla = new Campus(1, "Barranquilla");
@@ -86,7 +89,12 @@ class UserAccountServiceTest {
                 sectorRepository,
                 prototypeTypeRepository);
         service = new UserAccountService(
-                userRepository, new AffiliationResolver(lookup), new PasswordUpdater(passwordEncoder), fileService);
+                userRepository,
+                rosterRepository,
+                new AffiliationResolver(lookup),
+                new PasswordUpdater(passwordEncoder),
+                fileService);
+        lenient().when(rosterRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
         lenient().when(campusRepository.findById(1)).thenReturn(Optional.of(barranquilla));
         lenient().when(facultyRepository.findById(10)).thenReturn(Optional.of(engineering));
@@ -114,6 +122,22 @@ class UserAccountServiceTest {
             assertThat(created.facultyId()).isNull();
             assertThat(created.pendingSteps()).containsExactly(OnboardingStep.COMPLETE_PROFILE);
             verifyNoInteractions(campusRepository, facultyRepository, academicProgramRepository);
+        }
+
+        @Test
+        void whoeverIsOnTheRosterGetsItsRoleAndName() {
+            RosterEntry entry = RosterEntry.of(EMAIL);
+            entry.setRole(Role.TEACHER);
+            entry.setFirstName("Carlos");
+            entry.setLastName("Mendoza");
+            when(rosterRepository.findByEmail(EMAIL)).thenReturn(Optional.of(entry));
+
+            UserResponse created = service.register(registration("Ana@unisimon.edu.co"));
+
+            assertThat(created.role()).isEqualTo(Role.TEACHER);
+            assertThat(created.firstName()).isEqualTo("Carlos");
+            assertThat(created.lastName()).isEqualTo("Mendoza");
+            assertThat(created.pendingSteps()).containsExactly(OnboardingStep.COMPLETE_PROFILE);
         }
 
         @Test

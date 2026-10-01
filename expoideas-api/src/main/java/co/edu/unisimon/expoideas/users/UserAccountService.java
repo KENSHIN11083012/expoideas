@@ -6,6 +6,7 @@ import co.edu.unisimon.expoideas.files.FileFormat;
 import co.edu.unisimon.expoideas.files.FileService;
 import co.edu.unisimon.expoideas.files.FileVisibility;
 import co.edu.unisimon.expoideas.files.StoredFile;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserAccountService {
 
     private final UserRepository userRepository;
+    private final RosterRepository rosterRepository;
     private final AffiliationResolver affiliation;
     private final PasswordUpdater passwords;
     private final FileService fileService;
@@ -36,6 +38,8 @@ public class UserAccountService {
      * Registro público: la cuenta nace como estudiante, con la autorización de
      * datos que exige el formulario y sin nombre ni adscripción, que quedan como
      * paso pendiente ({@link OnboardingStep#COMPLETE_PROFILE}) del primer ingreso.
+     * Si el correo está en el listado de la cátedra, nace con el rol (y el
+     * nombre, si venía) que dice el listado.
      *
      * @throws ConflictException si el correo ya está en uso
      */
@@ -45,11 +49,20 @@ public class UserAccountService {
         if (userRepository.existsByEmail(email)) {
             throw new ConflictException("El correo institucional ya está registrado.");
         }
-        User user = User.builder()
+        User.UserBuilder user = User.builder()
                 .email(email)
                 .passwordHash(passwords.hash(request.password()))
-                .role(Role.STUDENT)
-                .build();
+                .role(Role.STUDENT);
+        rosterRepository.findByEmail(email.toLowerCase(Locale.ROOT)).ifPresent(entry -> {
+            user.role(entry.getRole());
+            if (entry.hasName()) {
+                user.firstName(entry.getFirstName()).lastName(entry.getLastName());
+            }
+        });
+        return register(user.build());
+    }
+
+    private UserResponse register(User user) {
         user.giveDataConsent();
 
         User saved = userRepository.save(user);

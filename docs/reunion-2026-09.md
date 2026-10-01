@@ -52,14 +52,16 @@ Otros puntos de la reunión:
 6. **F6 · Tipos de prototipo** en INNPRENDE II (punto 8). **Mecanismo hecho** (en `main`); los tipos los carga la gestión cuando estén definidos.
 7. **F7 · Cambio de marca a Idearium** (punto 13). **Nombres hechos** (en `main`); logos y paleta, cuando lleguen los recursos.
 8. **F8 · Evaluación con rúbrica** (punto 12). **Hecha** (en `main`): API y rúbricas (F8a), tablero del jurado (F8b), resultados y recordatorio (F8c).
-9. **F9 · Precarga del listado** (punto 10). **Hecha** (en `main`); falta cargar el listado real.
+9. **F9 · Precarga del listado** (punto 10). **Hecha** (en `main`). TI no entrega el listado por ahora: el panel queda disponible y los roles se asignan a mano.
+10. **F10 · Publicación de notas** (acordada después de la reunión). **Hecha** (en `main`): la gestión publica por cátedra y el equipo ve su nota y las observaciones sin nombres.
 
 ## Por confirmar
 
 - Rúbrica del póster: los valores de la tabla no coinciden con los que anuncia el encabezado del
   documento, ni los nombres de los niveles con la escala. Se cargó lo que dice la tabla (detalle en
   [rubricas.md](rubricas.md)).
-- Si los estudiantes ven su nota y las observaciones. Por ahora solo el profesor del grupo y la gestión.
+- ~~Si los estudiantes ven su nota y las observaciones.~~ Resuelto (F10): las ven cuando la gestión publica las
+  notas de la cátedra, sin nombres de jurados.
 
 - Invitaciones al equipo: ¿la persona invitada sigue teniendo que aceptar, o queda asociada al
   proyecto automáticamente? En la reunión se dijeron las dos cosas.

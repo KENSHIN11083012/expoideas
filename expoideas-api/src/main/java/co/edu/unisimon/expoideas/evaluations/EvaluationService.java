@@ -3,9 +3,11 @@ package co.edu.unisimon.expoideas.evaluations;
 import co.edu.unisimon.expoideas.common.ConflictException;
 import co.edu.unisimon.expoideas.common.ForbiddenActionException;
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
+import co.edu.unisimon.expoideas.editions.EditionTrack;
 import co.edu.unisimon.expoideas.editions.Track;
 import co.edu.unisimon.expoideas.evaluations.EvaluationRequest.ScoreRequest;
 import co.edu.unisimon.expoideas.evaluations.ProjectEvaluationsResponse.PendingJuror;
+import co.edu.unisimon.expoideas.evaluations.PublishedGradeResponse.CriterionFeedback;
 import co.edu.unisimon.expoideas.notifications.EvaluationReminderEvent;
 import co.edu.unisimon.expoideas.projects.Project;
 import co.edu.unisimon.expoideas.projects.ProjectPolicy;
@@ -146,6 +148,61 @@ public class EvaluationService {
                         .filter(juror -> !done.contains(juror.getId()))
                         .map(PendingJuror::from)
                         .toList());
+    }
+
+    /**
+     * Lo que el equipo ve de su evaluación: nada hasta que la gestión publique
+     * las notas de la cátedra o mientras ningún jurado haya calificado; después,
+     * la nota final y las observaciones por criterio, sin nombres de jurados.
+     *
+     * @throws ForbiddenActionException si no está en el equipo (aceptado) ni es el profesor ni de la gestión
+     */
+    @Transactional(readOnly = true)
+    public Optional<PublishedGradeResponse> published(Integer projectId, String email) {
+        User viewer = policy.account(email);
+        Project project = policy.findVisible(projectId, viewer);
+        boolean allowed =
+                project.memberOf(viewer).filter(member -> member.isAccepted()).isPresent()
+                        || project.getTeacher().getId().equals(viewer.getId())
+                        || viewer.getRole().isManagement();
+        if (!allowed) {
+            throw new ForbiddenActionException("Solo el equipo ve su nota publicada");
+        }
+        EditionTrack settings = project.trackSettings();
+        if (!settings.isGradesPublished()) {
+            return Optional.empty();
+        }
+
+        List<User> jurors = evaluatorRule.evaluatorsOf(project);
+        List<Evaluation> counted = counted(evaluationRepository.findByProjectIdOrderByCreatedAtAsc(projectId), jurors);
+        ProjectGrade grade = ProjectGrade.of(counted, jurors.size());
+        if (grade.grade() == null) {
+            return Optional.empty();
+        }
+
+        // Las observaciones se agrupan por criterio en el orden de la rúbrica, sin decir de qué jurado son.
+        Map<Integer, List<String>> commentsByCriterion = new LinkedHashMap<>();
+        Map<Integer, RubricCriterion> criteria = new LinkedHashMap<>();
+        for (Evaluation evaluation : counted) {
+            for (EvaluationScore score : evaluation.getScores()) {
+                if (score.getComment() != null) {
+                    criteria.putIfAbsent(score.getCriterion().getId(), score.getCriterion());
+                    commentsByCriterion
+                            .computeIfAbsent(score.getCriterion().getId(), id -> new ArrayList<>())
+                            .add(score.getComment());
+                }
+            }
+        }
+        List<CriterionFeedback> feedback = criteria.values().stream()
+                .sorted(java.util.Comparator.comparingInt(RubricCriterion::getPosition))
+                .map(criterion -> new CriterionFeedback(
+                        criterion.getId(),
+                        criterion.getPosition(),
+                        criterion.getShortName(),
+                        commentsByCriterion.get(criterion.getId())))
+                .toList();
+        return Optional.of(new PublishedGradeResponse(
+                projectId, grade.grade(), grade.scale(), grade.evaluated(), settings.getGradesPublishedAt(), feedback));
     }
 
     /** La nota de cada proyecto de la lista, por su id, con dos consultas para todos. */

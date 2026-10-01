@@ -1,8 +1,11 @@
 package co.edu.unisimon.expoideas.editions;
 
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
+import co.edu.unisimon.expoideas.users.User;
+import co.edu.unisimon.expoideas.users.UserRepository;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class EditionService {
 
     private final EditionRepository editionRepository;
+    private final UserRepository userRepository;
     private final Clock clock;
 
     @Transactional(readOnly = true)
@@ -50,6 +54,35 @@ public class EditionService {
     @Transactional
     public EditionResponse update(Integer id, EditionRequest request) {
         return save(find(id), request);
+    }
+
+    /**
+     * Desde ahora los equipos de esa cátedra ven su nota y las observaciones.
+     * Volver a publicar solo actualiza la fecha.
+     *
+     * @throws NoSuchElementException si la edición no existe o no tiene esa cátedra
+     */
+    @Transactional
+    public EditionResponse publishGrades(Integer id, Track track, String actorEmail) {
+        Edition edition = find(id);
+        User actor = userRepository
+                .findByEmail(actorEmail)
+                .orElseThrow(() -> new NoSuchElementException("No existe una cuenta con el correo: " + actorEmail));
+        trackOf(edition, track).publishGrades(actor, LocalDateTime.now(clock));
+        return EditionResponse.from(edition, today());
+    }
+
+    /** Los equipos dejan de ver su nota hasta que se vuelva a publicar. */
+    @Transactional
+    public EditionResponse hideGrades(Integer id, Track track) {
+        Edition edition = find(id);
+        trackOf(edition, track).hideGrades();
+        return EditionResponse.from(edition, today());
+    }
+
+    private static EditionTrack trackOf(Edition edition, Track track) {
+        return edition.track(track)
+                .orElseThrow(() -> new NoSuchElementException("La edición no tiene configurada la cátedra " + track));
     }
 
     private Edition find(Integer id) {

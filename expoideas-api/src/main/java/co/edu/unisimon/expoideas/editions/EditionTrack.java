@@ -1,5 +1,6 @@
 package co.edu.unisimon.expoideas.editions;
 
+import co.edu.unisimon.expoideas.users.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -44,4 +46,26 @@ public class EditionTrack {
 
     @Column(name = "max_members", nullable = false)
     private int maxMembers;
+
+    /** Desde cuándo los equipos ven su nota; null mientras los jurados califican. */
+    @Column(name = "grades_published_at")
+    private LocalDateTime gradesPublishedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "grades_published_by")
+    private User gradesPublishedBy;
+
+    public boolean isGradesPublished() {
+        return gradesPublishedAt != null;
+    }
+
+    public void publishGrades(User actor, LocalDateTime when) {
+        gradesPublishedAt = when;
+        gradesPublishedBy = actor;
+    }
+
+    public void hideGrades() {
+        gradesPublishedAt = null;
+        gradesPublishedBy = null;
+    }
 }

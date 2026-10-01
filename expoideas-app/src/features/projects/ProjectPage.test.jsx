@@ -16,6 +16,7 @@ vi.mock('@/features/jury/queries', () => ({ useJuryProjects: vi.fn() }));
 vi.mock('@/features/evaluations/ProjectEvaluations', () => ({
     ProjectEvaluations: () => <section>Panel de evaluación</section>,
 }));
+vi.mock('@/features/evaluations/MyGrade', () => ({ MyGrade: () => <section>Tu nota publicada</section> }));
 vi.mock('./queries', () => ({
     useProject: vi.fn(),
     useInviteMember: vi.fn(),
@@ -263,6 +264,16 @@ describe('Los jurados', () => {
 
         renderPage(project, { role: 'MACONDOLAB', userId: 9 });
         expect(screen.getAllByText('Panel de evaluación')).toHaveLength(2);
+    });
+
+    it('la nota publicada es para el equipo aceptado; una invitación sin responder no la ve', () => {
+        renderPage(project, { role: 'STUDENT', userId: 1 });
+        expect(screen.getByText('Tu nota publicada')).toBeInTheDocument();
+    });
+
+    it('el profesor y la gestión no llevan el panel del equipo', () => {
+        renderPage(project, { role: 'TEACHER', userId: 7 });
+        expect(screen.queryByText('Tu nota publicada')).not.toBeInTheDocument();
     });
 
     it('ni el equipo ni un jurado ven la evaluación', () => {

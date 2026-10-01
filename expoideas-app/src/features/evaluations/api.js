@@ -10,6 +10,8 @@ export const evaluationApi = {
     allMine: () => get('/evaluations/mine'),
     /** La nota del proyecto y lo que puso cada jurado (profesor del grupo y gestión). */
     results: (projectId) => get(`/projects/${projectId}/evaluations`),
+    /** La nota publicada del equipo; null mientras no esté publicada o nadie haya calificado (204). */
+    myGrade: (projectId) => get(`/projects/${projectId}/grade`),
     /** Escribe a los jurados de la cátedra con proyectos sin calificar (gestión). */
     remind: (editionId, track) => post(`/evaluations/reminders?editionId=${editionId}&track=${track}`),
 };

@@ -12,7 +12,10 @@ este documento es la referencia para leerlas y para revisar cambios.
 - Si el equipo **no asistió**, el jurado lo marca y su evaluación vale 0.0, sin niveles ni observaciones.
 - Califican los jurados asignados al proyecto, y cada uno puede corregir lo que guardó. Si la gestión
   quita a un jurado, su evaluación se conserva pero deja de contar.
-- Las notas las ven el profesor del grupo y la gestión; cada jurado, solo la suya.
+- Las notas las ven el profesor del grupo y la gestión; cada jurado, solo la suya. El equipo ve su nota
+  final y las observaciones (sin nombres de jurados) solo cuando la gestión **publica las notas** de la
+  cátedra en «Ediciones»; se pueden volver a ocultar. Publicar no congela nada: una corrección posterior
+  de un jurado se ve al instante.
 - La gestión puede recordar por correo, desde «Sustentaciones», a los jurados de una cátedra lo que les
   falta por calificar. No hay envíos automáticos: no está definido cuándo.
 - Escala institucional (Art. 62 del Estatuto Estudiantil): Deficiente 0,0–2,9 · Aceptable 3,0–3,9 ·

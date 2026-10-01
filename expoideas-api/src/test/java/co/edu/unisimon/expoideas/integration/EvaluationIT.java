@@ -155,6 +155,25 @@ class EvaluationIT extends IntegrationTest {
         put(mine, teacher, Map.of("absent", true)).expect(403);
         get(results, loginAs(Role.JUDGE)).expect(404);
 
+        // El equipo no ve nada hasta que la gestión publica; después, la nota y las observaciones sin nombres.
+        String grade = "/api/v1/projects/" + projectId + "/grade";
+        String publication = "/api/v1/editions/" + openEdition() + "/tracks/INNPRENDE_I/grades-publication";
+        get(grade, leader).expect(204);
+        put(publication, teacher, null).expect(403);
+        Response published = put(publication, macondolab, null).expect(200);
+        List<Object> publishedAt = published.json("$.tracks[?(@.track == 'INNPRENDE_I')].gradesPublishedAt");
+        assertThat(publishedAt).singleElement().isNotNull();
+        Response visible = get(grade, leader).expect(200);
+        assertThat(visible.<Double>json("$.grade")).isEqualTo(2.5);
+        assertThat(visible.<String>json("$.scale")).isEqualTo("FAILING");
+        assertThat(visible.<Integer>json("$.evaluated")).isEqualTo(2);
+        assertThat(visible.body()).doesNotContain("Prueba JUDGE").doesNotContain("juror");
+        // Marta corrigió a todo 5.0 sin observaciones y Pedro no asistió: no hay observaciones que mostrar.
+        assertThat(visible.<List<Object>>json("$.criteria")).isEmpty();
+        get(grade, marta).expect(403);
+        delete(publication, macondolab).expect(200);
+        get(grade, leader).expect(204);
+
         // Si la gestión quita a un jurado, su evaluación deja de contar.
         delete("/api/v1/projects/" + projectId + "/jurors/" + idOf(pedroEmail), macondolab)
                 .expect(204);

@@ -8,6 +8,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import co.edu.unisimon.expoideas.common.InvalidFieldsException;
+import co.edu.unisimon.expoideas.support.TestData;
+import co.edu.unisimon.expoideas.users.Role;
+import co.edu.unisimon.expoideas.users.User;
+import co.edu.unisimon.expoideas.users.UserRepository;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -34,12 +38,15 @@ class EditionServiceTest {
     @Mock
     private EditionRepository editionRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     private EditionService service;
 
     @BeforeEach
     void createService() {
         Clock clock = Clock.fixed(TODAY.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC);
-        service = new EditionService(editionRepository, clock);
+        service = new EditionService(editionRepository, userRepository, clock);
     }
 
     // ── Alta ────────────────────────────────────────────────────────────────
@@ -56,8 +63,8 @@ class EditionServiceTest {
         assertThat(created.submissionOpen()).isTrue();
         assertThat(created.tracks())
                 .containsExactlyInAnyOrder(
-                        new TrackSettingsResponse(Track.INNPRENDE_I, 3, 5),
-                        new TrackSettingsResponse(Track.INNPRENDE_II, 3, 5));
+                        new TrackSettingsResponse(Track.INNPRENDE_I, 3, 5, null),
+                        new TrackSettingsResponse(Track.INNPRENDE_II, 3, 5, null));
     }
 
     @Test
@@ -232,6 +239,32 @@ class EditionServiceTest {
         edition.setTrackSettings(Track.INNPRENDE_I, 2, 4);
         edition.setTrackSettings(Track.INNPRENDE_II, 2, 4);
         return edition;
+    }
+
+    @Test
+    void managementPublishesAndHidesTheGradesOfATrack() {
+        Edition edition = existing(7, "Expoideas 2026-2", OPENS, SUBMISSION_CLOSES);
+        User coordination = TestData.user(1, "coordinacion@unisimon.edu.co", Role.MACONDOLAB);
+        when(editionRepository.findWithTracksById(7)).thenReturn(Optional.of(edition));
+        when(userRepository.findByEmail("coordinacion@unisimon.edu.co")).thenReturn(Optional.of(coordination));
+
+        EditionResponse published = service.publishGrades(7, Track.INNPRENDE_I, "coordinacion@unisimon.edu.co");
+
+        assertThat(published.tracks())
+                .filteredOn(track -> track.track() == Track.INNPRENDE_I)
+                .singleElement()
+                .satisfies(track -> assertThat(track.gradesPublishedAt()).isEqualTo(TODAY.atStartOfDay()));
+        assertThat(published.tracks())
+                .filteredOn(track -> track.track() == Track.INNPRENDE_II)
+                .singleElement()
+                .satisfies(track -> assertThat(track.gradesPublishedAt()).isNull());
+        assertThat(edition.track(Track.INNPRENDE_I).orElseThrow().getGradesPublishedBy())
+                .isSameAs(coordination);
+
+        EditionResponse hidden = service.hideGrades(7, Track.INNPRENDE_I);
+
+        assertThat(hidden.tracks())
+                .allSatisfy(track -> assertThat(track.gradesPublishedAt()).isNull());
     }
 
     /** Los dos extremos de cada plazo cuentan: el último día todavía se puede. */

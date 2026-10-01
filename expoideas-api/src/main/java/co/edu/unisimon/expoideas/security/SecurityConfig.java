@@ -107,6 +107,8 @@ public class SecurityConfig {
                         .hasRole("MACONDOLAB")
                         .requestMatchers(HttpMethod.PUT, EDITIONS)
                         .hasRole("MACONDOLAB")
+                        .requestMatchers(HttpMethod.DELETE, EDITIONS)
+                        .hasRole("MACONDOLAB")
 
                         // Jurados: los asigna la gestión, y ella les recuerda lo pendiente.
                         .requestMatchers(JURORS)

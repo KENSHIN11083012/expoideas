@@ -34,6 +34,14 @@ export const useProjectEvaluations = (projectId) =>
         enabled: Boolean(projectId),
     });
 
+/** La nota publicada de mi proyecto; null si todavía no se ve. */
+export const useMyGrade = (projectId) =>
+    useQuery({
+        queryKey: ['my-grade', String(projectId)],
+        queryFn: () => evaluationApi.myGrade(projectId),
+        enabled: Boolean(projectId),
+    });
+
 /** Recuerda a los jurados de una cátedra lo que les falta por calificar. */
 export const useRemindJurors = () =>
     useMutation({ mutationFn: ({ editionId, track }) => evaluationApi.remind(editionId, track) });

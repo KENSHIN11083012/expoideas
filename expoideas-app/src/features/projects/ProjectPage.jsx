@@ -19,6 +19,7 @@ import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { ProjectDeliverables } from '@/features/deliverables/ProjectDeliverables';
+import { MyGrade } from '@/features/evaluations/MyGrade';
 import { ProjectEvaluations } from '@/features/evaluations/ProjectEvaluations';
 import { JurorsPanel } from '@/features/jury/JurorsPanel';
 import { useJuryProjects } from '@/features/jury/queries';
@@ -314,6 +315,9 @@ export default function ProjectPage() {
                 </aside>
 
                 <div className="flex flex-col gap-8 lg:col-start-1 lg:row-start-1">
+                    {/* El equipo ve su nota solo cuando la gestión la publicó; hasta entonces no hay panel. */}
+                    {me?.status === 'ACCEPTED' && <MyGrade project={project} />}
+
                     <section className="flex flex-col gap-4">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <h2 className="font-heading text-lg font-bold text-on-surface">Equipo</h2>

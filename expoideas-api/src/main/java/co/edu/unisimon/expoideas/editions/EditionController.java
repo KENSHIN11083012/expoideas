@@ -5,6 +5,8 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,5 +49,18 @@ public class EditionController {
     @PutMapping("/{id}")
     public EditionResponse update(@PathVariable Integer id, @Valid @RequestBody EditionRequest request) {
         return editionService.update(id, request);
+    }
+
+    /** Publica las notas de una cátedra: desde ahora cada equipo ve la suya. */
+    @PutMapping("/{id}/tracks/{track}/grades-publication")
+    public EditionResponse publishGrades(
+            @PathVariable Integer id, @PathVariable Track track, Authentication authentication) {
+        return editionService.publishGrades(id, track, authentication.getName());
+    }
+
+    /** Vuelve a ocultar las notas de una cátedra. */
+    @DeleteMapping("/{id}/tracks/{track}/grades-publication")
+    public EditionResponse hideGrades(@PathVariable Integer id, @PathVariable Track track) {
+        return editionService.hideGrades(id, track);
     }
 }

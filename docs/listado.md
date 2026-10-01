@@ -1,5 +1,8 @@
 # Listado de la cátedra
 
+> **Estado (septiembre de 2026):** TI no entrega este listado por ahora. El panel queda disponible por si
+> llega; mientras tanto todos se registran como estudiantes y el administrador asigna los roles a mano.
+
 Lo que MacondoLab carga en «Usuarios → Listado de la cátedra» para que cada persona se registre con
 su rol (reunión de septiembre de 2026, punto 10). Quien está en el listado nace como estudiante o
 profesor según diga; quien no está, como estudiante, y el administrador le cambia el rol a mano.

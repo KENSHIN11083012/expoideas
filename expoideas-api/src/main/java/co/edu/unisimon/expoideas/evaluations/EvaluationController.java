@@ -49,6 +49,16 @@ public class EvaluationController {
         return evaluationService.results(projectId, authentication.getName());
     }
 
+    /** Lo que el equipo ve de su evaluación, o 204 mientras no esté publicada o nadie haya calificado. */
+    @GetMapping("/api/v1/projects/{projectId}/grade")
+    public ResponseEntity<PublishedGradeResponse> published(
+            @PathVariable Integer projectId, Authentication authentication) {
+        return evaluationService
+                .published(projectId, authentication.getName())
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
     /** Todo lo que quien consulta ya calificó. */
     @GetMapping("/api/v1/evaluations/mine")
     public List<EvaluationResponse> allMine(Authentication authentication) {

@@ -61,7 +61,10 @@ criterio a su nivel o tocándolo (con «no asistió» y observación obligatoria
 nota del proyecto (promedio de sus jurados) la ven el profesor del grupo y la gestión en la ficha,
 en el listado y en el CSV, y la gestión puede recordar por correo a los jurados lo que les falta.
 Y la precarga: la gestión carga el [listado de la cátedra](docs/listado.md) y cada persona se
-registra con su rol.
+registra con su rol (TI no entrega ese listado por ahora, así que el panel queda vacío y los
+roles se asignan a mano). Y la publicación de notas: la gestión publica las de cada cátedra en
+«Ediciones» y desde ese momento cada equipo ve su nota final y las observaciones de los jurados,
+sin nombres.
 
 - Los tipos de prototipo de INNPRENDE II y qué evidencia pide cada uno (los carga la gestión en
   Catálogos y en los entregables; falta que MacondoLab los defina).

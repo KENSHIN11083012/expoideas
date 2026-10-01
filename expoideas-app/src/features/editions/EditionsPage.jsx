@@ -1,19 +1,26 @@
 import { useState } from 'react';
-import { CalendarClock, CalendarPlus, FileText, Pencil, Users } from 'lucide-react';
+import { CalendarClock, CalendarPlus, Eye, EyeOff, FileText, Pencil, Users } from 'lucide-react';
+import { toast } from 'sonner';
 import { TRACK_DESCRIPTIONS, TRACK_LIST, trackLabel } from '@/lib/tracks';
 import { PageContainer } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/ui/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback';
-import { useEditions } from './queries';
+import { useEditions, usePublishGrades } from './queries';
 import { editionStatus, formatDay } from './status';
 import { DeliverableTypesDialog } from '@/features/deliverables/DeliverableTypesDialog';
+import { formatDateTime } from '@/features/presentations/schemas';
 import { EditionDialog } from './EditionDialog';
 
-/** Configuración de una cátedra dentro de la tarjeta de la edición. */
-function TrackCard({ track, settings, onDeliverables }) {
+/**
+ * Configuración de una cátedra dentro de la tarjeta de la edición, con el
+ * estado de las notas: mientras no se publiquen, los equipos no ven la suya.
+ */
+function TrackCard({ track, settings, onDeliverables, onPublish }) {
+    const published = settings?.gradesPublishedAt;
     return (
         <div className="flex flex-col gap-1 rounded border border-outline-variant/60 bg-surface-container-low p-4">
             <p className="label-mono text-on-surface-variant">{trackLabel(track)}</p>
@@ -22,9 +29,24 @@ function TrackCard({ track, settings, onDeliverables }) {
                 <Users className="size-4 text-primary" aria-hidden="true" />
                 {settings ? `Grupos de ${settings.minMembers} a ${settings.maxMembers} integrantes` : 'Sin configurar'}
             </p>
-            <Button variant="outline" size="sm" className="mt-2 self-start" onClick={onDeliverables}>
-                <FileText /> Entregables
-            </Button>
+            <p className="flex items-center gap-2 text-sm text-on-surface-variant">
+                {published ? (
+                    <Eye className="size-4 text-primary" aria-hidden="true" />
+                ) : (
+                    <EyeOff className="size-4" aria-hidden="true" />
+                )}
+                {published ? `Notas publicadas el ${formatDateTime(published)}` : 'Notas sin publicar: los equipos no las ven'}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={onDeliverables}>
+                    <FileText /> Entregables
+                </Button>
+                {settings && (
+                    <Button variant={published ? 'ghost' : 'outline'} size="sm" onClick={() => onPublish(track, !published)}>
+                        {published ? <EyeOff /> : <Eye />} {published ? 'Ocultar notas' : 'Publicar notas'}
+                    </Button>
+                )}
+            </div>
         </div>
     );
 }
@@ -32,6 +54,19 @@ function TrackCard({ track, settings, onDeliverables }) {
 function EditionCard({ edition, onEdit }) {
     const status = editionStatus(edition);
     const [deliverablesOf, setDeliverablesOf] = useState(null);
+    const [publication, setPublication] = useState(null); // { track, publish }
+    const publishGrades = usePublishGrades();
+
+    const confirmPublication = async () => {
+        const { track, publish } = publication;
+        setPublication(null);
+        try {
+            await publishGrades.mutateAsync({ id: edition.id, track, publish });
+            toast.success(publish ? `Notas de ${trackLabel(track)} publicadas` : `Notas de ${trackLabel(track)} ocultas`);
+        } catch (publishError) {
+            toast.error(publishError.message);
+        }
+    };
 
     return (
         <Card className="flex flex-col gap-5 p-6">
@@ -68,6 +103,7 @@ function EditionCard({ edition, onEdit }) {
                         track={track}
                         settings={edition.tracks?.find((item) => item.track === track)}
                         onDeliverables={() => setDeliverablesOf(track)}
+                        onPublish={(item, publish) => setPublication({ track: item, publish })}
                     />
                 ))}
             </div>
@@ -75,6 +111,19 @@ function EditionCard({ edition, onEdit }) {
             {deliverablesOf && (
                 <DeliverableTypesDialog edition={edition} track={deliverablesOf} onClose={() => setDeliverablesOf(null)} />
             )}
+
+            <ConfirmDialog
+                open={Boolean(publication)}
+                title={publication?.publish ? '¿Publicar las notas?' : '¿Ocultar las notas?'}
+                description={
+                    publication?.publish
+                        ? `Cada equipo de ${trackLabel(publication.track)} en ${edition.name} verá su nota final y las observaciones de los jurados, sin nombres. Los jurados pueden seguir corrigiendo y el equipo verá lo corregido.`
+                        : `Los equipos de ${trackLabel(publication?.track)} en ${edition.name} dejarán de ver su nota hasta que la vuelvas a publicar.`
+                }
+                confirmLabel={publication?.publish ? 'Publicar' : 'Ocultar'}
+                onConfirm={confirmPublication}
+                onClose={() => setPublication(null)}
+            />
         </Card>
     );
 }

@@ -3,9 +3,9 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { apiError } from '@/test/utils';
 import EditionsPage from './EditionsPage';
-import { useEditions, useSaveEdition } from './queries';
+import { useEditions, usePublishGrades, useSaveEdition } from './queries';
 
-vi.mock('./queries', () => ({ useEditions: vi.fn(), useSaveEdition: vi.fn() }));
+vi.mock('./queries', () => ({ useEditions: vi.fn(), useSaveEdition: vi.fn(), usePublishGrades: vi.fn() }));
 
 /** Edición en plena inscripción, como la devuelve la API. */
 const open = {
@@ -23,6 +23,7 @@ const open = {
 };
 
 let saveEdition;
+let publishGrades;
 
 const renderPage = (editions = [open], query = {}) => {
     useEditions.mockReturnValue({ data: editions, isPending: false, error: null, refetch: vi.fn(), ...query });
@@ -39,6 +40,8 @@ const openDialog = async (name = 'Nueva edición') => {
 beforeEach(() => {
     saveEdition = { mutateAsync: vi.fn().mockResolvedValue(open), isPending: false };
     useSaveEdition.mockReturnValue(saveEdition);
+    publishGrades = { mutateAsync: vi.fn().mockResolvedValue(open), isPending: false };
+    usePublishGrades.mockReturnValue(publishGrades);
 });
 
 describe('Listado de ediciones', () => {
@@ -50,6 +53,35 @@ describe('Listado de ediciones', () => {
         expect(screen.getByText(/Grupos de 2 a 5 integrantes/)).toBeInTheDocument();
         expect(screen.getByText(/Grupos de 3 a 6 integrantes/)).toBeInTheDocument();
         expect(screen.getByText(/Entregas hasta el/)).toBeInTheDocument();
+    });
+
+    it('publica las notas de una cátedra después de confirmar, y las oculta si ya estaban publicadas', async () => {
+        renderPage([
+            {
+                ...open,
+                tracks: [
+                    { track: 'INNPRENDE_I', minMembers: 2, maxMembers: 5 },
+                    { track: 'INNPRENDE_II', minMembers: 3, maxMembers: 6, gradesPublishedAt: '2026-11-25T08:00:00' },
+                ],
+            },
+        ]);
+
+        expect(screen.getByText('Notas sin publicar: los equipos no las ven')).toBeInTheDocument();
+        expect(screen.getByText(/Notas publicadas el/)).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole('button', { name: /Publicar notas/ }));
+        const dialog = within(screen.getByRole('alertdialog'));
+        expect(dialog.getByText(/Cada equipo de INNPRENDE I · Despegue/)).toBeInTheDocument();
+        await userEvent.click(dialog.getByRole('button', { name: 'Publicar' }));
+        await waitFor(() =>
+            expect(publishGrades.mutateAsync).toHaveBeenCalledWith({ id: open.id, track: 'INNPRENDE_I', publish: true }),
+        );
+
+        await userEvent.click(screen.getByRole('button', { name: /Ocultar notas/ }));
+        await userEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Ocultar' }));
+        await waitFor(() =>
+            expect(publishGrades.mutateAsync).toHaveBeenCalledWith({ id: open.id, track: 'INNPRENDE_II', publish: false }),
+        );
     });
 
     it('con las inscripciones cerradas y las entregas abiertas lo dice', () => {

@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -74,8 +75,27 @@ class EditionControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "coordinacion@unisimon.edu.co", roles = "MACONDOLAB")
+    void macondoLabPublishesAndHidesGrades() throws Exception {
+        when(editionService.publishGrades(1, Track.INNPRENDE_I, "coordinacion@unisimon.edu.co"))
+                .thenReturn(response());
+        when(editionService.hideGrades(1, Track.INNPRENDE_I)).thenReturn(response());
+
+        mockMvc.perform(put("/api/v1/editions/1/tracks/INNPRENDE_I/grades-publication"))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/api/v1/editions/1/tracks/INNPRENDE_I/grades-publication"))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/v1/editions/1/tracks/OTRA/grades-publication"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @WithMockUser(roles = "TEACHER")
     void otherRolesDoNotWriteEditions() throws Exception {
+        mockMvc.perform(put("/api/v1/editions/1/tracks/INNPRENDE_I/grades-publication"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/v1/editions/1/tracks/INNPRENDE_I/grades-publication"))
+                .andExpect(status().isForbidden());
         mockMvc.perform(post("/api/v1/editions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(BODY))
@@ -143,7 +163,7 @@ class EditionControllerTest {
                 true,
                 true,
                 List.of(
-                        new TrackSettingsResponse(Track.INNPRENDE_I, 2, 5),
-                        new TrackSettingsResponse(Track.INNPRENDE_II, 2, 5)));
+                        new TrackSettingsResponse(Track.INNPRENDE_I, 2, 5, null),
+                        new TrackSettingsResponse(Track.INNPRENDE_II, 2, 5, null)));
     }
 }

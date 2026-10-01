@@ -2,21 +2,85 @@ package co.edu.unisimon.expoideas.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import co.edu.unisimon.expoideas.notifications.MailFailureRecorder;
 import co.edu.unisimon.expoideas.users.Role;
 import jakarta.mail.internet.MimeMessage;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadPoolExecutor;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.mail.MailSendException;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 /**
  * Los correos de la plataforma contra un SMTP de verdad (GreenMail): invitación a
  * un equipo, cuenta creada por la gestión y sustentación programada o cambiada.
  * Salen después del commit y en otro hilo, así que se espera a que lleguen.
+ * También, con qué límites se envían y dónde queda el que no se pudo enviar.
  */
 class NotificationIT extends IntegrationTest {
 
     private static final String TRACK = "INNPRENDE_I";
+
+    @Autowired
+    @Qualifier("applicationTaskExecutor")
+    private ThreadPoolTaskExecutor mailExecutor;
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    @Autowired
+    private MailFailureRecorder failures;
+
+    @Test
+    void mailIsSentWithLimitsSoAServerThatDoesNotAnswerCannotHangThePlatform() {
+        // Pocos hilos y una cola con tope; si se llena, envía quien lo pidió en vez de rechazarse.
+        assertThat(mailExecutor.getCorePoolSize()).isEqualTo(4);
+        assertThat(mailExecutor.getMaxPoolSize()).isEqualTo(4);
+        assertThat(mailExecutor.getQueueCapacity()).isEqualTo(500);
+        assertThat(mailExecutor.getThreadNamePrefix()).isEqualTo("correo-");
+        assertThat(mailExecutor.getThreadPoolExecutor().getRejectedExecutionHandler())
+                .isInstanceOf(ThreadPoolExecutor.CallerRunsPolicy.class);
+
+        // Conectar, leer y escribir tienen tiempo de espera: JavaMail no lo pone solo.
+        assertThat(((JavaMailSenderImpl) mailSender).getJavaMailProperties())
+                .containsEntry("mail.smtp.connectiontimeout", "10000")
+                .containsEntry("mail.smtp.timeout", "15000")
+                .containsEntry("mail.smtp.writetimeout", "15000");
+    }
+
+    @Test
+    void aMailThatCouldNotBeSentIsLeftInTheAuditTrailWithoutItsBody() {
+        String lost = uniqueEmail("correo.perdido");
+
+        // Como lo deja NotificationListener tras el último intento: desde el hilo del correo, sin sesión.
+        failures.record(
+                lost,
+                "Tu cuenta en Idearium",
+                3,
+                new MailSendException(
+                        "Mail server connection failed", new java.net.ConnectException("Connection refused")));
+
+        List<Map<String, Object>> rows = get("/api/v1/admin/audit?action=MAIL_FAILED&size=100", loginAs(Role.ADMIN))
+                .expect(200)
+                .json("$.items");
+        assertThat(rows)
+                .filteredOn(row -> lost.equals(row.get("targetLabel")))
+                .singleElement()
+                .satisfies(row -> assertThat(row)
+                        .containsEntry("actionLabel", "Correo que no se pudo enviar")
+                        .containsEntry("targetType", "MAIL")
+                        .containsEntry("targetId", null)
+                        .containsEntry("actorEmail", null)
+                        .containsEntry(
+                                "detail",
+                                "\"Tu cuenta en Idearium\" · intentos: 3 · ConnectException: Connection refused"));
+    }
 
     @Test
     void anInvitationReachesTheInvitedStudent() throws Exception {

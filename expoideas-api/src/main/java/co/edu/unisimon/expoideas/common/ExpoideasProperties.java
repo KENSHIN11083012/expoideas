@@ -49,7 +49,15 @@ public record ExpoideasProperties(
             @DefaultValue("5") @Min(1) int maxFailedAttempts,
             @DefaultValue("5m") Duration lockDuration) {}
 
-    /** Remitente de los correos (MAIL_FROM). El servidor SMTP va en spring.mail.*. */
+    /**
+     * Envío de los correos. El servidor SMTP va en spring.mail.*.
+     *
+     * @param from       remitente (MAIL_FROM)
+     * @param attempts   veces que se intenta un envío antes de darlo por perdido (MAIL_ATTEMPTS)
+     * @param retryDelay espera antes del segundo intento; antes del tercero, el doble, y así (MAIL_RETRY_DELAY)
+     */
     public record MailSettings(
-            @DefaultValue("no-reply@unisimon.edu.co") String from) {}
+            @DefaultValue("no-reply@unisimon.edu.co") String from,
+            @DefaultValue("3") @Min(1) int attempts,
+            @DefaultValue("5s") Duration retryDelay) {}
 }

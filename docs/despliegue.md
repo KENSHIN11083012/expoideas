@@ -103,6 +103,7 @@ cupo: en una hora pico de inscripciones se quedarían cortas.
 | `SPRING_MAIL_HOST` / `SPRING_MAIL_PORT` | No | Servidor SMTP de TI para los avisos (invitaciones, cuentas creadas, sustentaciones). Sin host no se envía nada y la API lo dice en el log. En `docker-compose.yml` salen de `MAIL_HOST` y `MAIL_PORT` |
 | `SPRING_MAIL_USERNAME` / `SPRING_MAIL_PASSWORD` | No | Credenciales del SMTP (`MAIL_USERNAME` y `MAIL_PASSWORD` en el `.env`). Con `MAIL_AUTH=false` y `MAIL_STARTTLS=false` se desactivan la autenticación y STARTTLS |
 | `MAIL_FROM` | No | Remitente de los avisos (por defecto `no-reply@unisimon.edu.co`; debe ser una dirección que el SMTP acepte) |
+| `MAIL_ATTEMPTS` / `MAIL_RETRY_DELAY` | No | Cuántas veces se intenta un envío (por defecto 3) y cuánto se espera antes del segundo intento (por defecto `5s`; antes del tercero, el doble). Ver «Si un correo no sale» abajo |
 | `APP_URL` | No | URL pública de la app, para los enlaces de los correos (`https://<dominio>.unisimon.edu.co/expoideas`). Junto con el SMTP activa la verificación del correo al registrarse y la recuperación de contraseña; ver «Verificación del correo» abajo |
 | `JAVA_TOOL_OPTIONS` | No | Opciones de la JVM. La imagen Docker ya trae `-XX:MaxRAMPercentage=75`; fuera de Docker no hay valor por defecto |
 
@@ -123,6 +124,22 @@ pide verificación, el rol del listado lo confirma la gestión y las contraseña
 Al activar el correo en una instalación que ya tiene cuentas, las existentes no quedan pendientes
 de verificar. Antes de anunciarlo conviene registrar una cuenta de prueba y comprobar que el enlace
 llega y abre: si el SMTP rechaza los envíos, las cuentas nuevas no podrían entrar.
+
+### Si un correo no sale
+
+Los correos salen después de la operación que los pide, en segundo plano: un SMTP lento o caído no
+frena a quien está usando la plataforma.
+
+- Cada envío espera como mucho 10 segundos para conectar y 15 para leer o escribir, y se intenta
+  tres veces (`MAIL_ATTEMPTS`), con 5 y 10 segundos de espera entre intentos (`MAIL_RETRY_DELAY`).
+  Las credenciales rechazadas no se reintentan: otro intento no las arregla.
+- Si ningún intento sale, queda en el log de la API y en el rastro de auditoría
+  (`GET /api/v1/admin/audit?action=MAIL_FAILED`, solo administradores): a quién iba, el asunto y el
+  motivo, nunca el cuerpo. Es donde mirar cuando alguien dice que no le llegó su contraseña
+  temporal: se le restablece desde **Usuarios**.
+- Hay cuatro envíos a la vez y hasta 500 en espera. Si el SMTP lleva rato caído y la espera se
+  llena, el envío lo hace la propia petición, que tarda más pero no falla.
+- Al apagar la API, los envíos en curso tienen 30 segundos para terminar.
 
 ## Primer administrador
 

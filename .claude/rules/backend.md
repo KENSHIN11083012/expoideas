@@ -20,7 +20,7 @@ están en AGENTS.md; esto es solo el mapa para ubicarse.
 | `presentations` | `PresentationController` `/projects/{projectId}/presentation`, `/presentations` | `presentations` | Publica `PresentationScheduledEvent` |
 | `jury` | `JuryController` `/projects/{projectId}/jurors`, `/jury/projects` | `jury_assignments` | Implementa `ProjectVisibilityRule` y `EvaluatorRule` |
 | `evaluations` | `RubricController` `/rubrics/{track}` · `EvaluationController` `/projects/{projectId}/evaluations` (+ `/mine`), `/projects/{projectId}/grade`, `/evaluations/mine`, `/evaluations/reminders` | `rubrics`, `rubric_criteria`, `rubric_levels`, `evaluations`, `evaluation_scores` | Define `EvaluatorRule`. Implementa `AccountDeletionRule`. Publica `EvaluationReminderEvent` |
-| `notifications` | — | — | `NotificationListener` envía los correos tras el commit (`AFTER_COMMIT`). Aquí viven los `record` de los eventos de correo |
+| `notifications` | — | — | `NotificationListener` envía los correos tras el commit (`AFTER_COMMIT`), en el ejecutor acotado de `spring.task.execution`, con reintentos. El que no sale lo deja `MailFailureRecorder` en el rastro (`MAIL_FAILED`). Aquí viven los `record` de los eventos de correo |
 | `reports` | `ProjectDirectoryController`: `GET /projects`, `GET /projects/export` (CSV) | — | Solo lectura sobre lo de los demás |
 | `files` | `FileController` `/files/{id}` | `files` | Define `PrivateFileAccessRule`; no sabe qué es un proyecto |
 | `audit` | `AuditController`: `GET /admin/audit` (solo `ADMIN`; filtros `action`, `from`, `to`; paginada) | `audit_events` | `AuditListener` guarda cada `AuditableAction` en la misma transacción que la acción |

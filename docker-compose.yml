@@ -66,6 +66,9 @@ services:
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: ${MAIL_AUTH:-true}
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: ${MAIL_STARTTLS:-true}
       MAIL_FROM: ${MAIL_FROM:-no-reply@unisimon.edu.co}
+      # Un envío que falla se reintenta; si ninguno sale, queda en el rastro de auditoría.
+      MAIL_ATTEMPTS: ${MAIL_ATTEMPTS:-3}
+      MAIL_RETRY_DELAY: ${MAIL_RETRY_DELAY:-5s}
       APP_URL: ${APP_URL:-}
     volumes:
       # FILES_DIR=/data/files ya viene fijado en el Dockerfile de la API.

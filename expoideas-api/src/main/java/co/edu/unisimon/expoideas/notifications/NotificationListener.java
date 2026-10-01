@@ -1,12 +1,16 @@
 package co.edu.unisimon.expoideas.notifications;
 
 import co.edu.unisimon.expoideas.common.ExpoideasProperties;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.MailAuthenticationException;
+import org.springframework.mail.MailParseException;
+import org.springframework.mail.MailPreparationException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -15,8 +19,9 @@ import org.springframework.transaction.event.TransactionalEventListener;
 /**
  * Convierte los eventos de la plataforma en correos. Corre después del commit
  * (si la operación falla, no hay aviso) y en otro hilo (quien pidió la operación
- * no espera al servidor de correo). Un envío que falla se registra y no afecta a
- * la operación que ya se confirmó.
+ * no espera al servidor de correo). Un envío que falla se reintenta; si ningún
+ * intento sale, queda en el rastro de auditoría y no afecta a la operación, que
+ * ya se confirmó.
  */
 @Slf4j
 @Component
@@ -29,6 +34,7 @@ public class NotificationListener {
 
     private final MailService mailService;
     private final ExpoideasProperties properties;
+    private final MailFailureRecorder failures;
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
@@ -154,12 +160,58 @@ public class NotificationListener {
         deliver(event.email(), subject, body);
     }
 
+    /**
+     * Envía, y si falla lo vuelve a intentar con una espera cada vez mayor: un
+     * SMTP que se cae un momento no debe costar la contraseña temporal de nadie.
+     */
     private void deliver(String to, String subject, String body) {
+        int attempts = properties.mail().attempts();
+        for (int attempt = 1; ; attempt++) {
+            try {
+                mailService.send(to, subject, body);
+                return;
+            } catch (RuntimeException e) {
+                boolean lastOne = attempt >= attempts || !worthRetrying(e);
+                if (lastOne || !pause(properties.mail().retryDelay().multipliedBy(attempt))) {
+                    giveUp(to, subject, attempt, e);
+                    return;
+                }
+                log.warn(
+                        "No se pudo enviar \"{}\" a {} (intento {} de {}): {}",
+                        subject,
+                        to,
+                        attempt,
+                        attempts,
+                        e.getMessage());
+            }
+        }
+    }
+
+    /** Hay fallos que otro intento no arregla: las credenciales del SMTP o un mensaje mal armado. */
+    private static boolean worthRetrying(RuntimeException e) {
+        return !(e instanceof MailAuthenticationException
+                || e instanceof MailParseException
+                || e instanceof MailPreparationException);
+    }
+
+    /** @return false si se interrumpió la espera (la API se está apagando): no se sigue intentando */
+    private static boolean pause(Duration delay) {
         try {
-            mailService.send(to, subject, body);
+            Thread.sleep(delay);
+            return true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    /** La operación ya se confirmó: el aviso perdido no sale en la respuesta, pero queda en el log y en el rastro. */
+    private void giveUp(String to, String subject, int attempts, RuntimeException cause) {
+        log.error("No se pudo enviar \"{}\" a {} tras {} intento(s): {}", subject, to, attempts, cause.getMessage());
+        try {
+            failures.record(to, subject, attempts, cause);
         } catch (RuntimeException e) {
-            // La operación ya se confirmó; el aviso perdido se ve en el log, no en la respuesta.
-            log.error("No se pudo enviar \"{}\" a {}: {}", subject, to, e.getMessage());
+            log.error("Tampoco se pudo dejar en el rastro el correo perdido a {}: {}", to, e.getMessage());
         }
     }
 

@@ -60,7 +60,8 @@ public final class TestData {
                 new JwtSettings(JWT_SECRET, Duration.ofMinutes(1)),
                 new CorsSettings(List.of()),
                 new FilesSettings(filesDirectory),
-                new MailSettings("expoideas@pruebas.local"),
+                // Sin espera entre intentos: las pruebas no duermen.
+                new MailSettings("expoideas@pruebas.local", 3, Duration.ZERO),
                 new LoginSettings(5, Duration.ofMinutes(5)),
                 "");
     }

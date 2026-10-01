@@ -2,8 +2,6 @@ package co.edu.unisimon.expoideas.notifications;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -12,15 +10,13 @@ import co.edu.unisimon.expoideas.common.ExpoideasProperties;
 import co.edu.unisimon.expoideas.support.TestData;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
-/** Sin SMTP no pasa nada; con SMTP el correo sale con el remitente configurado; si falla, no rompe. */
+/** Sin SMTP no pasa nada; con SMTP el correo sale con el remitente configurado. */
 class MailServiceTest {
 
     @SuppressWarnings("unchecked")
@@ -80,26 +76,6 @@ class MailServiceTest {
         assertThat(message.getValue().getTo()).containsExactly("ana@unisimon.edu.co");
         assertThat(message.getValue().getSubject()).isEqualTo("Hola");
         assertThat(message.getValue().getText()).isEqualTo("Cuerpo");
-    }
-
-    @Test
-    void aFailedDeliveryIsLoggedAndSwallowedByTheListener() {
-        JavaMailSender sender = mock(JavaMailSender.class);
-        doThrow(new MailSendException("SMTP caído")).when(sender).send(any(SimpleMailMessage.class));
-        NotificationListener listener = new NotificationListener(
-                new MailService(provider(sender), TestData.properties(Path.of("x"))),
-                TestData.properties(Path.of("x")));
-
-        assertThatCode(() -> listener.onPresentationScheduled(new PresentationScheduledEvent(
-                        List.of("ana@unisimon.edu.co", "carlos@unisimon.edu.co"),
-                        "BioSensor",
-                        LocalDateTime.of(2026, 11, 20, 9, 30),
-                        "Auditorio",
-                        null,
-                        false)))
-                .doesNotThrowAnyException();
-        // Se intentó con los dos destinatarios: el fallo del primero no frena al segundo.
-        verify(sender, org.mockito.Mockito.times(2)).send(any(SimpleMailMessage.class));
     }
 
     @Test

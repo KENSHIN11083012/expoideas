@@ -45,7 +45,8 @@ dominio.
 - Archivos: subida y descarga, hasta 5 MB, validados por contenido (JPG, PNG, WEBP y PDF; las
   plantillas también en DOCX y PPTX).
 - Avisos por correo: invitaciones a un equipo, cuentas creadas por la gestión, sustentaciones y
-  recordatorios a los jurados. Sin servidor SMTP la plataforma funciona igual y no envía nada.
+  recordatorios a los jurados. Sin servidor SMTP la plataforma funciona igual y no envía nada. Un
+  envío que falla se reintenta, y el que no sale queda en el rastro de auditoría.
 
 **Dominio de la Expo**
 

@@ -19,7 +19,9 @@ public record AuditableAction(Action action, Integer targetId, String targetLabe
         EDITION,
         PROJECT,
         EVALUATION,
-        DELIVERABLE
+        DELIVERABLE,
+        /** Un correo de la plataforma; se reconoce por su destinatario. */
+        MAIL
     }
 
     /** Las acciones que dejan rastro. Una nueva se añade aquí y se publica donde ocurre. */
@@ -35,7 +37,8 @@ public record AuditableAction(Action action, Integer targetId, String targetLabe
         EVALUATION_EDITED(Target.EVALUATION, "Evaluación corregida"),
         JUROR_REMOVED(Target.PROJECT, "Jurado quitado"),
         PROJECT_DELETED(Target.PROJECT, "Proyecto eliminado"),
-        DELIVERABLE_DELETED(Target.DELIVERABLE, "Entregable eliminado");
+        DELIVERABLE_DELETED(Target.DELIVERABLE, "Entregable eliminado"),
+        MAIL_FAILED(Target.MAIL, "Correo que no se pudo enviar");
 
         private final Target target;
         private final String label;
